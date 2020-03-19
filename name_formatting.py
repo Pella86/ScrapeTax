@@ -100,7 +100,6 @@ class LabelsTable:
         self.table = ET.SubElement(body, "table")
         
     
-    
     def generate_table(self, taxa_list):
         n_cols = 5
         n_rows = int(len(taxa_list) / n_cols) + 1

@@ -9,22 +9,30 @@ Created on Fri Jan 10 09:21:27 2020
 # Imports
 # =============================================================================
 
-
-
-import name_formatting
-
 import NBN_parser
+import CreateHTMLFile
 
-import os
+# =============================================================================
+# base data
+# =============================================================================
 
 
-base_folder = "./Data/Vespidae/"
+base_folder = "./Data/Vespidae"
 
 nbn_home = "https://species.nbnatlas.org"   
+
+
+# =============================================================================
+# family urls
+# =============================================================================
         
 #nbn_myceto = nbn_home + '/species/NBNSYS0000160474#names'
 nbn_myceto = nbn_home +  '/species/NBNSYS0000050803#classification'
 url = nbn_myceto
+
+# =============================================================================
+# Create genus list
+# =============================================================================
 
 
 filename = "./Data/Vespidae/nbn_vespidae.pickle"
@@ -37,10 +45,69 @@ NBN_parser.save_taxa_list(genus_list, list_filename)
 
 genus_list = NBN_parser.laod_taxa_list(list_filename)
 
+# =============================================================================
+# Create species list
+# =============================================================================
 
-print(genus_list)
+uid = 1
+species_list = []
+for genus in genus_list:
+    filename = base_folder + "/" + genus.name + "_" + str(uid) + ".pickle"
+    url = nbn_home + "/" + genus.link
+    
+    species = NBN_parser.generate_taxa_list(url, filename, "species", genus)
+    
+    for specie in species:
+        species_list.append(specie)
+        
+    uid += 1
 
 
+NBN_parser.save_taxa_list(species_list, base_folder + "/" + "species_list.mptaxa")
+
+# =============================================================================
+#  Create authority file    
+# =============================================================================
+
+def generate_authority_file(genus_list, species_list):
+    
+    fhtml = CreateHTMLFile.CreateHTMLFile()
+    # add date of creation and how many taxas are in the file
+    # maybe add the possibility to save the generate tree for later use?
+    # could be useless since it will be not modifiable
+    
+    fhtml.add_element("--- Genuses ---")
+    fhtml.add_line_break()
+    
+    for genus in genus_list:
+        fhtml.add_italics_element(genus.name)
+        fhtml.add_element(", ")
+        fhtml.add_element(genus.author)
+        fhtml.add_line_break()
+
+    fhtml.add_element("--- Species ---")
+    fhtml.add_line_break()
+    
+    for specie in species_list:
+        fhtml.add_italics_element(specie.name)
+        fhtml.add_element(", ")
+        fhtml.add_element(specie.author)
+        fhtml.add_line_break()
+    
+    
+    fhtml.generate_html_file(base_folder + "/" + "authority_file.html")
+    
+            
+genus_list   = NBN_parser.laod_taxa_list(base_folder + "/" +"genus_list.mptaxa")
+species_list = NBN_parser.laod_taxa_list(base_folder + "/" + "species_list.mptaxa")
+
+
+generate_authority_file(genus_list, species_list)
+       
+# =============================================================================
+# Old stuff
+# =============================================================================
+        
 # base_folder = "./Data/Vespidae/"
 
 # nbn_home = "https://species.nbnatlas.org"   
