@@ -13,63 +13,10 @@ import NBN_parser
 import CreateHTMLFile
 
 # =============================================================================
-# base data
+#  Function to create the authority file    
 # =============================================================================
 
-
-base_folder = "./Data/Vespidae"
-
-nbn_home = "https://species.nbnatlas.org"   
-
-
-# =============================================================================
-# family urls
-# =============================================================================
-        
-#nbn_myceto = nbn_home + '/species/NBNSYS0000160474#names'
-nbn_myceto = nbn_home +  '/species/NBNSYS0000050803#classification'
-url = nbn_myceto
-
-# =============================================================================
-# Create genus list
-# =============================================================================
-
-
-filename = "./Data/Vespidae/nbn_vespidae.pickle"
-
-genus_list = NBN_parser.generate_taxa_list(url, filename, "genus", None)
-
-list_filename = "./Data/Vespidae/genus_list.mptaxa"
-
-NBN_parser.save_taxa_list(genus_list, list_filename)
-
-genus_list = NBN_parser.laod_taxa_list(list_filename)
-
-# =============================================================================
-# Create species list
-# =============================================================================
-
-uid = 1
-species_list = []
-for genus in genus_list:
-    filename = base_folder + "/" + genus.name + "_" + str(uid) + ".pickle"
-    url = nbn_home + "/" + genus.link
-    
-    species = NBN_parser.generate_taxa_list(url, filename, "species", genus)
-    
-    for specie in species:
-        species_list.append(specie)
-        
-    uid += 1
-
-
-NBN_parser.save_taxa_list(species_list, base_folder + "/" + "species_list.mptaxa")
-
-# =============================================================================
-#  Create authority file    
-# =============================================================================
-
-def generate_authority_file(genus_list, species_list):
+def generate_authority_file(genus_list, species_list, base_folder):
     
     fhtml = CreateHTMLFile.CreateHTMLFile()
     # add date of creation and how many taxas are in the file
@@ -96,18 +43,61 @@ def generate_authority_file(genus_list, species_list):
     
     
     fhtml.generate_html_file(base_folder + "/" + "authority_file.html")
+
+# =============================================================================
+# Main 
+# =============================================================================
+
+if __name__ == "__main__":
+    print("Scrape Tax")
+    print("Program to gather informations from online databases about species and genuses")
     
-            
-genus_list   = NBN_parser.laod_taxa_list(base_folder + "/" +"genus_list.mptaxa")
-species_list = NBN_parser.laod_taxa_list(base_folder + "/" + "species_list.mptaxa")
+    print("-" * 79)
+    print("Paste the url of the family of the https://nbnatlas.org/ search result")
+    
+    url = input("website link > ")
 
-
-generate_authority_file(genus_list, species_list)
+    print("-" * 79)
+    print("The path to the folder where the file will be saved, the folder must already exist. Use dot (.) to access the current folder")
+    
+    base_folder = input("path > ")
+    
+    print("-" * 79)
+    print("Chose a prefix to name the files")
+    
+    prefix = input("prefix > ")
+    
+    genus_list, species_list = NBN_parser.generate_lists(url, base_folder, prefix)
+    generate_authority_file(genus_list, species_list, base_folder)   
+    
+    
        
 # =============================================================================
 # Old stuff
 # =============================================================================
-        
+  
+
+# =============================================================================
+#  Generate the lists
+# =============================================================================
+
+# url = nbn_home +  '/species/NBNSYS0000050803#classification'
+# base_folder = "./Data/Vespidae"
+# prefix = "vespidae"
+
+# # the url of a family on the NBN Atlas
+# url = nbn_home + '/species/NBNSYS0000160474'
+# # the folder on the pc were the data will be saved
+# base_folder = "./Data/Mycetophilidae"
+# # the prefix for the files to be saved
+# prefix = "mycetophilidae"
+
+# genus_list, species_list = NBN_parser.generate_lists(url, base_folder, prefix)
+    
+# generate_authority_file(genus_list, species_list, base_folder)
+
+
+      
 # base_folder = "./Data/Vespidae/"
 
 # nbn_home = "https://species.nbnatlas.org"   

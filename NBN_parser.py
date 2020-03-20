@@ -7,9 +7,13 @@ Created on Wed Mar 18 09:55:42 2020
 
 import bs4
 import pickle
+import os
 
 import request_handler
 import Taxa
+
+
+NBN_HOME = "https://species.nbnatlas.org"   
 
 
 def gather_child_taxa(url, filename):
@@ -48,13 +52,24 @@ def parse_html_taxa(taxa, hierarchy_tag, supertaxa):
         
         current_hirerarchy_tag = html_tag.get_text()
         
-        if current_hirerarchy_tag == hierarchy_tag:
-            name = html_name.find("span", class_="name").get_text()
-            author = html_name.find("span", class_="author").get_text()
-            link = html_name.find("a").get("href")
+        if current_hirerarchy_tag == hierarchy_tag :
+            name = html_name.find("span", class_="name")
+            if name:
+                name = name.get_text()
+            
+            author = html_name.find("span", class_="author")
+            if author:
+                author = author.get_text()
+            
+                
+            link = html_name.find("a")
+            if link:
+                link = link.get("href")
+            
             supertaxa = supertaxa
             
-            taxa_names.append(Taxa.Taxa(name, author, link, supertaxa))
+            if name and author and link:
+                taxa_names.append(Taxa.Taxa(name, author, link, supertaxa))
     
     return taxa_names
 
@@ -71,3 +86,42 @@ def laod_taxa_list(filename):
     with open(filename, "rb") as f:
         data = pickle.load(f)
     return data
+
+
+def generate_lists(url, base_folder, filename_prefix, save_lists = True):
+    
+    # Gather the genuses
+    
+    genus_tag = "_genus"
+    
+    filename = os.path.join(base_folder, filename_prefix + genus_tag + "_website" + ".pickle")
+
+    genus_list = generate_taxa_list(url, filename, "genus", None)
+    
+    if save_lists:
+        list_filename = os.path.join(base_folder, filename_prefix + genus_tag + "_list" + ".mptaxa")
+        save_taxa_list(genus_list, list_filename)
+    
+    # Gather the species
+        
+    specie_tag = "_specie"
+    
+    uid = 1
+    species_list = []
+    for genus in genus_list:
+        filename = os.path.join(base_folder, genus.name + specie_tag + "_" + str(uid) + ".pickle")
+        url = NBN_HOME + "/" + genus.link
+        
+        species = generate_taxa_list(url, filename, "species", genus)
+        
+        for specie in species:
+            species_list.append(specie)
+            
+        uid += 1
+    
+    if save_lists:
+        list_filename = os.path.join(base_folder, filename_prefix + specie_tag + "_list" + ".mptaxa")
+        save_taxa_list(species_list, list_filename)
+    
+    
+    return genus_list, species_list
