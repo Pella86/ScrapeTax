@@ -9,8 +9,11 @@ Created on Fri Jan 10 09:21:27 2020
 # Imports
 # =============================================================================
 
+import os
+
 import NBN_parser
 import CreateHTMLFile
+import CreateLabelTable
 
 # =============================================================================
 #  Function to create the authority file    
@@ -42,7 +45,7 @@ def generate_authority_file(genus_list, species_list, base_folder):
         fhtml.add_line_break()
     
     
-    fhtml.generate_html_file(base_folder + "/" + "authority_file.html")
+    fhtml.generate_html_file(os.path.join(base_folder, "authority_file.html"))
 
 # =============================================================================
 # Main 
@@ -56,22 +59,77 @@ if __name__ == "__main__":
     print("Paste the url of the family of the https://nbnatlas.org/ search result")
     
     url = input("website link > ")
+    
+    if url == "":
+        url = "https://nbnatlas.org/species/NBNSYS0000050803"
 
     print("-" * 79)
     print("The path to the folder where the file will be saved, the folder must already exist. Use dot (.) to access the current folder")
     
     base_folder = input("path > ")
     
+    if base_folder == "":
+        base_folder = "./Data/Vespidae"
+    
     print("-" * 79)
     print("Chose a prefix to name the files")
     
     prefix = input("prefix > ")
     
-    genus_list, species_list = NBN_parser.generate_lists(url, base_folder, prefix)
-    generate_authority_file(genus_list, species_list, base_folder)   
+    if prefix == "":
+        prefix = "vespidae"
+        
+    print("-" * 79)
     
+    correct_answer = False
+    exit_command = False
     
-       
+    while not exit_command:
+        print("What you would like to do?")
+        print("  1. Generate authority list")
+        print("  2. Generate label table")
+        print("  3. Exit (e, exit, quit)")
+        
+        choice = input("pick a number >")
+        
+        if choice == "e" or choice == "exit" or choice == "quit" or choice == "3":
+            exit_command = True
+        else:
+            try:
+                choice = int(choice)
+            except ValueError:
+                print("not a value from 1 to 3")
+                choice = None
+            
+                
+            
+            if choice == 1:
+                print("Generating authority list")
+    
+                genus_list, species_list = NBN_parser.generate_lists(url, base_folder, prefix)
+                generate_authority_file(genus_list, species_list, base_folder)  
+                
+                exit_command = True
+            
+            elif choice == 2:
+                print("Generating label table")
+                _, species_list = NBN_parser.generate_lists(url, base_folder, prefix)
+                
+                table = CreateLabelTable.LabelTable()
+                
+                table.create_table(species_list,
+                                   os.path.join(base_folder,
+                                                prefix + "_label_table.html"
+                                                )
+                                   )
+                
+                exit_command = True
+            
+            else:
+                print("Choice not available")
+                exit_command = True
+            
+                
 # =============================================================================
 # Old stuff
 # =============================================================================

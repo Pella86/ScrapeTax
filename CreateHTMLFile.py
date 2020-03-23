@@ -35,7 +35,7 @@ class CreateHTMLFile:
         
         head = ET.SubElement(self.root, "head")
         
-        style = ET.SubElement(head, "style")
+        self.style = ET.SubElement(head, "style")
         
         sel = SelectorProprieties("body")
         sel.add_propriety("font-family", "Lucida Console")
@@ -44,11 +44,15 @@ class CreateHTMLFile:
         psel = SelectorProprieties("p")
         psel.add_propriety("display", "inline")
         
-        style.text = sel.generate_selector()
-        style.text += psel.generate_selector()
+        self.style.text = sel.generate_selector()
+        self.style.text += psel.generate_selector()
         
         
         self.body = ET.SubElement(self.root, "body")
+    
+    
+    def add_selector(self, selector):
+        self.style.text += selector.generate_selector()
         
     
     def add_body_element(self, element):
