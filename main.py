@@ -50,8 +50,10 @@ def generate_authority_file(genus_list, species_list, base_folder):
 # =============================================================================
 # Main 
 # =============================================================================
-
-if __name__ == "__main__":
+ 
+PRODUCTION = False    
+    
+def prod_main():    
     print("Scrape Tax")
     print("Program to gather informations from online databases about species and genuses")
     
@@ -128,6 +130,63 @@ if __name__ == "__main__":
             else:
                 print("Choice not available")
                 exit_command = True
+    
+
+if __name__ == "__main__":
+    if PRODUCTION:
+        prod_main()
+    else:
+        # test the gathering of the specie complete taxonomy
+        # test successfull
+        # can gather the whole taxonomy
+        # store taxonomy in a dictionary
+        # how to integrate the taxa names that arent in the test?
+        # run and rise exception if the taxa name isnt there?
+        
+        import request_handler
+        import bs4
+        link = "https://species.nbnatlas.org/species/NHMSYS0000875042"
+        
+        req = request_handler.Request(link, "./Data/Vespidae/test_specie_tax.pickle")
+        
+        req.load()
+        
+        soup = bs4.BeautifulSoup(req.response.text, "html.parser")      
+        
+        children = soup.find("section", id="classification")
+        dts = children.find_all("dt")
+        
+        # the real names
+        dds = children.find_all("dd")
+        
+        print(dts[0])
+        print("------------------------------------------------")
+        print(dds[0])
+        print("------------------------------------------------")
+        print(dts[0].text)
+        print(dds[0].find("span", class_="name").text)
+        
+        tax_dict = {}
+        
+        tax_names = ["unranked", "kingdom", "phylum", "subphylum", "class", "order", "family", "genus", "species"]
+        
+        for n in tax_names:
+            tax_dict[n] = None
+            
+            
+        for dt, dd in zip(dts, dds):
+            print("------------------------------------------------")
+            print(dt.text)
+            print(dd.find("span", class_="name").text)
+            tax_name = dt.text
+            tax_dict[tax_name] = dd.find("span", class_="name").text
+            
+        
+        print(tax_dict)
+        
+        
+    
+
             
                 
 # =============================================================================

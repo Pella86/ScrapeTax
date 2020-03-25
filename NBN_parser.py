@@ -78,14 +78,7 @@ def generate_taxa_list(base_url, data_filename, hierarchy_tag, supertaxa):
     taxa_list = parse_html_taxa(taxa_names, hierarchy_tag, supertaxa)
     return taxa_list
 
-def save_taxa_list(taxa_list, filename):
-    with open(filename, "wb") as f:
-        pickle.dump(taxa_list, f)
-    
-def laod_taxa_list(filename):
-    with open(filename, "rb") as f:
-        data = pickle.load(f)
-    return data
+
 
 
 def generate_lists(url, base_folder, filename_prefix, save_lists = True):
@@ -100,7 +93,7 @@ def generate_lists(url, base_folder, filename_prefix, save_lists = True):
     
     if save_lists:
         list_filename = os.path.join(base_folder, filename_prefix + genus_tag + "_list" + ".mptaxa")
-        save_taxa_list(genus_list, list_filename)
+        Taxa.save_taxa_list(genus_list, list_filename)
     
     # Gather the species
         
@@ -121,7 +114,7 @@ def generate_lists(url, base_folder, filename_prefix, save_lists = True):
     
     if save_lists:
         list_filename = os.path.join(base_folder, filename_prefix + specie_tag + "_list" + ".mptaxa")
-        save_taxa_list(species_list, list_filename)
+        Taxa.save_taxa_list(species_list, list_filename)
     
     
     return genus_list, species_list
