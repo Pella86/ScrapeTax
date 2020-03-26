@@ -1,0 +1,37 @@
+ , Family, Subfamily, Tribe, Genus, SpecificEpithet, SubspecificEpithet, InfraspecificRank, InfraspecificEpithet, Authorship
+1, Vespidae,  ,  , Ancistrocerus, antilope,  ,  ,  ,  , (Panzer, 1798)
+2, Vespidae,  ,  , Ancistrocerus, claripennis,  ,  ,  ,  , Thomson, 1874
+3, Vespidae,  ,  , Ancistrocerus, gazella,  ,  ,  ,  , (Panzer, 1798)
+4, Vespidae,  ,  , Ancistrocerus, nigricornis,  ,  ,  ,  , (Curtis, 1826)
+5, Vespidae,  ,  , Ancistrocerus, oviventris, Ancistrocerus oviventris subsp. oviventris,  ,  ,  , (Wesmael, 1836)
+6, Vespidae,  ,  , Ancistrocerus, parietinus,  ,  ,  ,  , (Linnaeus, 1758)
+7, Vespidae,  ,  , Ancistrocerus, scoticus,  ,  ,  ,  , (Curtis, 1826)
+8, Vespidae,  ,  , Ancistrocerus, trifasciatus,  ,  ,  ,  , (Müller, 1776)
+9, Vespidae,  ,  , Dolichovespula, media,  ,  ,  ,  , (Retzius, 1783)
+10, Vespidae,  ,  , Dolichovespula, norwegica,  ,  ,  ,  , (Fabricius, 1781)
+11, Vespidae,  ,  , Dolichovespula, saxonica,  ,  ,  ,  , (Fabricius, 1793)
+12, Vespidae,  ,  , Dolichovespula, sylvestris,  ,  ,  ,  , (Scopoli, 1763)
+13, Vespidae,  ,  , Eumenes, coarctatus,  ,  ,  ,  , (Linnaeus, 1758)
+14, Vespidae,  ,  , Euodynerus, quadrifasciatus,  ,  ,  ,  , (Fabricius, 1793)
+15, Vespidae,  ,  , Gymnomerus, laevipes,  ,  ,  ,  , (Shuckard, 1837)
+16, Vespidae,  ,  , Microdynerus, exilis,  ,  ,  ,  , (Herrich-Schäffer, 1839)
+17, Vespidae,  ,  , Odynerus, melanocephalus,  ,  ,  ,  , (Gmelin in Linnaeus, 1790)
+18, Vespidae,  ,  , Odynerus, reniformis,  ,  ,  ,  , (Gmelin in Linnaeus, 1790)
+19, Vespidae,  ,  , Odynerus, simillimus,  ,  ,  ,  , Morawitz, F., 1867
+20, Vespidae,  ,  , Odynerus, spinipes,  ,  ,  ,  , (Linnaeus, 1758)
+21, Vespidae,  ,  , Polistes, dominula,  ,  ,  ,  , (Christ, 1791)
+22, Vespidae,  ,  , Polistes, gallicus,  ,  ,  ,  , (Linnaeus, 1767)
+23, Vespidae,  ,  , Polistes, nimpha,  ,  ,  ,  , (Christ, 1791)
+24, Vespidae,  ,  , Pseudepipona, herrichii,  ,  ,  ,  , (Saussure, 1855)
+25, Vespidae,  ,  , Pterocheilus, phaleratus,  ,  ,  ,  , (Panzer, 1797)
+26, Vespidae,  ,  , Symmorphus, bifasciatus,  ,  ,  ,  , (Linnaeus, 1761)
+27, Vespidae,  ,  , Symmorphus, connexus,  ,  ,  ,  , (Curtis, 1826)
+28, Vespidae,  ,  , Symmorphus, crassicornis,  ,  ,  ,  , (Panzer, 1798)
+29, Vespidae,  ,  , Symmorphus, gracilis,  ,  ,  ,  , (Brullé, 1832)
+30, Vespidae,  ,  , Vespa, crabro, Vespa crabro subsp. gribodoi,  ,  ,  , Linnaeus, 1758
+31, Vespidae,  ,  , Vespa, orientalis,  ,  ,  ,  , Linnaeus, 1771
+32, Vespidae,  ,  , Vespa, velutina,  ,  ,  ,  , Lepeletier, 1836
+33, Vespidae,  ,  , Vespula, austriaca,  ,  ,  ,  , (Panzer, 1799)
+34, Vespidae,  ,  , Vespula, germanica,  ,  ,  ,  , (Fabricius, 1793)
+35, Vespidae,  ,  , Vespula, rufa,  ,  ,  ,  , (Linnaeus, 1758)
+36, Vespidae,  ,  , Vespula, vulgaris,  ,  ,  ,  , (Linnaeus, 1758)

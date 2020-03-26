@@ -6,7 +6,6 @@ Created on Wed Mar 18 09:55:42 2020
 """
 
 import bs4
-import pickle
 import os
 
 import request_handler
@@ -16,12 +15,17 @@ import Taxa
 NBN_HOME = "https://species.nbnatlas.org"   
 
 
-def gather_child_taxa(url, filename):
-    # download the website
+def get_soup(url, filename):
     req = request_handler.Request(url, filename)
     req.load()
+    return bs4.BeautifulSoup(req.response.text, "html.parser")
+
+
+
+
+def gather_child_taxa(url, filename):
     
-    soup = bs4.BeautifulSoup(req.response.text, "html.parser")
+    soup = get_soup(url, filename)
     
     # search for the child taxa section that contains all the names
     children = soup.find("dl", class_="child-taxa")
@@ -118,3 +122,60 @@ def generate_lists(url, base_folder, filename_prefix, save_lists = True):
     
     
     return genus_list, species_list
+
+
+def gather_taxonomy(url, filename):
+    soup = get_soup(url, filename)
+    children = soup.find("section", id="classification")
+    
+    dts = children.find_all("dt")
+    dds = children.find_all("dd")
+
+    tax_dict = {}
+    
+    for dt, dd in zip(dts, dds):
+
+      # dt.text is the tax category (genus, specie, family), while the 
+      # dd is the name of the specie, genus and so on
+      tax_dict[dt.text] = dd.find("span", class_="name").text
+      
+     
+    return tax_dict
+
+
+def create_authority_line(specie, base_path):
+    
+    link = NBN_HOME + "/" + specie.link
+    filename = os.path.join(base_path, "tax_" + specie.name.replace(" ", "_") + ".pickle")
+    
+    tax_dict = gather_taxonomy(link, filename)
+     
+    # add the author
+    tax_dict["author"] = specie.author
+    
+    elements = ["family", "subfamily", "tribe", "genus", "species", "subspecies", "infraspecificEpithet", "InfraspecificRank", "Infraspecific Epitheth", "author"]
+    
+    elestr = []
+    for el in elements:
+        sp = tax_dict.get(el)
+        if sp:
+            if el == "species":
+                sp = sp.split(" ")[1]
+            
+            elestr.append(sp)
+        else:
+            elestr.append(" ")
+            
+            
+    # get the author from the taxa
+    
+    
+    line = ""
+    for i, el in enumerate(elestr):
+        if i == len(elestr) - 1:
+            line += el
+        else:
+            line += el + ", "
+    
+    return line
+        

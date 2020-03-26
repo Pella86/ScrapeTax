@@ -23,7 +23,7 @@ def save_taxa_list(taxa_list, filename):
     with open(filename, "wb") as f:
         pickle.dump(taxa_list, f)
     
-def laod_taxa_list(filename):
+def load_taxa_list(filename):
     with open(filename, "rb") as f:
         data = pickle.load(f)
     return data
