@@ -78,7 +78,6 @@ def prod_main():
         
     print("-" * 79)
     
-    correct_answer = False
     exit_command = False
     
     while not exit_command:
@@ -150,8 +149,9 @@ def prod_main():
                 n = 1
                 for specie in species_list:
                     print("-"*79)
-                    n, line = NBN_parser.create_authority_line(n, specie, base_folder)
-                    csv_file += line
+                    n, lines = NBN_parser.create_authority_line(n, specie, base_folder)
+                    for line in lines:
+                        csv_file += line
                     
                 with open(os.path.join(base_folder, prefix + "_csv_authority_file.csv"), "w") as f:
                     f.write(csv_file)   
@@ -175,8 +175,7 @@ if __name__ == "__main__":
         # - move the non NBN specific functions to this file
         
         # load a specie taxa file
-        import Taxa
-        
+
         species_list = Taxa.load_taxa_list("./Data/Vespidae/vespidae_specie_list.mptaxa")
         
         base_path = "./Data/Vespidae"
@@ -186,8 +185,9 @@ if __name__ == "__main__":
         n = 1
         for specie in species_list:
             print("-"*79)
-            n, line = NBN_parser.create_authority_line(n, specie, base_path)
-            csv_file += line
+            n, lines = NBN_parser.create_authority_line(n, specie, base_path)
+            for line in lines:
+                csv_file += line
             
         with open("csv_test.csv", "w") as f:
             f.write(csv_file)

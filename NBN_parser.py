@@ -131,22 +131,57 @@ def gather_taxonomy(url, filename):
     dts = children.find_all("dt")
     dds = children.find_all("dd")
 
-    tax_dict = {}
+    html_parts = zip(dts, dds)
     
-    for dt, dd in zip(dts, dds):
+    species = []
+    
+    species.append({})
+    
+    for dt, dd in html_parts:
+        if dt.text == "subspecies":
+            subspecie_name = dd.find("span", class_="name").text.split(" ")[3]
+            subspecie_author = dd.find("span", class_="author").text
+            species.append({"subspecies" : subspecie_name, "author" : subspecie_author})
+    
 
-      # dt.text is the tax category (genus, specie, family), while the 
-      # dd is the name of the specie, genus and so on
+    for dt, dd in zip(dts, dds):
+        if dt.text == "subspecies":
+            continue
+        
+        for specie in species:
+            name =  dd.find("span", class_="name").text
+            
+            if dt.text == "species":
+                name = name.split(" ")[1]
+            
+            specie[dt.text] = name
+        
+    
+    print(species)
+        
+    
+
+    # tax_dict = {}
+    
+    # # check for subspecies
+    
+    # for dt, dd in zip(dts, dds):
+
+    #   # dt.text is the tax category (genus, specie, family), while the 
+    #   # dd is the name of the specie, genus and so on
       
       
-      if dt.text == "subspecies":
-          if tax_dict.get(dt.text) == None:
-              tax_dict[dt.text] = []
-          tax_dict[dt.text].append(dd.find("span", class_="name").text)
-      else:
-          tax_dict[dt.text] = dd.find("span", class_="name").text
+    #   if dt.text == "subspecies":
+    #       if tax_dict.get(dt.text) == None:
+    #           tax_dict[dt.text] = []
+    #       tax_dict[dt.text].append(dd.find("span", class_="name").text)
+    #       print(dd.find("span", class_="author"))
+    #       print("*"*79)
+    #       print(tax_dict[dt.text])
+    #   else:
+    #       tax_dict[dt.text] = dd.find("span", class_="name").text
              
-    return tax_dict
+    return species
 
 
 def create_authority_line(n_base, specie, base_path):
@@ -155,68 +190,69 @@ def create_authority_line(n_base, specie, base_path):
     link = NBN_HOME + "/" + specie.link
     filename = os.path.join(base_path, "tax_" + specie.name.replace(" ", "_") + ".pickle")
     
-    tax_dict = gather_taxonomy(link, filename)
+    species = gather_taxonomy(link, filename)
      
     # add the author
-    tax_dict["author"] = specie.author
+    species[0]["author"] = specie.author
     
     elements = ["family", "subfamily", "tribe", "genus", "species", "subspecies", "InfraspecificRank", "Infraspecific Epitheth", "author"]
     
-    elements_list = []
-        
-    elestr = []
-    for el in elements:
-        sp = tax_dict.get(el)
-        if sp:
-            
-            if el == "species":
-                sp = sp.split(" ")[1]
-            
-            elif el == "subspecies":
-                sp = " "
-            
-            elestr.append(sp)
-            
-        else:
-            elestr.append(" ")
-            
-    elements_list.append(elestr)
     
+    lines = []
     
-    subspecies_n = tax_dict.get("subspecies")
+    for tax_dict in species:
     
-    if subspecies_n != None:
-        for subsp in subspecies_n:
-            elestr = []
-            for el in elements:
-                
-                sp = tax_dict.get(el)
-                if sp != None:
-                    if el == "species":
-                        sp = sp.split(" ")[1]
-                    
-                    elif el == "subspecies":
-                        sp = subsp.split(" ")[3]
-                    elestr.append(sp)
-                else:
-                    elestr.append(" ")  
-            elements_list.append(elestr)
-
-  
-    # get the author from the taxa
-    line = ""
-    for elestr in elements_list:
-        
-        line += str(n_base) + "\t"
-        
-        for i, el in enumerate(elestr):
-            if i == len(elestr) - 1:
-                line += el
+        elements_list = []
+            
+        elestr = []
+        for el in elements:
+            sp = tax_dict.get(el)
+            if sp:
+                elestr.append(sp)
             else:
-                line += el + "\t"
-        line += "\n"
+                elestr.append(" ")
+                
+        elements_list.append(elestr)
         
-        n_base += 1
+        print(elestr)
+        
+        
+        # subspecies_n = tax_dict.get("subspecies")
+        
+        # if subspecies_n != None:
+        #     for subsp in subspecies_n:
+        #         elestr = []
+        #         for el in elements:
+                    
+        #             sp = tax_dict.get(el)
+        #             if sp != None:
+        #                 if el == "species":
+        #                     sp = sp.split(" ")[1]
+                        
+        #                 elif el == "subspecies":
+        #                     sp = subsp.split(" ")[3]
+        #                 elestr.append(sp)
+        #             else:
+        #                 elestr.append(" ")  
+        #         elements_list.append(elestr)
     
-    return n_base, line
+      
+        # get the author from the taxa
+        line = ""
+        for elestr in elements_list:
+            
+            line += str(n_base) + "\t"
+            
+            for i, el in enumerate(elestr):
+                if i == len(elestr) - 1:
+                    line += el
+                else:
+                    line += el + "\t"
+            line += "\n"
+            
+            n_base += 1
+        
+        lines.append(line)
+    
+    return n_base, lines
         
