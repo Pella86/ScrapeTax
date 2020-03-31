@@ -255,4 +255,75 @@ def create_authority_line(n_base, specie, base_path):
         lines.append(line)
     
     return n_base, lines
+
+
+
+if __name__ == "__main__":
+    # load family home page
+    
+    base_folder = "./Data/Psychidae"
+    prefix = "psychidae"
+    
+    url = "https://species.nbnatlas.org/species/NBNSYS0000160829"
+    
+    filename = os.path.join(base_folder, prefix + "_genus" + "_website" + ".pickle")
+    
+    soup = get_soup(url, filename)
+    
+    # search for the child taxa section that contains all the names
+    children = soup.find("dl", class_="child-taxa")
+    
+    # names with hierarchy tags (subfamily, genus, ...)
+    dts = children.find_all("dt")
+    
+    # the real names
+    dds = children.find_all("dd")
+
+    
+    ranks = ["unranked", "kingdom", "phylum", "subphylum", "class", "order", "family", "subfamily", "tribe", "genus", "species"]
+    
+    subfamily_count = 0
+    tribe_count = 0
+    
+    species_list = ""
+    
+    
+    genus_list = []
+    
+    for dt, dd in zip(dts, dds):
+
+        if dt.text == "subfamily":
+            slink = dd.find("a")
+            
+            if slink:
+                slink = slink.get("href")
+                name = dd.find("span", class_="name").text
+                
+                subfamily_count += 1
+
+                tags = gather_child_taxa(NBN_HOME + slink, os.path.join(base_folder, prefix + "_" + name + "_" + str(subfamily_count) + ".pickle" ))
+                
+                
+                
+                for sdt, sdd in tags:
+                    print("-"*79)
+                    
+                    if sdt.text == "tribe":
+                        tlink = sdd.find("a")
+                        if tlink:
+                            tlink = tlink.get("href")
+                            
+                            name = sdd.find("span", class_="name").text
+                            print(name)
+                            
+                            tribe_tags = gather_child_taxa(NBN_HOME + tlink, os.path.join(base_folder, prefix + "_" + name + "_" + str(tribe_count) + ".pickle" ))
+                            
+                            for tdt, tdd in tribe_tags:
+                                print(tdt.text + ": " + tdd.find("span", class_="name").text)
         
+        if dt.text == "genus":
+            link = dd.find("a").get("href")
+            pass
+            
+                       
+                            
