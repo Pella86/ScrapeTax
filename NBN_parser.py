@@ -187,7 +187,12 @@ def gather_taxonomy(url, filename):
 def create_authority_line(n_base, specie, base_path):
     print(f"Creating csv line for {specie}...")
     
-    link = NBN_HOME + "/" + specie.link
+    link = specie.link
+    if not link.startswith(NBN_HOME):
+        link = NBN_HOME + "/" + specie.link
+        
+    print(link)    
+    
     filename = os.path.join(base_path, "tax_" + specie.name.replace(" ", "_") + ".pickle")
     
     species = gather_taxonomy(link, filename)
@@ -310,7 +315,7 @@ class NBNElement:
     def gather_child_elements(self, base_folder, prefix):
         if self.get_link():
             link = NBN_HOME + self.get_link()
-            filename = self.generate_filename(base_folder, prefix)
+            filename = self.generate_filename(base_folder, prefix )
             html_elements = gather_child_taxa(link, filename)
             return [NBNElement(dt, dd) for dt, dd in html_elements]
     
@@ -379,10 +384,31 @@ if __name__ == "__main__":
             
             genus_list.append(Taxa.Taxa(name, author, element.get_link(), "none"))
                               
-    
+    species_list = []
     for genus in genus_list:
+        print("-" * 79)
         print(genus, genus.link)
         
+        filename = os.path.join(base_folder, f"{prefix}_{genus.name}_webpage.pickle")
+        
+        html_elements = gather_child_taxa(genus.link, filename)
+        
+        for dt, dd in html_elements:
+            specie = NBNElement(dt, dd)
+            
+            print(specie.get_rank())
+            print(specie.get_name(), specie.get_author())
+            print(specie.get_link())
+            
+            
+            taxa = Taxa.Taxa(specie.get_name(), specie.get_author(), specie.get_link(), genus)
+            species_list.append(taxa)
+            
+    n = 1
+    for specie in species_list:
+        line = create_authority_line(n, specie, base_folder)
+        n += 1
+        print(line)
         
                                       
             
