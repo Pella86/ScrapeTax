@@ -6,6 +6,7 @@ Created on Wed Mar 18 09:46:56 2020
 """
 
 import requests
+import bs4
 import os
 import pickle
 
@@ -55,3 +56,9 @@ class Request:
             
     def show_url(self):
         print(self.url)
+        
+        
+def get_soup(url, filename):
+    req = Request(url, filename)
+    req.load()
+    return bs4.BeautifulSoup(req.response.text, "html.parser")

@@ -52,7 +52,7 @@ def generate_authority_file(genus_list, species_list, base_folder):
 # Main 
 # =============================================================================
  
-PRODUCTION = True    
+PRODUCTION = False    
     
 def prod_main():    
     print("Scrape Tax")
@@ -175,10 +175,12 @@ if __name__ == "__main__":
         # - move the non NBN specific functions to this file
         
         # load a specie taxa file
-
-        species_list = Taxa.load_taxa_list("./Data/Vespidae/vespidae_specie_list.mptaxa")
         
-        base_path = "./Data/Vespidae"
+        base_path = "./Data/Mycetophilidae"
+        family_url = "https://species.nbnatlas.org/species/NBNSYS0000160474" 
+        prefix = "mycetophilidae"
+
+        genus_list, species_list = NBN_parser.generate_lists(family_url, base_path, prefix)
         
         csv_file = " \tFamily\tSubfamily\tTribe\tGenus\tSpecificEpithet\tSubspecificEpithet\tInfraspecificRank\tInfraspecificEpithet\tAuthorship\n"
         
