@@ -17,10 +17,10 @@ import CreateLabelTable
 import Taxa
 
 # =============================================================================
-#  Function to create the authority file    
+#  Function to create the authority list    
 # =============================================================================
 
-def generate_authority_file(genus_list, species_list, base_folder):
+def generate_authority_list(genus_list, species_list, base_folder):
     
     fhtml = CreateHTMLFile.CreateHTMLFile()
     # add date of creation and how many taxas are in the file
@@ -49,10 +49,31 @@ def generate_authority_file(genus_list, species_list, base_folder):
     fhtml.generate_html_file(os.path.join(base_folder, "authority_file.html"))
 
 # =============================================================================
+# Function to create the authority file
+# =============================================================================
+
+def generate_authority_file(family_url, base_path, prefix):
+    genus_list, species_list = NBN_parser.generate_lists(family_url, base_path, prefix)
+        
+    csv_file = " ,Family,Subfamily,Tribe,Genus,SpecificEpithet,SubspecificEpithet,InfraspecificRank,InfraspecificEpithet,Authorship\n".encode("utf8")
+    
+    n = 1
+    for specie in species_list:
+        print("-"*79)
+        n, lines = NBN_parser.create_authority_line(n, specie, base_path)
+        for line in lines:
+            csv_file += line.encode("utf8")
+            
+    csv_filename = os.path.join(base_path, prefix + "_authority_file.csv")
+        
+    with open(csv_filename, "wb") as f:
+        f.write(csv_file)
+
+# =============================================================================
 # Main 
 # =============================================================================
  
-PRODUCTION = False    
+PRODUCTION = True    
     
 def prod_main():    
     print("Scrape Tax")
@@ -77,6 +98,12 @@ def prod_main():
         prefix = "vespidae"
         
     print("-" * 79)
+    print("Paste the url of the family of the https://nbnatlas.org/ search result")
+                
+    url = input("website link > ")
+    
+    if url == "":
+        url = "https://nbnatlas.org/species/NBNSYS0000050803" 
     
     exit_command = False
     
@@ -97,68 +124,34 @@ def prod_main():
                 choice = int(choice)
             except ValueError:
                 print("not a value from 1 to 3")
-                choice = None
+                choice = None 
             
-            
-            if choice == 1 or choice == 2:
-                print("-" * 79)
-                print("Paste the url of the family of the https://nbnatlas.org/ search result")
-                
-                url = input("website link > ")
-                
-                if url == "":
-                    url = "https://nbnatlas.org/species/NBNSYS0000050803"                
-            
-                
-            
-                if choice == 1:
-                    print("Generating authority list")
-        
-                    genus_list, species_list = NBN_parser.generate_lists(url, base_folder, prefix)
-                    generate_authority_file(genus_list, species_list, base_folder)  
-                    
-                    exit_command = True
-                
-                elif choice == 2:
-                    print("Generating label table")
-                    _, species_list = NBN_parser.generate_lists(url, base_folder, prefix)
-                    
-                    table = CreateLabelTable.LabelTable()
-                    
-                    table.create_table(species_list,
-                                       os.path.join(base_folder,
-                                                    prefix + "_label_table.html"
-                                                    )
-                                       )
-                    
-                    exit_command = True
-                
-            elif choice == 3:
-                print("-" * 79)
-                print("Paste the path on disk to a species list (*.mptaxa)")
-                
-                species_list_filename = input("species list >: ")
-                
-                species_list = Taxa.load_taxa_list(species_list_filename)
-                                
-                if species_list_filename == "":
-                    species_list_filename = "./Data/Vespidae/vespidae_specie_list.mptaxa"
-                
-                csv_file = " \tFamily\tSubfamily\tTribe\tGenus\tSpecificEpithet\tSubspecificEpithet\tInfraspecificRank\tInfraspecificEpithet\tAuthorship\n"
-                
-                n = 1
-                for specie in species_list:
-                    print("-"*79)
-                    n, lines = NBN_parser.create_authority_line(n, specie, base_folder)
-                    for line in lines:
-                        csv_file += line
-                    
-                with open(os.path.join(base_folder, prefix + "_csv_authority_file.csv"), "w") as f:
-                    f.write(csv_file)   
+            if choice == 1:
+                print("Generating authority list")
+    
+                genus_list, species_list = NBN_parser.generate_lists(url, base_folder, prefix)
+                generate_authority_list(genus_list, species_list, base_folder)  
                 
                 exit_command = True
             
-            
+            elif choice == 2:
+                print("Generating label table")
+                _, species_list = NBN_parser.generate_lists(url, base_folder, prefix)
+                
+                table = CreateLabelTable.LabelTable()
+                
+                table.create_table(species_list,
+                                   os.path.join(base_folder,
+                                                prefix + "_label_table.html"
+                                                )
+                                   )
+                
+                exit_command = True
+                
+            elif choice == 3:
+                print("Generating authority file")
+                generate_authority_file(url, base_folder, prefix)
+                   
             else:
                 print("Choice not available")
                 exit_command = True
@@ -197,19 +190,7 @@ if __name__ == "__main__":
         # prefix = "formicidae"      
         
         
-        genus_list, species_list = NBN_parser.generate_lists(family_url, base_path, prefix)
-        
-        csv_file = " \tFamily\tSubfamily\tTribe\tGenus\tSpecificEpithet\tSubspecificEpithet\tInfraspecificRank\tInfraspecificEpithet\tAuthorship\n"
-        
-        n = 1
-        for specie in species_list:
-            print("-"*79)
-            n, lines = NBN_parser.create_authority_line(n, specie, base_path)
-            for line in lines:
-                csv_file += line
-            
-        with open(prefix + "_csv_test.csv", "w") as f:
-            f.write(csv_file)
+        generate_authority_file(family_url, base_path, prefix)
 
 
 # =============================================================================
@@ -234,7 +215,7 @@ if __name__ == "__main__":
 
 # genus_list, species_list = NBN_parser.generate_lists(url, base_folder, prefix)
     
-# generate_authority_file(genus_list, species_list, base_folder)
+# generate_authority_list(genus_list, species_list, base_folder)
 
 
       

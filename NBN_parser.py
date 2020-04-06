@@ -15,6 +15,7 @@ NBN_HOME = "https://species.nbnatlas.org"
 
 
 def gather_child_taxa(url, filename):
+    '''Function that scans the web page and gathers the child taxa of the url'''
     
     soup = request_handler.get_soup(url, filename)
     
@@ -37,17 +38,20 @@ def gather_child_taxa(url, filename):
 
 
 def generate_filename(base_folder, prefix, name):
+    ''' Function that generates a filename given a prefix and a base folder'''
+    name = name.replace(" ", "_")
     filename = f"{prefix}_{name}_webpage.pickle" 
     return os.path.join(base_folder, filename)
 
 class NBNElement:
+    ''' Class that processes the informations inside the gathered taxa'''
     
-    
-    def __init__(self, dt, dd):
-        self.html_rank = dt
-        self.html_name = dd
+    def __init__(self, html_rank, html_name):
+        self.html_rank = html_rank
+        self.html_name = html_name
     
     def get_link(self):
+        '''Method that gets the link from the name box'''
         link = self.html_name.find("a")
         if link:
             link = link.get("href")
@@ -59,15 +63,21 @@ class NBNElement:
             return None  
     
     def get_name(self):
+        '''Method that gets the name (e.g. '''
         return self.html_name.find("span", class_="name").text
     
     def get_rank(self):
+        '''Method that gets the rank (specie, genus, ...) '''
         return self.html_rank.text
     
     def generate_filename(self, base_folder, prefix):
+        '''Method that generates the filename, same as generate_filename() 
+        function, but uses the name found in the get_name() function'''
         return generate_filename(base_folder, prefix, self.get_name())
 
     def gather_child_elements(self, base_folder, prefix):
+        '''Method that gather the child elements from the page 
+        pointed by the get_link() method'''
         if self.get_link():
             link = self.get_link()
             filename = self.generate_filename(base_folder, prefix )
@@ -75,6 +85,7 @@ class NBNElement:
             return [NBNElement(dt, dd) for dt, dd in html_elements]
     
     def get_author(self):
+        '''Method that gets the author name for the element'''
         author = self.html_name.find("span", class_="author")
         if author:
             return author.text
@@ -148,6 +159,13 @@ def generate_lists(family_url, base_folder, prefix, save_lists = True):
     return genus_list, species_list
 
 def gather_taxonomy(url, filename):
+    ''' Function that scraps the taxonomy of a specie,
+    it searches in the classification section the various ranks, and groups
+    them in a dictionary. The function gathers the data for the subspecies too.
+    returns a list of dictionaries where the first element is the specie and is
+    always present, the other elements are subspecies in case they exist'''
+    
+    # find ranks and the name associated
     soup = request_handler.get_soup(url, filename)
     children = soup.find("section", id="classification")
     
@@ -156,9 +174,12 @@ def gather_taxonomy(url, filename):
 
     html_parts = zip(dts, dds)
     
+    # compiles the specie + subspecie list
     species = []
     
     species.append({})
+    
+    # find the subspecie and append the eventual subspecie name and author
     
     for dt, dd in html_parts:
         if dt.text == "subspecies":
@@ -166,7 +187,7 @@ def gather_taxonomy(url, filename):
             subspecie_author = dd.find("span", class_="author").text
             species.append({"subspecies" : subspecie_name, "author" : subspecie_author})
     
-
+    # fill in the dictionary the rest of the taxonomy
     for dt, dd in zip(dts, dds):
         if dt.text == "subspecies":
             continue
@@ -179,35 +200,39 @@ def gather_taxonomy(url, filename):
             
             specie[dt.text] = name
 
-
-             
     return species
 
 
 def create_authority_line(n_base, specie, base_path):
+    '''Function that creates the line for the authority file, this function
+    returns a list of string corresponding to a row of the excel file'''
+    
     print(f"Creating csv line for {specie}...")
     
+    # get the specie link, is the member .link of the Taxa class
     link = specie.link
     if not link.startswith(NBN_HOME):
         link = NBN_HOME + "/" + specie.link
           
-    
-    filename = os.path.join(base_path, "tax_" + specie.name.replace(" ", "_") + ".pickle")
-    
+    filename = generate_filename(base_path, "tax_", specie.name)
     species = gather_taxonomy(link, filename)
      
-    # add the author
+    # add the author of the specie which is still not in the dictionary
     species[0]["author"] = specie.author
     
-    elements = ["family", "subfamily", "tribe", "genus", "species", "subspecies", "InfraspecificRank", "Infraspecific Epitheth", "author"]
+    elements = ["family", "subfamily", "tribe", "genus", "species",
+                "subspecies", "InfraspecificRank", "Infraspecific Epitheth",
+                "author"]
     
-    
+    # create the lines based on the above defined elements
     lines = []
+    sep = ","
     
     for tax_dict in species:
     
         elements_list = []
-            
+         
+        # creates the string based on the element if it exist, else put a space
         elestr = []
         for el in elements:
             sp = tax_dict.get(el)
@@ -217,39 +242,22 @@ def create_authority_line(n_base, specie, base_path):
                 elestr.append(" ")
                 
         elements_list.append(elestr)
-        
-        
-        # subspecies_n = tax_dict.get("subspecies")
-        
-        # if subspecies_n != None:
-        #     for subsp in subspecies_n:
-        #         elestr = []
-        #         for el in elements:
-                    
-        #             sp = tax_dict.get(el)
-        #             if sp != None:
-        #                 if el == "species":
-        #                     sp = sp.split(" ")[1]
-                        
-        #                 elif el == "subspecies":
-        #                     sp = subsp.split(" ")[3]
-        #                 elestr.append(sp)
-        #             else:
-        #                 elestr.append(" ")  
-        #         elements_list.append(elestr)
     
       
         # get the author from the taxa
         line = ""
         for elestr in elements_list:
             
-            line += str(n_base) + "\t"
+            line += str(n_base) + sep
             
             for i, el in enumerate(elestr):
+                if el.find(" ") >= 0:
+                    el = f'"{el}"'
+                
                 if i == len(elestr) - 1:
                     line += el
                 else:
-                    line += el + "\t"
+                    line += el + sep
             line += "\n"
             
             n_base += 1
@@ -258,32 +266,6 @@ def create_authority_line(n_base, specie, base_path):
     
     return n_base, lines
 
-
-# def get_rank(dt):
-#     return dt.text
-
-# def get_link(dd):
-#     link = dd.find("a")
-#     if link:
-#         return NBN_HOME + link.get("href")
-#     else:
-#         return None
-    
-# def get_name(dd):
-#     return dd.find("span", class_="name").text
-
-
-# def get_species_tags(tdt, tdd, base_folder, prefix):
-#     if get_rank(tdt) == "genus":
-#         link = get_link(tdd)
-#         if link:
-#             name = get_name(tdd)
-#             filename = generate_filename(base_folder, prefix, name)    
-#             return gather_child_taxa(link, filename)
-        
-        
-
-    
     
             
 
