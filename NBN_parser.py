@@ -36,84 +36,6 @@ def gather_child_taxa(url, filename):
     return zip(dts, dds)
 
 
-
-# hierarchy tag should be "known" so it could be defined in an external file
-
-# def parse_html_taxa(taxa, hierarchy_tag, supertaxa):
-    
-#     taxa_names = []
-    
-#     for html_tag, html_name in taxa:
-        
-#         current_hirerarchy_tag = html_tag.get_text()
-        
-#         if current_hirerarchy_tag == hierarchy_tag :
-#             name = html_name.find("span", class_="name")
-#             if name:
-#                 name = name.get_text()
-            
-#             author = html_name.find("span", class_="author")
-#             if author:
-#                 author = author.get_text()
-            
-                
-#             link = html_name.find("a")
-#             if link:
-#                 link = link.get("href")
-            
-#             supertaxa = supertaxa
-            
-#             if name and author and link:
-#                 taxa_names.append(Taxa.Taxa(name, author, link, supertaxa))
-    
-#     return taxa_names
-
-# def generate_taxa_list(base_url, data_filename, hierarchy_tag, supertaxa):
-#     taxa_names = gather_child_taxa(base_url, data_filename)
-#     taxa_list = parse_html_taxa(taxa_names, hierarchy_tag, supertaxa)
-#     return taxa_list
-
-
-
-
-# def generate_lists(url, base_folder, filename_prefix, save_lists = True):
-    
-#     # Gather the genuses
-    
-#     genus_tag = "_genus"
-    
-#     filename = os.path.join(base_folder, filename_prefix + genus_tag + "_website" + ".pickle")
-
-#     genus_list = generate_taxa_list(url, filename, "genus", None)
-    
-#     if save_lists:
-#         list_filename = os.path.join(base_folder, filename_prefix + genus_tag + "_list" + ".mptaxa")
-#         Taxa.save_taxa_list(genus_list, list_filename)
-    
-#     # Gather the species
-        
-#     specie_tag = "_specie"
-    
-#     uid = 1
-#     species_list = []
-#     for genus in genus_list:
-#         filename = os.path.join(base_folder, genus.name + specie_tag + "_" + str(uid) + ".pickle")
-#         url = NBN_HOME + "/" + genus.link
-        
-#         species = generate_taxa_list(url, filename, "species", genus)
-        
-#         for specie in species:
-#             species_list.append(specie)
-            
-#         uid += 1
-    
-#     if save_lists:
-#         list_filename = os.path.join(base_folder, filename_prefix + specie_tag + "_list" + ".mptaxa")
-#         Taxa.save_taxa_list(species_list, list_filename)
-    
-    
-#     return genus_list, species_list
-
 def generate_filename(base_folder, prefix, name):
     filename = f"{prefix}_{name}_webpage.pickle" 
     return os.path.join(base_folder, filename)
@@ -128,7 +50,11 @@ class NBNElement:
     def get_link(self):
         link = self.html_name.find("a")
         if link:
-            return NBN_HOME + link.get("href")
+            link = link.get("href")
+            if link.startswith(NBN_HOME):
+                return link
+            else:
+                return NBN_HOME + link
         else:
             return None  
     
@@ -143,13 +69,17 @@ class NBNElement:
 
     def gather_child_elements(self, base_folder, prefix):
         if self.get_link():
-            link = NBN_HOME + self.get_link()
+            link = self.get_link()
             filename = self.generate_filename(base_folder, prefix )
             html_elements = gather_child_taxa(link, filename)
             return [NBNElement(dt, dd) for dt, dd in html_elements]
     
     def get_author(self):
-        return self.html_name.find("span", class_="author").text
+        author = self.html_name.find("span", class_="author")
+        if author:
+            return author.text
+        else:
+            return "author not found"
 
 
 

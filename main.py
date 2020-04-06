@@ -176,10 +176,27 @@ if __name__ == "__main__":
         
         # load a specie taxa file
         
-        base_path = "./Data/Mycetophilidae"
-        family_url = "https://species.nbnatlas.org/species/NBNSYS0000160474" 
-        prefix = "mycetophilidae"
+        # base_path = "./Data/Libellulidae"
+        # family_url = "https://species.nbnatlas.org/species/NBNSYS0000160307" 
+        # prefix = "libellulidae"
 
+        # base_path = "./Data/Psychidae"
+        # family_url = "https://species.nbnatlas.org/species/NBNSYS0000160829" 
+        # prefix = "psychidae"
+
+        base_path = "./Data/Vespidae"
+        family_url = "https://species.nbnatlas.org/species/NBNSYS0000050803" 
+        prefix = "vespidae"
+
+        # base_path = "./Data/Mycetophilidae"
+        # family_url = "https://species.nbnatlas.org/species/NBNSYS0000160474" 
+        # prefix = "mycetophilidae"   
+        
+        # base_path = "./Data/Formicidae"
+        # family_url = "https://species.nbnatlas.org/species/NBNSYS0000037030" 
+        # prefix = "formicidae"      
+        
+        
         genus_list, species_list = NBN_parser.generate_lists(family_url, base_path, prefix)
         
         csv_file = " \tFamily\tSubfamily\tTribe\tGenus\tSpecificEpithet\tSubspecificEpithet\tInfraspecificRank\tInfraspecificEpithet\tAuthorship\n"
@@ -191,7 +208,7 @@ if __name__ == "__main__":
             for line in lines:
                 csv_file += line
             
-        with open("csv_test.csv", "w") as f:
+        with open(prefix + "_csv_test.csv", "w") as f:
             f.write(csv_file)
 
 
