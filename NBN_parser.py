@@ -97,6 +97,9 @@ class NBNElement:
 
 
 def generate_lists(family_url, base_folder, prefix, save_lists = True):
+    '''Function that arranges the genuses and species in a list, the function
+    could be translated in a tree, but ... is difficult. The function returns
+    a list of Taxa with name, author and reference link'''
     
     filename = generate_filename(base_folder, prefix, "family")
     

@@ -73,37 +73,35 @@ def generate_authority_file(family_url, base_path, prefix):
 # Main 
 # =============================================================================
  
-PRODUCTION = True    
+PRODUCTION = True   
+
+def get_input(title, input_sentence, default = None):
+    print("-" * 79)
+    print(title)
+    choice = input(input_sentence + " >")
+    if choice == "":
+        choice = default
+    return choice
+ 
     
 def prod_main():    
     print("Scrape Tax")
     print("Program to gather informations from online databases about species and genuses")
     
-
-
-    print("-" * 79)
-    print("The path to the folder where the file will be saved, the folder must already exist. Use dot (.) to access the current folder")
-    
-    base_folder = input("path > ")
-    
-    if base_folder == "":
-        base_folder = "./Data/Vespidae"
-    
-    print("-" * 79)
-    print("Chose a prefix to name the files")
-    
-    prefix = input("prefix > ")
-    
-    if prefix == "":
-        prefix = "vespidae"
         
-    print("-" * 79)
-    print("Paste the url of the family of the https://nbnatlas.org/ search result")
-                
-    url = input("website link > ")
+    base_folder = get_input("The path to the folder where the file will be saved, the folder must already exist. Use dot (.) to access the current folder",
+                            "path",
+                            "./Data/Vespidae")
     
-    if url == "":
-        url = "https://nbnatlas.org/species/NBNSYS0000050803" 
+    
+    prefix = get_input("Chose a prefix to name the files",
+                       "prefix",
+                       "vespidae")
+    
+    url = get_input("Paste the url of the family of the https://nbnatlas.org/ search result",
+                    "website link",
+                    "https://nbnatlas.org/species/NBNSYS0000050803")
+        
     
     exit_command = False
     

@@ -23,10 +23,10 @@ class Request:
         self.response = None
         self.filename = filename
     
-    def download(self):
+    def download(self, params = None):
         ''' Makes a connection to the website and downloads the webpage'''
         print("Downloading data from:", self.url)
-        self.response = requests.get(self.url)
+        self.response = requests.get(self.url, params=params)
         print("Response status: ", self.response)
     
     def save(self):
