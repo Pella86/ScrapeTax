@@ -18,5 +18,7 @@ if __name__ == "__main__":
     
     job = req.response.json()
     print(json.dumps(job, indent=2))
+    
+   "body > div.l-basic-main > div.l-content.__web-inspector-hide-shortcut__ > div > div.ui.segments > div:nth-child(1) > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div:nth-child(1) > b > a"
 
     

@@ -59,8 +59,13 @@ class LabelTable:
                     print(taxa)
                     
                     genspe = taxa.name.split(" ")
+                    
+                    
                     genus_str = genspe[0]
-                    specie_str = genspe[1]
+                    
+                    specie_str = ""
+                    if len(genspe) >= 2:
+                        specie_str = genspe[1]
                     
                     genus = ET.SubElement(td, "i")
                     genus.text = genus_str

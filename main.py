@@ -20,7 +20,7 @@ import Taxa
 #  Function to create the authority list    
 # =============================================================================
 
-def generate_authority_list(genus_list, species_list, base_folder):
+def generate_authority_list(genus_list, species_list, base_folder, prefix):
     
     fhtml = CreateHTMLFile.CreateHTMLFile()
     # add date of creation and how many taxas are in the file
@@ -46,7 +46,7 @@ def generate_authority_list(genus_list, species_list, base_folder):
         fhtml.add_line_break()
     
     
-    fhtml.generate_html_file(os.path.join(base_folder, "authority_file.html"))
+    fhtml.generate_html_file(os.path.join(base_folder, prefix + "_species_list.html"))
 
 # =============================================================================
 # Function to create the authority file
@@ -73,7 +73,7 @@ def generate_authority_file(family_url, base_path, prefix):
 # Main 
 # =============================================================================
  
-PRODUCTION = True   
+PRODUCTION = False   
 
 def get_input(title, input_sentence, default = None):
     print("-" * 79)
@@ -159,38 +159,26 @@ if __name__ == "__main__":
     if PRODUCTION:
         prod_main()
     else:
-        # Test the csv file construction
-        
-        # to do
-        # - manage the authors for the subspecie
-        # - move the non NBN specific functions to this file
-        
-        # load a specie taxa file
-        
-        # base_path = "./Data/Libellulidae"
-        # family_url = "https://species.nbnatlas.org/species/NBNSYS0000160307" 
-        # prefix = "libellulidae"
 
-        # base_path = "./Data/Psychidae"
-        # family_url = "https://species.nbnatlas.org/species/NBNSYS0000160829" 
-        # prefix = "psychidae"
+        base_folder = "./Data/Formicidae"
+        url = "https://species.nbnatlas.org/species/NBNSYS0000037030" 
+        prefix = "formicidae"          
 
-        base_path = "./Data/Vespidae"
-        family_url = "https://species.nbnatlas.org/species/NBNSYS0000050803" 
-        prefix = "vespidae"
-
-        # base_path = "./Data/Mycetophilidae"
-        # family_url = "https://species.nbnatlas.org/species/NBNSYS0000160474" 
-        # prefix = "mycetophilidae"   
+        genus_list, species_list = NBN_parser.generate_lists(url, base_folder, prefix)
+        generate_authority_list(genus_list, species_list, base_folder, prefix)  
         
-        # base_path = "./Data/Formicidae"
-        # family_url = "https://species.nbnatlas.org/species/NBNSYS0000037030" 
-        # prefix = "formicidae"      
-        
-        
-        generate_authority_file(family_url, base_path, prefix)
 
+        _, species_list = NBN_parser.generate_lists(url, base_folder, prefix)
+        
+        table = CreateLabelTable.LabelTable()
+        
+        table.create_table(species_list,
+                           os.path.join(base_folder,
+                                        prefix + "_label_table.html"
+                                        )
+                           )
 
+        generate_authority_file(url, base_folder, prefix)
 # =============================================================================
 # Old stuff
 # =============================================================================

@@ -18,15 +18,16 @@ import pickle
 
 class Request:
     
-    def __init__(self, url, filename):
+    def __init__(self, url, filename, params = None):
         self.url = url
         self.response = None
         self.filename = filename
+        self.params = params
     
-    def download(self, params = None):
+    def download(self):
         ''' Makes a connection to the website and downloads the webpage'''
         print("Downloading data from:", self.url)
-        self.response = requests.get(self.url, params=params)
+        self.response = requests.get(self.url, params=self.params)
         print("Response status: ", self.response)
     
     def save(self):

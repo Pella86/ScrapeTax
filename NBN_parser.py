@@ -273,6 +273,36 @@ def create_authority_line(n_base, specie, base_path):
             
 
 if __name__ == "__main__":
+
+
+    # Test the csv file construction
+    
+    # to do
+    # - manage the authors for the subspecie
+    # - move the non NBN specific functions to this file
+    
+    # load a specie taxa file
+    
+    # base_path = "./Data/Libellulidae"
+    # family_url = "https://species.nbnatlas.org/species/NBNSYS0000160307" 
+    # prefix = "libellulidae"
+
+    # base_path = "./Data/Psychidae"
+    # family_url = "https://species.nbnatlas.org/species/NBNSYS0000160829" 
+    # prefix = "psychidae"
+
+    base_path = "./Data/Vespidae"
+    family_url = "https://species.nbnatlas.org/species/NBNSYS0000050803" 
+    prefix = "vespidae"
+
+    # base_path = "./Data/Mycetophilidae"
+    # family_url = "https://species.nbnatlas.org/species/NBNSYS0000160474" 
+    # prefix = "mycetophilidae"   
+    
+    # base_path = "./Data/Formicidae"
+    # family_url = "https://species.nbnatlas.org/species/NBNSYS0000037030" 
+    # prefix = "formicidae"     
+    
     # load family home page
     print("NBN_parser")
     
