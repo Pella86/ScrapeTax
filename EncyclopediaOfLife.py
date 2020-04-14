@@ -8,6 +8,8 @@ Created on Thu Apr  9 10:30:51 2020
 import request_handler
 import json
 
+import Taxa
+
 eol_api = "https://eol.org/api/search/1.0.json"
 eol_test_folder ="./Data/EOL_test/"
 
@@ -74,7 +76,7 @@ for name in names:
             collect_genus = False
         else: 
             print("collecting...")
-            genus_list.append((name.text, eol_main + name.get("href")))
+            genus_list.append(Taxa.Taxa(name.text, None, eol_main + name.get("href"), None))
         
     
     if name.text == "Mycetophilidae":
@@ -85,12 +87,52 @@ for name in names:
     # keep searching until the family name is found
     # then collect the names till you find a name with -iae as ending
 
-print(genus_list)
-
-
-for name, link in genus_list:
-    pass
+species_list = []
+for taxa in genus_list:
+    
     #open the website, look for author and specie list
+
+    # open the website
+    s = request_handler.get_soup(taxa.link, eol_test_folder + taxa.name + ".pickle")
+    
+    # samples = s.select("body > div.l-basic-main > div.l-content > div")
+    # print(samples)
+    
+    div = s.find("div", {"class": "page-children"})
+    
+    links = div.find_all("a")
+    
+    for link in links:
+        print("-"*79)
+        
+        parts = link.text.split(" ")
+        
+        if len(parts) < 3:
+            print(f"Name is not rightfully formatted: {link.text}")
+            continue
+            
+
+        specie_name = parts[0] + " " + parts[1]
+        author_name = "".join(p + " " for p in parts[2 : ])[:-1]
+        
+        specie_link = eol_main + link.get("href")
+        
+        print(specie_name)
+        print(author_name)
+        
+        specie = Taxa.Taxa(specie_name, author_name,  specie_link, taxa)
+        species_list.append(specie)
+
+
+
+for taxa in species_list:
+    print(taxa)
+
+
+# create a function for the authority file independent from NBN Atlas
+# craete a function for EoL that returns the dict
+    
+    
 
 
 
