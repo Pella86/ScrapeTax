@@ -205,24 +205,26 @@ def gather_taxonomy(url, filename):
 
     return species
 
+def generate_species_dictionary(species_list, base_path, prefix):
+    species_dicts = []
+    
+    for specie in species_list:
+        # get the specie link, is the member .link of the Taxa class
+        link = specie.link
+        if not link.startswith(NBN_HOME):
+            link = NBN_HOME + "/" + specie.link
+              
+        filename = generate_filename(base_path, "tax_", specie.name)
+        species = gather_taxonomy(link, filename)
+         
+        # add the author of the specie which is still not in the dictionary
+        species[0]["author"] = specie.author   
+    
+        species_dicts += species
+    return species_dicts
 
-def create_authority_line(n_base, specie, base_path):
-    '''Function that creates the line for the authority file, this function
-    returns a list of string corresponding to a row of the excel file'''
-    
-    print(f"Creating csv line for {specie}...")
-    
-    # get the specie link, is the member .link of the Taxa class
-    link = specie.link
-    if not link.startswith(NBN_HOME):
-        link = NBN_HOME + "/" + specie.link
-          
-    filename = generate_filename(base_path, "tax_", specie.name)
-    species = gather_taxonomy(link, filename)
-     
-    # add the author of the specie which is still not in the dictionary
-    species[0]["author"] = specie.author
-    
+
+def create_authority_lines(species_dicts):
     elements = ["family", "subfamily", "tribe", "genus", "species",
                 "subspecies", "InfraspecificRank", "Infraspecific Epitheth",
                 "author"]
@@ -231,7 +233,7 @@ def create_authority_line(n_base, specie, base_path):
     lines = []
     sep = ","
     
-    for tax_dict in species:
+    for n, tax_dict in enumerate(species_dicts):
     
         elements_list = []
          
@@ -251,7 +253,7 @@ def create_authority_line(n_base, specie, base_path):
         line = ""
         for elestr in elements_list:
             
-            line += str(n_base) + sep
+            line += str(n + 1) + sep
             
             for i, el in enumerate(elestr):
                 if el.find(" ") >= 0:
@@ -262,12 +264,74 @@ def create_authority_line(n_base, specie, base_path):
                 else:
                     line += el + sep
             line += "\n"
-            
-            n_base += 1
         
         lines.append(line)
     
-    return n_base, lines
+    return lines    
+    
+
+# def create_authority_line(n_base, specie, base_path):
+#     '''Function that creates the line for the authority file, this function
+#     returns a list of string corresponding to a row of the excel file'''
+    
+#     print(f"Creating csv line for {specie}...")
+    
+#     # get the specie link, is the member .link of the Taxa class
+#     link = specie.link
+#     if not link.startswith(NBN_HOME):
+#         link = NBN_HOME + "/" + specie.link
+          
+#     filename = generate_filename(base_path, "tax_", specie.name)
+#     species = gather_taxonomy(link, filename)
+     
+#     # add the author of the specie which is still not in the dictionary
+#     species[0]["author"] = specie.author
+    
+#     elements = ["family", "subfamily", "tribe", "genus", "species",
+#                 "subspecies", "InfraspecificRank", "Infraspecific Epitheth",
+#                 "author"]
+    
+#     # create the lines based on the above defined elements
+#     lines = []
+#     sep = ","
+    
+#     for tax_dict in species:
+    
+#         elements_list = []
+         
+#         # creates the string based on the element if it exist, else put a space
+#         elestr = []
+#         for el in elements:
+#             sp = tax_dict.get(el)
+#             if sp:
+#                 elestr.append(sp)
+#             else:
+#                 elestr.append(" ")
+                
+#         elements_list.append(elestr)
+    
+      
+#         # get the author from the taxa
+#         line = ""
+#         for elestr in elements_list:
+            
+#             line += str(n_base) + sep
+            
+#             for i, el in enumerate(elestr):
+#                 if el.find(" ") >= 0:
+#                     el = f'"{el}"'
+                
+#                 if i == len(elestr) - 1:
+#                     line += el
+#                 else:
+#                     line += el + sep
+#             line += "\n"
+            
+#             n_base += 1
+        
+#         lines.append(line)
+    
+#     return n_base, lines
 
     
             
@@ -308,16 +372,15 @@ if __name__ == "__main__":
     
     base_folder = "./Data/Psychidae"
     prefix = "psychidae"
-    
     url = "https://species.nbnatlas.org/species/NBNSYS0000160829"
     
     genus_list, species_list = generate_lists(url, base_folder, prefix)
+    spec_dict = generate_species_dictionary(species_list, base_path, prefix)
+    lines = create_authority_lines(spec_dict)
     
-    n = 1
-    for specie in species_list:
-        n, line = create_authority_line(n, specie, base_folder)
-        
-        print(line)
+    for line in lines:
+        print(lines)
+
         
                                       
             

@@ -14,6 +14,7 @@ import os
 import NBN_parser
 import CreateHTMLFile
 import CreateLabelTable
+import EncyclopediaOfLife
 import Taxa
 
 # =============================================================================
@@ -52,22 +53,46 @@ def generate_authority_list(genus_list, species_list, base_folder, prefix):
 # Function to create the authority file
 # =============================================================================
 
-def generate_authority_file(family_url, base_path, prefix):
-    genus_list, species_list = NBN_parser.generate_lists(family_url, base_path, prefix)
+# def generate_authority_file(family_url, base_path, prefix):
+#     genus_list, species_list = NBN_parser.generate_lists(family_url, base_path, prefix)
         
-    csv_file = " ,Family,Subfamily,Tribe,Genus,SpecificEpithet,SubspecificEpithet,InfraspecificRank,InfraspecificEpithet,Authorship\n".encode("utf8")
+#     csv_file = " ,Family,Subfamily,Tribe,Genus,SpecificEpithet,SubspecificEpithet,InfraspecificRank,InfraspecificEpithet,Authorship\n".encode("utf8")
     
-    n = 1
-    for specie in species_list:
-        print("-"*79)
-        n, lines = NBN_parser.create_authority_line(n, specie, base_path)
-        for line in lines:
-            csv_file += line.encode("utf8")
+#     n = 1
+#     for specie in species_list:
+#         print("-"*79)
+#         n, lines = NBN_parser.create_authority_line(n, specie, base_path)
+#         for line in lines:
+#             csv_file += line.encode("utf8")
             
+#     csv_filename = os.path.join(base_path, prefix + "_authority_file.csv")
+        
+#     with open(csv_filename, "wb") as f:
+#         f.write(csv_file)
+
+def generate_authority_file(family_url, base_path, prefix, source):
+
+    csv_file = " ,Family,Subfamily,Tribe,Genus,SpecificEpithet,SubspecificEpithet,InfraspecificRank,InfraspecificEpithet,Authorship\n".encode("utf8")
+      
+    if source == "NBN_Atlas":
+        _, species_list = NBN_parser.generate_lists(family_url, base_path, prefix)
+
+        spec_dict = NBN_parser.generate_species_dictionary(species_list, base_path, prefix)
+        lines = NBN_parser.create_authority_lines(spec_dict)
+     
+    elif source == "EOL":
+        _, species_list = EncyclopediaOfLife.generate_lists(family_url, base_path, prefix)
+        spec_dict = EncyclopediaOfLife.generate_specie_dictionary(species_list, family_url)
+        lines = NBN_parser.create_authority_lines(spec_dict)
+  
+    for line in lines:
+        csv_file += line.encode("utf8")
+             
     csv_filename = os.path.join(base_path, prefix + "_authority_file.csv")
         
     with open(csv_filename, "wb") as f:
         f.write(csv_file)
+
 
 # =============================================================================
 # Main 
@@ -148,7 +173,7 @@ def prod_main():
                 
             elif choice == 3:
                 print("Generating authority file")
-                generate_authority_file(url, base_folder, prefix)
+                generate_authority_file(url, base_folder, prefix, "NBN_Atlas")
                    
             else:
                 print("Choice not available")
@@ -164,21 +189,24 @@ if __name__ == "__main__":
         url = "https://species.nbnatlas.org/species/NBNSYS0000037030" 
         prefix = "formicidae"          
 
-        genus_list, species_list = NBN_parser.generate_lists(url, base_folder, prefix)
-        generate_authority_list(genus_list, species_list, base_folder, prefix)  
+        # genus_list, species_list = NBN_parser.generate_lists(url, base_folder, prefix)
+        # generate_authority_list(genus_list, species_list, base_folder, prefix)  
         
 
-        _, species_list = NBN_parser.generate_lists(url, base_folder, prefix)
+        # _, species_list = NBN_parser.generate_lists(url, base_folder, prefix)
         
-        table = CreateLabelTable.LabelTable()
+        # table = CreateLabelTable.LabelTable()
         
-        table.create_table(species_list,
-                           os.path.join(base_folder,
-                                        prefix + "_label_table.html"
-                                        )
-                           )
+        # table.create_table(species_list,
+        #                    os.path.join(base_folder,
+        #                                 prefix + "_label_table.html"
+        #                                 )
+        #                    )
 
-        generate_authority_file(url, base_folder, prefix)
+        #generate_authority_file(url, base_folder, prefix, "NBN_Atlas")
+        
+        
+        generate_authority_file("Formicidae", base_folder, prefix, "EOL")
 # =============================================================================
 # Old stuff
 # =============================================================================

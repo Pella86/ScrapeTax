@@ -34,7 +34,7 @@ if __name__ == "__main__":
     filename = "./Data/Vespidae/vespidae_genus_list.mptaxa"
     
     
-    genus_list = laod_taxa_list(filename)
+    genus_list = load_taxa_list(filename)
     
     print(genus_list[0].link)
     
