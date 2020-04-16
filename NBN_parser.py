@@ -33,7 +33,7 @@ def gather_child_taxa(url, filename):
     
     print("Child taxa found:", len(dts))
 
-    # return the zipped
+    # return the zipped elements
     return zip(dts, dds)
 
 
@@ -224,50 +224,50 @@ def generate_species_dictionary(species_list, base_path, prefix):
     return species_dicts
 
 
-def create_authority_lines(species_dicts):
-    elements = ["family", "subfamily", "tribe", "genus", "species",
-                "subspecies", "InfraspecificRank", "Infraspecific Epitheth",
-                "author"]
+# def create_authority_lines(species_dicts):
+#     elements = ["family", "subfamily", "tribe", "genus", "species",
+#                 "subspecies", "InfraspecificRank", "Infraspecific Epitheth",
+#                 "author"]
     
-    # create the lines based on the above defined elements
-    lines = []
-    sep = ","
+#     # create the lines based on the above defined elements
+#     lines = []
+#     sep = ","
     
-    for n, tax_dict in enumerate(species_dicts):
+#     for n, tax_dict in enumerate(species_dicts):
     
-        elements_list = []
+#         elements_list = []
          
-        # creates the string based on the element if it exist, else put a space
-        elestr = []
-        for el in elements:
-            sp = tax_dict.get(el)
-            if sp:
-                elestr.append(sp)
-            else:
-                elestr.append(" ")
+#         # creates the string based on the element if it exist, else put a space
+#         elestr = []
+#         for el in elements:
+#             sp = tax_dict.get(el)
+#             if sp:
+#                 elestr.append(sp)
+#             else:
+#                 elestr.append(" ")
                 
-        elements_list.append(elestr)
+#         elements_list.append(elestr)
     
       
-        # get the author from the taxa
-        line = ""
-        for elestr in elements_list:
+#         # get the author from the taxa
+#         line = ""
+#         for elestr in elements_list:
             
-            line += str(n + 1) + sep
+#             line += str(n + 1) + sep
             
-            for i, el in enumerate(elestr):
-                if el.find(" ") >= 0:
-                    el = f'"{el}"'
+#             for i, el in enumerate(elestr):
+#                 if el.find(" ") >= 0:
+#                     el = f'"{el}"'
                 
-                if i == len(elestr) - 1:
-                    line += el
-                else:
-                    line += el + sep
-            line += "\n"
+#                 if i == len(elestr) - 1:
+#                     line += el
+#                 else:
+#                     line += el + sep
+#             line += "\n"
         
-        lines.append(line)
+#         lines.append(line)
     
-    return lines    
+#     return lines    
     
 
 # def create_authority_line(n_base, specie, base_path):
