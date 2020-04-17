@@ -5,21 +5,36 @@ Created on Thu Apr  9 10:30:51 2020
 @author: Media Markt
 """
 
+# =============================================================================
+# Imports
+# =============================================================================
+
 import request_handler
 import json
 import os
 
 import Taxa
 
+# =============================================================================
+# Constants
+# =============================================================================
+
 eol_api = "https://eol.org/api/search/1.0.json"
 eol_main = "https://eol.org"
 
 eol_test_folder ="./Data/EOL_test/"
-family = "Mycetophilidae"
+
+
+# =============================================================================
+# Functions
+# =============================================================================
 
 def generate_lists(family_name, base_folder, prefix, save_lists = True):
+    ''' Function that generates both the genera and species lists'''
+    # could in principle split the genrate list names
+    # shall I add a eol prefix so data dont get overwritten?
     
-    
+    # performs a query to the website
     params = {}
     params["q"] = family_name.lower()
     
@@ -39,16 +54,17 @@ def generate_lists(family_name, base_folder, prefix, save_lists = True):
 
     json_data = req.response.json()
     
+    # shows the results
     for n, result in enumerate(json_data["results"]):
         print(n, result["title"])
 
     # select the first result in the query
     result_link  = json_data["results"][0]["link"]
-    #result_title = json_data["results"][0]["title"]
     
+    # creates the reference link
     family_page = result_link + "/names"
 
-
+    # soups the link
     path = os.path.join(base_folder, prefix + "_eol_webpage.pickle")
     s = request_handler.get_soup(family_page, path)
 
@@ -61,7 +77,7 @@ def generate_lists(family_name, base_folder, prefix, save_lists = True):
     names = divs[0].find_all("a")
 
     # create the genus list based on the detection of the next family
-    #  family1 (ending -idae) -- start
+    #  family1 == family_name -- start
     #    genus1
     #    genus2
     #  family2 (ending -idae) -- stop
@@ -138,8 +154,6 @@ def generate_specie_dictionary(species_list, family):
         species_dicts.append(sdict)
     return species_dicts
     
-    
-
 
 # create a function for the authority file independent from NBN Atlas
 # craete a function for EoL that returns the dict

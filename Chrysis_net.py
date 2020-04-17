@@ -5,44 +5,84 @@ Created on Thu Apr 16 11:33:16 2020
 @author: Media Markt
 """
 
+# =============================================================================
+# Impports
+# =============================================================================
 
 import request_handler
 import os
 
-chrys_folder = "./Data/Chrysididae/Chrysis_net"
-url = "https://chrysis.net/database/chr_checklist_en.php"
+import Taxa
 
-s = request_handler.get_soup(url, os.path.join(chrys_folder, "species_list_webpage.pickle"))
+# =============================================================================
+# To dos
+# =============================================================================
 
-print(len(s.find_all("li")))
 
-for li in s.find_all("li"):
-    
-    ref = li.find_all("a")
-        
-    if len(ref) == 2:
-        name = ref[1]
-    if len(ref) == 1:
-        name = ref[0]     
-    else:
-        continue
-    
-    
-    name_parts = name.text.split(" ")
-    
-    if len(name_parts) > 3 and name.text.find(",") != -1:
-        genus = name_parts[0]
-        specie = name_parts[1]
-        
-        
-        author = "".join(part + " " for part in name_parts[2:])
-        author = author[:-1]
-        author = author.replace("[E]", "")
-        
-        print(genus, specie, author)
-    else: 
-        continue
-    
-    
+
 # add the subfamilies by scraping the other webpage
 # add the possibility to create an authority file
+
+chrys_test_folder = "./Data/Chrysididae/Chrysis_net"
+species_check_page_url = "https://chrysis.net/database/chr_checklist_en.php"
+family = "Chrysididae"
+    
+
+def generate_lists(base_folder, prefix, save_lists = False):
+    
+    filename = os.path.join(base_folder, prefix + "_species_list_webpage.pickle")
+    s = request_handler.get_soup(species_check_page_url, filename)
+    
+    genus_list = []
+    species_list = []
+    
+    # find all the listed items
+    
+    print("Gathering species from chrysis.net...")
+    
+    for li in s.find_all("li"):
+        
+        # find the links inside the listed items
+        ref = li.find_all("a")
+        
+        # select the right link
+        if len(ref) == 2:
+            name = ref[1]
+        if len(ref) == 1:
+            name = ref[0]     
+        else:
+            continue
+        
+        # split the name
+        name_parts = name.text.split(" ")
+        
+        # %s %s %s %s, %year this is the right format for an author
+        if len(name_parts) > 3 and name.text.find(",") != -1:
+            genus = name_parts[0]
+            specie = name_parts[1]
+            
+            
+            author = "".join(part + " " for part in name_parts[2:])
+            author = author[:-1]
+            author = author.replace("[E]", "")
+            
+            species_list.append(Taxa.Taxa(genus + " " + specie, author, None, None))
+        else: 
+            continue    
+    
+    return genus_list, species_list
+
+def generate_specie_dictionary(species_list):
+    species_dicts = []
+    for specie in species_list:
+        sdict = {}
+        sdict["family"] = family
+        name_parts = specie.name.split(" ")
+        sdict["genus"] = name_parts[0]
+        sdict["species"] = name_parts[1]
+        sdict["author"] = specie.author
+        species_dicts.append(sdict)
+    
+    return species_dicts
+
+

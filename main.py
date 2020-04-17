@@ -15,6 +15,7 @@ import NBN_parser
 import CreateHTMLFile
 import CreateLabelTable
 import EncyclopediaOfLife
+import Chrysis_net
 import Taxa
 
 # =============================================================================
@@ -126,20 +127,26 @@ def save_authority_file(filename, species_dict):
     with open(filename, "wb") as f:
         f.write(csv_file)
 
-def generate_authority_file(family_url, base_path, prefix, source):
+# def generate_authority_file(family_url, base_path, prefix, source):
       
-    if source == "NBN_Atlas":
-        _, species_list = NBN_parser.generate_lists(family_url, base_path, prefix)
-        spec_dict = NBN_parser.generate_species_dictionary(species_list, base_path, prefix)
+#     if source == "NBN_Atlas":
+#         _, species_list = NBN_parser.generate_lists(family_url, base_path, prefix)
+#         spec_dict = NBN_parser.generate_species_dictionary(species_list, base_path, prefix)
         
-    elif source == "EOL":
-        _, species_list = EncyclopediaOfLife.generate_lists(family_url, base_path, prefix)
-        spec_dict = EncyclopediaOfLife.generate_specie_dictionary(species_list, family_url)
+#     elif source == "EOL":
+#         _, species_list = EncyclopediaOfLife.generate_lists(family_url, base_path, prefix)
+#         spec_dict = EncyclopediaOfLife.generate_specie_dictionary(species_list, family_url)
              
+#     csv_filename = os.path.join(base_path, prefix + "_authority_file.csv")
+        
+#     save_authority_file(csv_filename, spec_dict)
+
+
+def generate_authority_file(species_dict, base_path, prefix):
+      
     csv_filename = os.path.join(base_path, prefix + "_authority_file.csv")
         
-    save_authority_file(csv_filename, spec_dict)
-
+    save_authority_file(csv_filename, species_dict)
 
 # =============================================================================
 # Main 
@@ -252,13 +259,89 @@ if __name__ == "__main__":
 
         #generate_authority_file(url, base_folder, prefix, "NBN_Atlas")
         
-        
+        family = "Chrysididae"
+        prefix = family.lower()
+
         base_folder = "./Data/Chrysididae"
-        prefix = "chrysididae"
+        
+        # NBN_Atlas
+        
         url = "https://species.nbnatlas.org/species/NBNSYS0000159685"
+
+        # _, species_list_nbn = NBN_parser.generate_lists(url, base_folder, prefix)
+        # spec_dict = NBN_parser.generate_species_dictionary(species_list_nbn, base_folder, prefix)
+        
+        # generate_authority_file(spec_dict, base_folder, "nbn_" + prefix)
+
+        # # EOL
+ 
+        # _, species_list_eol = EncyclopediaOfLife.generate_lists(family, base_folder, prefix)
+        # spec_dict = EncyclopediaOfLife.generate_specie_dictionary(species_list_eol, family)
+        
+        # generate_authority_file(spec_dict, base_folder, "eol_" + prefix)
+        
+        # # Chrysis net
+        # _, species_list_chr = Chrysis_net.generate_lists(base_folder, prefix)
+        # spec_dict = Chrysis_net.generate_specie_dictionary(species_list_chr)
+        
+        # generate_authority_file(spec_dict, base_folder, "chr_" + prefix)
+        
+        _, species_list_nbn = NBN_parser.generate_lists(url, base_folder, prefix)
+        _, species_list_eol = EncyclopediaOfLife.generate_lists(family, base_folder, prefix)
+        _, species_list_chr = Chrysis_net.generate_lists(base_folder, prefix)
+        print(len(species_list_nbn), len(species_list_eol), len(species_list_chr))
         
         
-        generate_authority_file(url, base_folder, prefix, "NBN_Atlas")
+        csv = '"Present in","NBN Atlas","EOL Database","Chrysis.net"\n'
+        
+        complete_list = []
+        
+        for nbn_specie in species_list_nbn:
+            complete_list.append(nbn_specie)
+            
+        for eol_specie in species_list_eol:
+            if eol_specie.name in [sp.name for sp in complete_list]:
+                continue
+            else:
+                complete_list.append(eol_specie)
+            
+        for chr_specie in species_list_chr:
+            if chr_specie.name in [sp.name for sp in complete_list]:
+                continue
+            else:
+                complete_list.append(chr_specie)
+        complete_list.sort(key= lambda item : item.name)  
+        
+        lines = ""
+        for sp in complete_list:
+            line = f'"{sp.name}",'
+            
+            if sp.name in [s.name for s in species_list_nbn]:
+                line += "x,"
+            else:
+                line += ","
+                    
+            if sp.name in [s.name for s in species_list_eol]:
+                line += "x,"
+            else:
+                line += ","                    
+                    
+            if sp.name in [s.name for s in species_list_chr]:
+                line += "x"
+            else:
+                line += ""
+            
+            lines += line + "\n"
+                
+        csv += lines
+                
+        filename = os.path.join(base_folder, "list_compare.csv")
+        
+        with open(filename, "wb") as f:
+            f.write(csv.encode("utf8"))
+        
+        
+        
 # =============================================================================
 # Old stuff
 # =============================================================================
