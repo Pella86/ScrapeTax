@@ -60,11 +60,17 @@ def generate_lists(base_folder, prefix, save_lists = False):
         if len(name_parts) > 3 and name.text.find(",") != -1:
             genus = name_parts[0]
             specie = name_parts[1]
-            
-            
-            author = "".join(part + " " for part in name_parts[2:])
+
+            if len(name_parts[2]) > 0:
+                 # add the subspecie
+                specie += " " + name_parts[2]
+                author = "".join(part + " " for part in name_parts[3:])
+                
+            else:
+                author = "".join(part + " " for part in name_parts[2:])
+
             author = author[:-1]
-            author = author.replace("[E]", "")
+            author = author.replace("[E]", "")            
             
             species_list.append(Taxa.Taxa(genus + " " + specie, author, None, None))
         else: 
@@ -77,12 +83,33 @@ def generate_specie_dictionary(species_list):
     for specie in species_list:
         sdict = {}
         sdict["family"] = family
+        
         name_parts = specie.name.split(" ")
+        
+        
         sdict["genus"] = name_parts[0]
         sdict["species"] = name_parts[1]
+        if len(name_parts) == 3:
+            sdict["subspecies"] = name_parts[2]
+        
         sdict["author"] = specie.author
         species_dicts.append(sdict)
     
     return species_dicts
 
 
+if __name__ == "__main__":
+    
+    
+    family = "Chrysididae"
+    prefix = family.lower()
+
+    base_folder = "./Data/Chrysididae"
+    
+    url = "https://species.nbnatlas.org/species/NBNSYS0000159685"
+    
+    glist, slist = generate_lists(base_folder, prefix)
+    sd = generate_specie_dictionary(slist)
+    for d in sd:
+       #print(d.get("subspecies"))
+        pass
