@@ -5,8 +5,8 @@ Created on Mon Apr 20 10:59:46 2020
 @author: Media Markt
 """
 
-import os
 import ProgressBar
+import CreateHTMLFile
 
 # =============================================================================
 # Function to create the authority file
@@ -96,9 +96,43 @@ def save_authority_file(filename, species_dict):
     print("saved file in:", filename)
 
 
-def generate_authority_file(species_dict, base_path, prefix):
+def generate_authority_file(species_dict, fileinfo):
     ''' generates the filename and passes it to the save functio'''
       
-    csv_filename = os.path.join(base_path, prefix + "_authority_file.csv")
+    csv_filename = fileinfo.csv_filename("authority_file")
         
     save_authority_file(csv_filename, species_dict)
+    
+    
+    
+# =============================================================================
+#  Function to create the authority list    
+# =============================================================================
+
+def generate_authority_list(genus_list, species_list, fileinfo):
+    
+    fhtml = CreateHTMLFile.CreateHTMLFile()
+    # add date of creation and how many taxas are in the file
+    # maybe add the possibility to save the generate tree for later use?
+    # could be useless since it will be not modifiable
+    
+    fhtml.add_element("--- Genuses ---")
+    fhtml.add_line_break()
+    
+    for genus in genus_list:
+        fhtml.add_italics_element(genus.name)
+        fhtml.add_element(", ")
+        fhtml.add_element(genus.author)
+        fhtml.add_line_break()
+
+    fhtml.add_element("--- Species ---")
+    fhtml.add_line_break()
+    
+    for specie in species_list:
+        fhtml.add_italics_element(specie.name)
+        fhtml.add_element(", ")
+        fhtml.add_element(specie.author)
+        fhtml.add_line_break()
+    
+    
+    fhtml.generate_html_file(fileinfo.html_filename("species_list"))

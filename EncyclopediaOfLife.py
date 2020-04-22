@@ -29,7 +29,7 @@ eol_test_folder ="./Data/EOL_test/"
 # Functions
 # =============================================================================
 
-def generate_lists(family_name, base_folder, prefix, save_lists = True):
+def generate_lists(family_name, fileinfo, save_lists = True):
     ''' Function that generates both the genera and species lists'''
     # could in principle split the genrate list names
     # shall I add a eol prefix so data dont get overwritten?
@@ -48,7 +48,7 @@ def generate_lists(family_name, base_folder, prefix, save_lists = True):
     
     print("Downloading infos from the query with parameters:", params)
     
-    path = os.path.join(base_folder, prefix + "_eol_query.pickle")
+    path = fileinfo.pickle_filename("eol_query")
     req = request_handler.Request(eol_api, path, params)
     req.load()
 
@@ -65,7 +65,7 @@ def generate_lists(family_name, base_folder, prefix, save_lists = True):
     family_page = result_link + "/names"
 
     # soups the link
-    path = os.path.join(base_folder, prefix + "_eol_webpage.pickle")
+    path = fileinfo.pickle_filename("eol_webpage")
     s = request_handler.get_soup(family_page, path)
 
     # select the section corresponding to the Hierarchical tree
@@ -109,7 +109,7 @@ def generate_lists(family_name, base_folder, prefix, save_lists = True):
         
         #open the website, look for author and specie list
         
-        filename = os.path.join(base_folder, taxa.name + ".pickle")
+        filename = fileinfo.pickle_filename(taxa.name)
 
         s = request_handler.get_soup(taxa.link, filename)
         
@@ -163,7 +163,11 @@ if __name__ == "__main__":
     family_name = "Formicidae"
     base_folder = "./Data/Formicidae"
     prefix = "formicidae"
-    _, species_list = generate_lists(family_name, base_folder, prefix)
+    
+    import FileInfo
+    fileinfo = FileInfo.FileInfo(base_folder, prefix)
+    
+    _, species_list = generate_lists(family_name, fileinfo)
     spec_dict = generate_specie_dictionary(species_list, family_name)
     
     for d in spec_dict:

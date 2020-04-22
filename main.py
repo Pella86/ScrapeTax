@@ -9,48 +9,12 @@ Created on Fri Jan 10 09:21:27 2020
 # Imports
 # =============================================================================
 
-import os
-
 import NBN_parser
-import CreateHTMLFile
 import CreateLabelTable
 import EncyclopediaOfLife
 import Chrysis_net
-import Taxa
 import AuthorityFileCreation
-
-# =============================================================================
-#  Function to create the authority list    
-# =============================================================================
-
-def generate_authority_list(genus_list, species_list, base_folder, prefix):
-    
-    fhtml = CreateHTMLFile.CreateHTMLFile()
-    # add date of creation and how many taxas are in the file
-    # maybe add the possibility to save the generate tree for later use?
-    # could be useless since it will be not modifiable
-    
-    fhtml.add_element("--- Genuses ---")
-    fhtml.add_line_break()
-    
-    for genus in genus_list:
-        fhtml.add_italics_element(genus.name)
-        fhtml.add_element(", ")
-        fhtml.add_element(genus.author)
-        fhtml.add_line_break()
-
-    fhtml.add_element("--- Species ---")
-    fhtml.add_line_break()
-    
-    for specie in species_list:
-        fhtml.add_italics_element(specie.name)
-        fhtml.add_element(", ")
-        fhtml.add_element(specie.author)
-        fhtml.add_line_break()
-    
-    
-    fhtml.generate_html_file(os.path.join(base_folder, prefix + "_species_list.html"))
-
+import FileInfo
 
 
 # =============================================================================
@@ -66,13 +30,16 @@ def get_input(title, input_sentence, default = None):
     if choice == "":
         choice = default
     return choice
- 
+
+
+def prod_main():
     
-def prod_main():    
+    # title
     print("Scrape Tax")
     print("Program to gather informations from online databases about species and genuses")
+     
     
-        
+    
     base_folder = get_input("The path to the folder where the file will be saved, the folder must already exist. Use dot (.) to access the current folder",
                             "path",
                             "./Data/Vespidae")
@@ -82,10 +49,33 @@ def prod_main():
                        "prefix",
                        "vespidae")
     
-    url = get_input("Paste the url of the family of the https://nbnatlas.org/ search result",
-                    "website link",
-                    "https://nbnatlas.org/species/NBNSYS0000050803")
+    
+    fileinfo = FileInfo.FileInfo(base_folder, prefix)
+    
+    
+    # nbn or eol
+    
+    source = get_input("Chose a website (nbn, eol)",
+                       "website",
+                       "nbn")
+    
+    
+    
+    print("Generate lists...")
+    
+    # generate the lists
+    if source == "nbn":
+        url = get_input("Input the family url", 
+                        "url",
+                        "https://species.nbnatlas.org/species/NBNSYS0000050803")
         
+        genus_list, species_list = NBN_parser.generate_lists(url, fileinfo)
+    elif source == "eol":
+        family_name = get_input("Input the family name",
+                                "family",
+                                "Vespidae")
+        genus_list, species_list = EncyclopediaOfLife.generate_lists(family_name, fileinfo)
+    
     
     exit_command = False
     
@@ -97,8 +87,7 @@ def prod_main():
         print("  4. Exit (e, exit, quit)")
         
         
-        choice = input("pick a number >")
-        
+        choice = input("pick a number >")    
         if choice == "e" or choice == "exit" or choice == "quit" or choice == "4":
             exit_command = True
         else:
@@ -107,92 +96,74 @@ def prod_main():
             except ValueError:
                 print("not a value from 1 to 3")
                 choice = None 
+                
+
             
             if choice == 1:
                 print("Generating authority list")
-    
-                genus_list, species_list = NBN_parser.generate_lists(url, base_folder, prefix)
-                generate_authority_list(genus_list, species_list, base_folder)  
+                
+
+                AuthorityFileCreation.generate_authority_list(genus_list, species_list, fileinfo)  
                 
                 exit_command = True
             
             elif choice == 2:
                 print("Generating label table")
-                _, species_list = NBN_parser.generate_lists(url, base_folder, prefix)
                 
                 table = CreateLabelTable.LabelTable()
                 
-                table.create_table(species_list,
-                                   os.path.join(base_folder,
-                                                prefix + "_label_table.html"
-                                                )
-                                   )
+                table.create_table(species_list, fileinfo.html_filename("label_table"))
                 
                 exit_command = True
                 
             elif choice == 3:
                 print("Generating authority file")
-                AuthorityFileCreation.generate_authority_file(url, base_folder, prefix, "NBN_Atlas")
-                   
+                if source == "nbn":
+                    spec_dict = NBN_parser.generate_species_dictionary(species_list, fileinfo)
+                elif source == "eol":
+                    spec_dict = EncyclopediaOfLife.generate_specie_dictionary(species_list, family_name)
+                    
+                    
+                AuthorityFileCreation.generate_authority_file(spec_dict, fileinfo)
             else:
                 print("Choice not available")
-                exit_command = True
-    
+                exit_command = True            
+        
+
 
 if __name__ == "__main__":
     if PRODUCTION:
         prod_main()
     else:
+        
+        base_folder = "./Data/Vespidae"
+        family_name = "Vespidae"
+        prefix = family_name.lower()
+        
+        fileinfo = FileInfo.FileInfo(base_folder, prefix)
+        
+        glist, slist = EncyclopediaOfLife.generate_lists(family_name, fileinfo)
+        
+        lt = CreateLabelTable.LabelTable()  
+        lt.create_table(slist, fileinfo.html_filename("table"))
+        
+        # base_folder = "./Data/Formicidae"
+        # url = "https://species.nbnatlas.org/species/NBNSYS0000037030" 
+        # prefix = "formicidae"          
 
-        base_folder = "./Data/Formicidae"
-        url = "https://species.nbnatlas.org/species/NBNSYS0000037030" 
-        prefix = "formicidae"          
+        
+        # family = "Chrysididae"
+        # prefix = family.lower()
 
-        # genus_list, species_list = NBN_parser.generate_lists(url, base_folder, prefix)
-        # generate_authority_list(genus_list, species_list, base_folder, prefix)  
+        # base_folder = "./Data/Chrysididae"
         
-
-        # _, species_list = NBN_parser.generate_lists(url, base_folder, prefix)
-        
-        # table = CreateLabelTable.LabelTable()
-        
-        # table.create_table(species_list,
-        #                    os.path.join(base_folder,
-        #                                 prefix + "_label_table.html"
-        #                                 )
-        #                    )
-
-        #generate_authority_file(url, base_folder, prefix, "NBN_Atlas")
-        
-        family = "Chrysididae"
-        prefix = family.lower()
-
-        base_folder = "./Data/Chrysididae"
-        
-        # NBN_Atlas
-        
-        url = "https://species.nbnatlas.org/species/NBNSYS0000159685"
+        # url = "https://species.nbnatlas.org/species/NBNSYS0000159685"
         
         
+        # _, species_list_chr = Chrysis_net.generate_lists(base_folder, prefix)
+        # spec_dict = Chrysis_net.generate_specie_dictionary(species_list_chr)
         
-
-        # _, species_list_nbn = NBN_parser.generate_lists(url, base_folder, prefix)
-        # spec_dict = NBN_parser.generate_species_dictionary(species_list_nbn, base_folder, prefix)
-        
-        # generate_authority_file(spec_dict, base_folder, "nbn_" + prefix)
-
-        # # EOL
- 
-        # _, species_list_eol = EncyclopediaOfLife.generate_lists(family, base_folder, prefix)
-        # spec_dict = EncyclopediaOfLife.generate_specie_dictionary(species_list_eol, family)
-        
-        # generate_authority_file(spec_dict, base_folder, "eol_" + prefix)
-        
-        # Chrysis net
-        _, species_list_chr = Chrysis_net.generate_lists(base_folder, prefix)
-        spec_dict = Chrysis_net.generate_specie_dictionary(species_list_chr)
-        
-        AuthorityFileCreation.generate_authority_file(spec_dict, base_folder, "chr_" + prefix)
+        # AuthorityFileCreation.generate_authority_file(spec_dict, base_folder, "chr_" + prefix)
         
         # _, species_list_nbn = NBN_parser.generate_lists(url, base_folder, prefix)
         # _, species_list_eol = EncyclopediaOfLife.generate_lists(family, base_folder, prefix)

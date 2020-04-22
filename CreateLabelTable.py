@@ -18,6 +18,7 @@ class LabelTable:
         
         tsel = CreateHTMLFile.SelectorProprieties("table")
         tsel.add_propriety("border-collapse", "collapse")
+        tsel.add_propriety("page-break-after", "always")
         
         self.fhtml.add_selector(tsel)
         
@@ -30,6 +31,7 @@ class LabelTable:
         #table_selector.add_propriety("font-family", "Lucida Console")
         table_selector.add_propriety("font-size", "8px")  
         #table_selector.add_propriety("border-collapse", "collapse")
+        
         
         self.fhtml.add_selector(table_selector)
         
@@ -44,6 +46,10 @@ class LabelTable:
         
         for i in range(n_rows):
             
+            if i % 22 == 0:
+                self.table = ET.SubElement(self.fhtml.body, "table")
+                self.fhtml.add_line_break()
+            
             tr = ET.SubElement(self.table, "tr")
             
             for j in range(n_cols):
@@ -55,8 +61,6 @@ class LabelTable:
                     taxa = taxa_list[cur_index]
                     
                     td = ET.SubElement(tr, "td")
-                    
-                    print(taxa)
                     
                     genspe = taxa.name.split(" ")
                     

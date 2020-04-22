@@ -5,10 +5,9 @@ Created on Wed Mar 18 09:55:42 2020
 @author: Media Markt
 """
 
-
-import os
 import request_handler
 import Taxa
+import FileInfo
 
 
 NBN_HOME = "https://species.nbnatlas.org"   
@@ -37,18 +36,13 @@ def gather_child_taxa(url, filename):
     return zip(dts, dds)
 
 
-def generate_filename(base_folder, prefix, name):
-    ''' Function that generates a filename given a prefix and a base folder'''
-    name = name.replace(" ", "_")
-    filename = f"{prefix}_{name}_webpage.pickle" 
-    return os.path.join(base_folder, filename)
-
 class NBNElement:
     ''' Class that processes the informations inside the gathered taxa'''
     
-    def __init__(self, html_rank, html_name):
+    def __init__(self, html_rank, html_name, fileinfo):
         self.html_rank = html_rank
         self.html_name = html_name
+        self.fileinfo = fileinfo
     
     def get_link(self):
         '''Method that gets the link from the name box'''
@@ -70,19 +64,20 @@ class NBNElement:
         '''Method that gets the rank (specie, genus, ...) '''
         return self.html_rank.text
     
-    def generate_filename(self, base_folder, prefix):
-        '''Method that generates the filename, same as generate_filename() 
-        function, but uses the name found in the get_name() function'''
-        return generate_filename(base_folder, prefix, self.get_name())
+    # def generate_filename(self, base_folder, prefix):
+    #     '''Method that generates the filename, same as generate_filename() 
+    #     function, but uses the name found in the get_name() function'''
+    #     return generate_filename(base_folder, prefix, self.get_name())
 
-    def gather_child_elements(self, base_folder, prefix):
+    def gather_child_elements(self):
         '''Method that gather the child elements from the page 
         pointed by the get_link() method'''
         if self.get_link():
             link = self.get_link()
-            filename = self.generate_filename(base_folder, prefix )
+            filename = self.fileinfo.pickle_filename(self.get_name())
             html_elements = gather_child_taxa(link, filename)
-            return [NBNElement(dt, dd) for dt, dd in html_elements]
+            
+            return [NBNElement(dt, dd, self.fileinfo) for dt, dd in html_elements]
     
     def get_author(self):
         '''Method that gets the author name for the element'''
@@ -93,15 +88,12 @@ class NBNElement:
             return "author not found"
 
 
-
-
-
-def generate_lists(family_url, base_folder, prefix, save_lists = True):
+def generate_lists(family_url, fileinfo, save_lists = True):
     '''Function that arranges the genuses and species in a list, the function
     could be translated in a tree, but ... is difficult. The function returns
     a list of Taxa with name, author and reference link'''
     
-    filename = generate_filename(base_folder, prefix, "family")
+    filename = fileinfo.pickle_filename("family")
     
     taxa = gather_child_taxa(family_url, filename)
     
@@ -110,16 +102,16 @@ def generate_lists(family_url, base_folder, prefix, save_lists = True):
     
     for dt, dd in taxa:
         
-        element = NBNElement(dt, dd)
+        element = NBNElement(dt, dd, fileinfo)
         
         if element.get_rank() == "subfamily":
             
-            subfam = element.gather_child_elements(base_folder, prefix)
+            subfam = element.gather_child_elements()
 
             for subf in subfam:
                 
                 if subf.get_rank() == "tribe":
-                    genuses = subf.gather_child_elements(base_folder, prefix)
+                    genuses = subf.gather_child_elements()
                     
                     for genus in genuses:
                         if genus.get_rank() == "genus":
@@ -142,21 +134,21 @@ def generate_lists(family_url, base_folder, prefix, save_lists = True):
                               
     for genus in genus_list:
         
-        filename = os.path.join(base_folder, f"{prefix}_{genus.name}_webpage.pickle")
-        
+        filename = fileinfo.pickle_filename(f"{genus.name}_webpage")
         html_elements = gather_child_taxa(genus.link, filename)
         
         for dt, dd in html_elements:
-            specie = NBNElement(dt, dd)            
+            specie = NBNElement(dt, dd, fileinfo)            
             
             taxa = Taxa.Taxa(specie.get_name(), specie.get_author(), specie.get_link(), genus)
             species_list.append(taxa)
 
     if save_lists:
-        list_filename = os.path.join(base_folder, f"{prefix}_genus_list.mptaxa")
+
+        list_filename = fileinfo.mptaxa_filename("genus_list")
         Taxa.save_taxa_list(genus_list, list_filename)
         
-        list_filename = os.path.join(base_folder,f"{prefix}_species_list.mptaxa")
+        list_filename = fileinfo.mptaxa_filename("species_list")
         Taxa.save_taxa_list(species_list, list_filename)
         
     return genus_list, species_list
@@ -205,7 +197,7 @@ def gather_taxonomy(url, filename):
 
     return species
 
-def generate_species_dictionary(species_list, base_path, prefix):
+def generate_species_dictionary(species_list, fileinfo):
     species_dicts = []
     
     for specie in species_list:
@@ -214,7 +206,7 @@ def generate_species_dictionary(species_list, base_path, prefix):
         if not link.startswith(NBN_HOME):
             link = NBN_HOME + "/" + specie.link
               
-        filename = generate_filename(base_path, "tax_", specie.name)
+        filename = fileinfo.pickle_filename(specie.name.replace(" ", "_"))
         species = gather_taxonomy(link, filename)
          
         # add the author of the specie which is still not in the dictionary
@@ -222,117 +214,6 @@ def generate_species_dictionary(species_list, base_path, prefix):
     
         species_dicts += species
     return species_dicts
-
-
-# def create_authority_lines(species_dicts):
-#     elements = ["family", "subfamily", "tribe", "genus", "species",
-#                 "subspecies", "InfraspecificRank", "Infraspecific Epitheth",
-#                 "author"]
-    
-#     # create the lines based on the above defined elements
-#     lines = []
-#     sep = ","
-    
-#     for n, tax_dict in enumerate(species_dicts):
-    
-#         elements_list = []
-         
-#         # creates the string based on the element if it exist, else put a space
-#         elestr = []
-#         for el in elements:
-#             sp = tax_dict.get(el)
-#             if sp:
-#                 elestr.append(sp)
-#             else:
-#                 elestr.append(" ")
-                
-#         elements_list.append(elestr)
-    
-      
-#         # get the author from the taxa
-#         line = ""
-#         for elestr in elements_list:
-            
-#             line += str(n + 1) + sep
-            
-#             for i, el in enumerate(elestr):
-#                 if el.find(" ") >= 0:
-#                     el = f'"{el}"'
-                
-#                 if i == len(elestr) - 1:
-#                     line += el
-#                 else:
-#                     line += el + sep
-#             line += "\n"
-        
-#         lines.append(line)
-    
-#     return lines    
-    
-
-# def create_authority_line(n_base, specie, base_path):
-#     '''Function that creates the line for the authority file, this function
-#     returns a list of string corresponding to a row of the excel file'''
-    
-#     print(f"Creating csv line for {specie}...")
-    
-#     # get the specie link, is the member .link of the Taxa class
-#     link = specie.link
-#     if not link.startswith(NBN_HOME):
-#         link = NBN_HOME + "/" + specie.link
-          
-#     filename = generate_filename(base_path, "tax_", specie.name)
-#     species = gather_taxonomy(link, filename)
-     
-#     # add the author of the specie which is still not in the dictionary
-#     species[0]["author"] = specie.author
-    
-#     elements = ["family", "subfamily", "tribe", "genus", "species",
-#                 "subspecies", "InfraspecificRank", "Infraspecific Epitheth",
-#                 "author"]
-    
-#     # create the lines based on the above defined elements
-#     lines = []
-#     sep = ","
-    
-#     for tax_dict in species:
-    
-#         elements_list = []
-         
-#         # creates the string based on the element if it exist, else put a space
-#         elestr = []
-#         for el in elements:
-#             sp = tax_dict.get(el)
-#             if sp:
-#                 elestr.append(sp)
-#             else:
-#                 elestr.append(" ")
-                
-#         elements_list.append(elestr)
-    
-      
-#         # get the author from the taxa
-#         line = ""
-#         for elestr in elements_list:
-            
-#             line += str(n_base) + sep
-            
-#             for i, el in enumerate(elestr):
-#                 if el.find(" ") >= 0:
-#                     el = f'"{el}"'
-                
-#                 if i == len(elestr) - 1:
-#                     line += el
-#                 else:
-#                     line += el + sep
-#             line += "\n"
-            
-#             n_base += 1
-        
-#         lines.append(line)
-    
-#     return n_base, lines
-
     
             
 
@@ -374,12 +255,13 @@ if __name__ == "__main__":
     prefix = "psychidae"
     url = "https://species.nbnatlas.org/species/NBNSYS0000160829"
     
-    genus_list, species_list = generate_lists(url, base_folder, prefix)
-    spec_dict = generate_species_dictionary(species_list, base_path, prefix)
-    lines = create_authority_lines(spec_dict)
+    fileinfo = FileInfo.FileInfo(base_folder, prefix)
     
-    for line in lines:
-        print(lines)
+    genus_list, species_list = generate_lists(url, fileinfo)
+    spec_dict = generate_species_dictionary(species_list, fileinfo)
+    
+    
+    print(len(genus_list), len(spec_dict))
 
         
                                       
