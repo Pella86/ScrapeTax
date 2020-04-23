@@ -89,18 +89,19 @@ class LabelTable:
 
 
 if __name__ == "__main__":
-    table = LabelTable()
+    # table = LabelTable()
     
-    import os
-    import NBN_parser
+    # import os
+    # import NBN_parser
     
-    base_folder = ".\Data\Vespidae"
+    # base_folder = ".\Data\Vespidae"
     
-    filename = os.path.join(base_folder, "vespidae_specie_list.mptaxa")
-    species_list = NBN_parser.laod_taxa_list(filename)
+    # filename = os.path.join(base_folder, "vespidae_specie_list.mptaxa")
+    # species_list = NBN_parser.laod_taxa_list(filename)
     
-    table.create_table(species_list,
-                       os.path.join(base_folder,
-                                    "vespidae_label_table_test.html"
-                                    )
-                       )
+    # table.create_table(species_list,
+    #                    os.path.join(base_folder,
+    #                                 "vespidae_label_table_test.html"
+    #                                 )
+    #                    )
+    print(repr("https://github.com/Pella86/ScrapeTax.git"))

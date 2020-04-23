@@ -21,7 +21,7 @@ import FileInfo
 # Main 
 # =============================================================================
  
-PRODUCTION = False   
+
 
 def get_input(title, input_sentence, default = None):
     print("-" * 79)
@@ -131,6 +131,8 @@ def prod_main():
         
 
 
+PRODUCTION = False   
+
 if __name__ == "__main__":
     if PRODUCTION:
         prod_main()
@@ -144,8 +146,8 @@ if __name__ == "__main__":
         
         glist, slist = EncyclopediaOfLife.generate_lists(family_name, fileinfo)
         
-        lt = CreateLabelTable.LabelTable()  
-        lt.create_table(slist, fileinfo.html_filename("table"))
+        # lt = CreateLabelTable.LabelTable()  
+        # lt.create_table(slist, fileinfo.html_filename("table"))
         
         # base_folder = "./Data/Formicidae"
         # url = "https://species.nbnatlas.org/species/NBNSYS0000037030" 

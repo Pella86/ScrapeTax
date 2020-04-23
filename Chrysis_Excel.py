@@ -43,8 +43,6 @@ for genus, specie, subspecie, author in zip(genus_col, specie_col, sub_specie_co
         
         tax_dicts.append(tax_dict)
 
-
-    
     
     
 wb_sub = openpyxl.load_workbook("./Data/Chrysididae_xls/Subfamilies - tribes.xlsx")
@@ -56,11 +54,15 @@ genus_col = wb_sub.active["c"][2:]
 
 for subfam, tribe, genus in zip(subfamilies_col, tribes_col, genus_col):
     
+    
     if genus.value:
         # select the genera and put in the subfamily designation the
         # corresponding subfamily / trinbe if it exists
+        
+        
         for tax_dict in tax_dicts:
-            if tax_dict["genus"] == genus.value.split(" ")[0]:
+            # corrected the error when the genus contained trailing spaces
+            if genus.value.find(tax_dict["genus"].strip()) >= 0:
                 if subfam.value:
                     tax_dict["subfamily"] = subfam.value
                 
