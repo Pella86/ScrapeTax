@@ -2,7 +2,7 @@
 """
 Created on Mon Apr 20 10:59:46 2020
 
-@author: Media Markt
+@author: maurop
 """
 
 import ProgressBar
@@ -82,8 +82,6 @@ def create_authority_lines(species_dicts):
     
 def save_authority_file(filename, species_dict):
     ''' saves the authority file on disk and adds the headers'''
-    
-    print("Generating authority file...")
     
     csv_file = " ,Family,Subfamily,Tribe,Genus,SpecificEpithet,SubspecificEpithet,InfraspecificRank,InfraspecificEpithet,Authorship\n".encode("utf8")
     lines = create_authority_lines(species_dict)

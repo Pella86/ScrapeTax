@@ -2,7 +2,7 @@
 """
 Created on Thu Mar 19 09:16:57 2020
 
-@author: Media Markt
+@author: maurop
 """
 
 import xml.etree.ElementTree as ET

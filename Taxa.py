@@ -2,7 +2,7 @@
 """
 Created on Wed Mar 18 10:07:07 2020
 
-@author: Media Markt
+@author: maurop
 """
 
 import pickle

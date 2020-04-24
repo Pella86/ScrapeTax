@@ -100,24 +100,24 @@ def prod_main():
 
             
             if choice == 1:
-                print("Generating authority list")
+                print("Generating authority list...")
                 
-
                 AuthorityFileCreation.generate_authority_list(genus_list, species_list, fileinfo)  
                 
-                exit_command = True
+                print("Authority list created")
             
             elif choice == 2:
-                print("Generating label table")
+                print("Generating label table...")
                 
                 table = CreateLabelTable.LabelTable()
                 
                 table.create_table(species_list, fileinfo.html_filename("label_table"))
-                
-                exit_command = True
+
+                print("Table created")
                 
             elif choice == 3:
-                print("Generating authority file")
+                print("Generating authority file...")
+                
                 if source == "nbn":
                     spec_dict = NBN_parser.generate_species_dictionary(species_list, fileinfo)
                 elif source == "eol":
@@ -125,13 +125,15 @@ def prod_main():
                     
                     
                 AuthorityFileCreation.generate_authority_file(spec_dict, fileinfo)
+                
+                print("Authority file created.")
             else:
                 print("Choice not available")
                 exit_command = True            
         
 
 
-PRODUCTION = False   
+PRODUCTION = True   
 
 if __name__ == "__main__":
     if PRODUCTION:

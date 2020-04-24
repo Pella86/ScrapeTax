@@ -2,7 +2,7 @@
 """
 Created on Tue Apr  7 11:49:00 2020
 
-@author: Media Markt
+@author: maurop
 """
 
 import request_handler

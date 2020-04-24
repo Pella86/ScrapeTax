@@ -2,7 +2,7 @@
 """
 Created on Wed Apr 22 10:02:11 2020
 
-@author: Media Markt
+@author: maurop
 """
 
 import os
