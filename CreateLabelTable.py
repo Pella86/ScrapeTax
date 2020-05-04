@@ -13,7 +13,7 @@ import CreateHTMLFile
 
 class LabelTable:   
     
-    def __init__(self):
+    def __init__(self, browser):
         self.fhtml = CreateHTMLFile.CreateHTMLFile()
         
         tsel = CreateHTMLFile.SelectorProprieties("table")
@@ -25,13 +25,21 @@ class LabelTable:
         
         table_selector = CreateHTMLFile.SelectorProprieties("td")
         table_selector.add_propriety("width", "42mm")
-        table_selector.add_propriety("height", "12mm")
+        table_selector.add_propriety("height", "12mm")        
         table_selector.add_propriety("border", "1px solid black")  
         table_selector.add_propriety("padding", "5px")
         #table_selector.add_propriety("font-family", "Lucida Console")
-        table_selector.add_propriety("font-size", "8px")  
-        #table_selector.add_propriety("border-collapse", "collapse")
+        #table_selector.add_propriety("border-collapse", "collapse")  
+ 
+        if browser == "chrome":
+            table_selector.add_propriety("font-size", "8px")  
+            self.n_rows_per_table = 22
         
+        elif  browser == "safari":
+            table_selector.add_propriety("font-size", "10px") 
+            self.n_rows_per_table = 15
+        else:
+            raise Exception("LabelTable: No browser specified")
         
         self.fhtml.add_selector(table_selector)
         
@@ -46,7 +54,7 @@ class LabelTable:
         
         for i in range(n_rows):
             
-            if i % 22 == 0:
+            if i % self.n_rows_per_table == 0:
                 self.table = ET.SubElement(self.fhtml.body, "table")
                 self.fhtml.add_line_break()
             

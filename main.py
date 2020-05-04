@@ -96,9 +96,7 @@ def prod_main():
             except ValueError:
                 print("not a value from 1 to 3")
                 choice = None 
-                
 
-            
             if choice == 1:
                 print("Generating authority list...")
                 
@@ -109,7 +107,7 @@ def prod_main():
             elif choice == 2:
                 print("Generating label table...")
                 
-                table = CreateLabelTable.LabelTable()
+                table = CreateLabelTable.LabelTable("safari")
                 
                 table.create_table(species_list, fileinfo.html_filename("label_table"))
 

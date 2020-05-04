@@ -14,6 +14,7 @@ import json
 import os
 
 import Taxa
+import ProgressBar
 
 # =============================================================================
 # Constants
@@ -103,9 +104,11 @@ def generate_lists(family_name, fileinfo, save_lists = True):
         if name.text == family_name:
             collect_genus = True
     
+    
+    pbar = ProgressBar.ProgressBar(len(genus_list))
 
     species_list = []
-    for taxa in genus_list:
+    for i, taxa in enumerate(genus_list):
         
         #open the website, look for author and specie list
         
@@ -137,7 +140,7 @@ def generate_lists(family_name, fileinfo, save_lists = True):
             specie = Taxa.Taxa(specie_name, author_name,  specie_link, taxa)
             species_list.append(specie)
     
-    
+        pbar.draw_bar(i)
     return genus_list, species_list
 
 
