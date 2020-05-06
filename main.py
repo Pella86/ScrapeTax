@@ -109,7 +109,9 @@ def prod_main():
                 
                 table = CreateLabelTable.LabelTable("safari")
                 
-                table.create_table(species_list, fileinfo.html_filename("label_table"))
+                whole_list = genus_list + species_list
+                
+                table.create_table(whole_list, fileinfo.html_filename("label_table"))
 
                 print("Table created")
                 
