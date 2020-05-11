@@ -14,7 +14,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 
@@ -78,8 +78,21 @@ class Request:
     def show_url(self):
         print(self.url)
         
-        
-def get_soup(url, filename):
+    def get_json(self):
+        return self.response.json()
+
+
+def load_request(url, filename):
     req = Request(url, filename)
     req.load()
-    return bs4.BeautifulSoup(req.response.text, "html.parser")
+    return req.response
+        
+        
+def get_soup(url, filename):
+    response = load_request(url, filename)
+    return bs4.BeautifulSoup(response.text, "html.parser")
+
+
+def get_json(url, filename):
+    response = load_request(url, filename)
+    return response.json()

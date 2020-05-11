@@ -84,10 +84,10 @@ class LabelTable:
                 if  cur_index < len(taxa_list):
                     
                     taxa = taxa_list[cur_index]
-                    
+
                     # divide genus and specie
                     genspe = taxa.name.split(" ")
-                    
+
                     # if the name is binomial (e.g. Metisa plana)
                     if len(genspe) >= 2:                        
                         genus_str = genspe[0]

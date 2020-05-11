@@ -15,7 +15,7 @@ import EncyclopediaOfLife
 import Chrysis_net
 import AuthorityFileCreation
 import FileInfo
-
+import GBIF_downloader
 
 # =============================================================================
 # Main 
@@ -55,12 +55,10 @@ def prod_main():
     
     # nbn or eol
     
-    source = get_input("Chose a website (nbn, eol)",
+    source = get_input("Chose a website (nbn, eol, gbif)",
                        "website",
-                       "nbn")
-    
-    
-    
+                       "gbif")
+
     print("Generate lists...")
     
     # generate the lists
@@ -75,6 +73,13 @@ def prod_main():
                                 "family",
                                 "Vespidae")
         genus_list, species_list = EncyclopediaOfLife.generate_lists(family_name, fileinfo)
+    
+    elif source == "gbif":
+        family_name = get_input("Input the family name",
+                                "family",
+                                "Vespidae")
+
+        genus_list, species_list = GBIF_downloader.generate_lists(family_name, fileinfo)        
     
     
     exit_command = False
