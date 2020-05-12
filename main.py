@@ -34,51 +34,37 @@ def get_input(title, input_sentence, default = None):
 
 def prod_main():
     
+    
     # title
     print("Scrape Tax")
     print("Program to gather informations from online databases about species and genuses")
      
-    
-    
     base_folder = get_input("The path to the folder where the file will be saved, the folder must already exist. Use dot (.) to access the current folder",
                             "path",
-                            "./Data/Vespidae")
-    
-    
-    prefix = get_input("Chose a prefix to name the files",
-                       "prefix",
-                       "vespidae")
-    
-    
-    fileinfo = FileInfo.FileInfo(base_folder, prefix)
-    
-    
-    # nbn or eol
-    
+                            "./Data")
+
+
     source = get_input("Chose a website (nbn, eol, gbif)",
                        "website",
                        "gbif")
 
+    family_name = get_input("Input the family name",
+                                "family",
+                                "Vespidae")
+    
+    
+    fileinfo = FileInfo.FileInfo(base_folder, source, family_name)
+    
     print("Generate lists...")
     
     # generate the lists
     if source == "nbn":
-        url = get_input("Input the family url", 
-                        "url",
-                        "https://species.nbnatlas.org/species/NBNSYS0000050803")
-        
-        genus_list, species_list = NBN_parser.generate_lists(url, fileinfo)
+        genus_list, species_list = NBN_parser.generate_lists(family_name, fileinfo)
+
     elif source == "eol":
-        family_name = get_input("Input the family name",
-                                "family",
-                                "Vespidae")
         genus_list, species_list = EncyclopediaOfLife.generate_lists(family_name, fileinfo)
     
     elif source == "gbif":
-        family_name = get_input("Input the family name",
-                                "family",
-                                "Vespidae")
-
         genus_list, species_list = GBIF_downloader.generate_lists(family_name, fileinfo)        
     
     

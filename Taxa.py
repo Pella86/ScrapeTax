@@ -15,6 +15,7 @@ class Taxa:
         self.author = str(author)
         self.link = link
         self.super_taxa = supertaxa
+        self.source = ""
         
     def __str__(self):
         return self.name + " | " + self.author    

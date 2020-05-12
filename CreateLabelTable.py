@@ -28,6 +28,16 @@ class LabelTable:
         
         self.fhtml.add_selector(tsel)
         
+        left_sel = CreateHTMLFile.SelectorProprieties(".left")
+        left_sel.add_propriety("float", "left")
+        self.fhtml.add_selector(left_sel)
+        
+        right_sel = CreateHTMLFile.SelectorProprieties(".right")
+        right_sel.add_propriety("float", "right")
+        self.fhtml.add_selector(right_sel)
+        
+        
+        
         # formatting the text and size of the cell
         table_selector = CreateHTMLFile.SelectorProprieties("td")
         table_selector.add_propriety("width", "42mm")
@@ -54,7 +64,7 @@ class LabelTable:
         self.table = ET.SubElement(self.fhtml.body, "table")
         
  
-    def create_table(self, taxa_list, filename):
+    def create_table(self, taxa_list, filename, source=""):
         
         # fixed number of columns (fits an A4)
         n_cols = 4
@@ -116,30 +126,49 @@ class LabelTable:
                         ET.SubElement(td, "br")
 
                     # Line corresponding to author
-                    author = ET.SubElement(td, "div")
+#                    author = ET.SubElement(td, "div")
+#                    if taxa.author:
+#                        author.text = taxa.author
+#                    else:
+#                        author.text = "Author not available"
+                    
+                    # add the source to the last line
+                    last_line_div = ET.SubElement(td, "div")
+                    
+                    left = ET.SubElement(last_line_div, "span")
+                    left.set("class", "left")
                     if taxa.author:
-                        author.text = taxa.author
+                        left.text = taxa.author
                     else:
-                        author.text = "Author not available"
+                        left.text = "Author not available"
+                    
+                    right = ET.SubElement(last_line_div, "span")
+                    right.set("class", "right")
+                    right.text = source
     
         self.fhtml.generate_html_file(filename)
     
 
 
 if __name__ == "__main__":
-    # table = LabelTable()
+     table = LabelTable("safari")
     
-    # import os
-    # import NBN_parser
+     import os
+     import NBN_parser
+     import FileInfo
     
-    # base_folder = ".\Data\Vespidae"
+     base_folder = "./Data/Vespidae"
+     prefix = "vespidae"
+     
+     fi = FileInfo.FileInfo(base_folder, prefix)
+     family_url = "https://species.nbnatlas.org/species/NBNSYS0000050803"
+     
+     
+     genus_list, species_list = NBN_parser.generate_lists(family_url, fi)
     
-    # filename = os.path.join(base_folder, "vespidae_specie_list.mptaxa")
-    # species_list = NBN_parser.laod_taxa_list(filename)
+     table.create_table(genus_list + species_list,
+                        os.path.join(base_folder,
+                                     "vespidae_label_table_test.html"
+                                     )
+                        )
     
-    # table.create_table(species_list,
-    #                    os.path.join(base_folder,
-    #                                 "vespidae_label_table_test.html"
-    #                                 )
-    #                    )
-    print(repr("https://github.com/Pella86/ScrapeTax.git"))

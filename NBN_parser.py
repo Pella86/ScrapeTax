@@ -88,10 +88,26 @@ class NBNElement:
             return "author not found"
 
 
-def generate_lists(family_url, fileinfo, save_lists = True):
+def generate_lists(family_name, fileinfo, save_lists = True):
     '''Function that arranges the genuses and species in a list, the function
     could be translated in a tree, but ... is difficult. The function returns
     a list of Taxa with name, author and reference link'''
+    
+    api_url = "https://species-ws.nbnatlas.org/search?"
+    param = {}
+    param["q"] = family_name
+    param["fq"] = "idxtype:TAXON"
+ 
+    req = request_handler.Request(api_url, fileinfo.pickle_filename("family_search"), param)
+    req.load()
+    
+    # pick the first result
+    search_json = req.get_json()
+    
+    family_guid = search_json["searchResults"]["results"][0]["guid"]
+    
+    family_url = "https://species.nbnatlas.org/species/" + family_guid
+    
     
     filename = fileinfo.pickle_filename("family")
     
@@ -220,167 +236,66 @@ def generate_species_dictionary(species_list, fileinfo):
 if __name__ == "__main__":
 
 
-    # Test the csv file construction
+#    # Test the csv file construction
+#    
+#    # to do
+#    # - manage the authors for the subspecie
+#    # - move the non NBN specific functions to this file
+#    
+#    # load a specie taxa file
+#    
+#    # base_path = "./Data/Libellulidae"
+#    # family_url = "https://species.nbnatlas.org/species/NBNSYS0000160307" 
+#    # prefix = "libellulidae"
+#
+#    # base_path = "./Data/Psychidae"
+#    # family_url = "https://species.nbnatlas.org/species/NBNSYS0000160829" 
+#    # prefix = "psychidae"
+#
+#    base_path = "./Data/Vespidae"
+#    family_url = "https://species.nbnatlas.org/species/NBNSYS0000050803" 
+#    prefix = "vespidae"
+#
+#    # base_path = "./Data/Mycetophilidae"
+#    # family_url = "https://species.nbnatlas.org/species/NBNSYS0000160474" 
+#    # prefix = "mycetophilidae"   
+#    
+#    # base_path = "./Data/Formicidae"
+#    # family_url = "https://species.nbnatlas.org/species/NBNSYS0000037030" 
+#    # prefix = "formicidae"     
+#    
+#    # load family home page
+#    print("NBN_parser")
+#    
+#    base_folder = "./Data/Psychidae"
+#    prefix = "psychidae"
+#    url = "https://species.nbnatlas.org/species/NBNSYS0000160829"
+#    
+#    fileinfo = FileInfo.FileInfo(base_folder, prefix)
+#    
+#    genus_list, species_list = generate_lists(url, fileinfo)
+#    spec_dict = generate_species_dictionary(species_list, fileinfo)
+#    
+#    
+#    print(len(genus_list), len(spec_dict))
     
-    # to do
-    # - manage the authors for the subspecie
-    # - move the non NBN specific functions to this file
     
-    # load a specie taxa file
-    
-    # base_path = "./Data/Libellulidae"
-    # family_url = "https://species.nbnatlas.org/species/NBNSYS0000160307" 
-    # prefix = "libellulidae"
-
-    # base_path = "./Data/Psychidae"
-    # family_url = "https://species.nbnatlas.org/species/NBNSYS0000160829" 
-    # prefix = "psychidae"
-
-    base_path = "./Data/Vespidae"
-    family_url = "https://species.nbnatlas.org/species/NBNSYS0000050803" 
+    base_folder = "./Data/NBN_test"
     prefix = "vespidae"
-
-    # base_path = "./Data/Mycetophilidae"
-    # family_url = "https://species.nbnatlas.org/species/NBNSYS0000160474" 
-    # prefix = "mycetophilidae"   
     
-    # base_path = "./Data/Formicidae"
-    # family_url = "https://species.nbnatlas.org/species/NBNSYS0000037030" 
-    # prefix = "formicidae"     
-    
-    # load family home page
-    print("NBN_parser")
-    
-    base_folder = "./Data/Psychidae"
-    prefix = "psychidae"
-    url = "https://species.nbnatlas.org/species/NBNSYS0000160829"
-    
-    fileinfo = FileInfo.FileInfo(base_folder, prefix)
-    
-    genus_list, species_list = generate_lists(url, fileinfo)
-    spec_dict = generate_species_dictionary(species_list, fileinfo)
+    fi = FileInfo.FileInfo(base_folder, prefix)
     
     
-    print(len(genus_list), len(spec_dict))
+    family_name = "Vespidae"
+    
+    genus_list, specie_list = generate_lists(family_name, fi)
+    
 
         
                                       
             
             
-            
     
-    
-    
-    # tags = gather_child_taxa(url, filename)
-
-    # species_list = []
-
-    # for dt, dd in tags:
-        
-    #     if get_rank(dt) == "subfamily":
-    #         link = get_link(dd)
-    #         if link:
-    #             name = get_name(dd)
-    #             filename = generate_filename(base_folder, prefix, name)
-                
-    #             sub_tags = gather_child_taxa(link, filename)
-                
-    #             for sdt, sdd in sub_tags:
-                    
-    #                 if get_rank(sdt) == "tribe":
-    #                     link = get_link(sdd)
-    #                     if link:
-    #                         name = get_name(sdd)
-    #                         filename = generate_filename(base_folder, prefix, name)
-                            
-    #                         tribe_tags = gather_child_taxa(link, filename)
-                            
-    #                         for tdt, tdd in tribe_tags:
-                                
-    #                             if get_rank(tdt) == "genus":
-    #                                 link = get_link(tdd)
-    #                                 if link:
-    #                                     name = get_name(tdd)
-    #                                     filename = generate_filename(base_folder, prefix, name)
-                            
-    #                                     genus_tags = gather_child_taxa(link, filename)
-                                        
-    #                                     for gdt, gdd in genus_tags:
-                                            
-    #                                         link = get_link(gdd)
-                                            
-    #                                         if link:
-    #                                             name = get_name(gdd)
-    #                                             species = gather_taxonomy(link, generate_filename(base_folder, prefix, name))
-                                                
-    #                                             print(species)
-                                            
-                                                           
-                                    
-                                    
-                    
-                
-                
-            
-    
-    
-    # soup = get_soup(url, filename)
-    
-    # # search for the child taxa section that contains all the names
-    # children = soup.find("dl", class_="child-taxa")
-    
-    # # names with hierarchy tags (subfamily, genus, ...)
-    # dts = children.find_all("dt")
-    
-    # # the real names
-    # dds = children.find_all("dd")
-
-    
-    # ranks = ["unranked", "kingdom", "phylum", "subphylum", "class", "order", "family", "subfamily", "tribe", "genus", "species"]
-    
-    # subfamily_count = 0
-    # tribe_count = 0
-    
-    
-    # species_list = ""
-    
-    
-    # genus_list = []
-    
-    # for dt, dd in zip(dts, dds):
-
-    #     if dt.text == "subfamily":
-    #         slink = dd.find("a")
-            
-    #         if slink:
-    #             slink = slink.get("href")
-    #             name = dd.find("span", class_="name").text
-                
-    #             subfamily_count += 1
-
-    #             tags = gather_child_taxa(NBN_HOME + slink, os.path.join(base_folder, prefix + "_" + name + "_" + str(subfamily_count) + ".pickle" ))
-                
-                
-                
-    #             for sdt, sdd in tags:
-    #                 print("-"*79)
-                    
-    #                 if sdt.text == "tribe":
-    #                     tlink = sdd.find("a")
-    #                     if tlink:
-    #                         tlink = tlink.get("href")
-                            
-    #                         name = sdd.find("span", class_="name").text
-    #                         print(name)
-                            
-    #                         tribe_tags = gather_child_taxa(NBN_HOME + tlink, os.path.join(base_folder, prefix + "_" + name + "_" + str(tribe_count) + ".pickle" ))
-                            
-    #                         for tdt, tdd in tribe_tags:
-    #                             print(tdt.text + ": " + tdd.find("span", class_="name").text)
-        
-    #     if dt.text == "genus":
-    #         link = dd.find("a").get("href")
-    #         pass
             
                        
                             
