@@ -188,7 +188,7 @@ def generate_lists(family_name, file_info, save_lists = True):
     
     def generate_specie_mp_taxa(specie, mp_taxa_parent_genus):
         name = specie["scientificName"].replace(specie["authorship"], "").strip()
-        author = specie["authorship"]
+        author = specie["authorship"].strip()
         specie_id = specie["speciesKey"]
         link = f"{api_url}/species/{specie_id}"
         
@@ -207,7 +207,7 @@ def generate_lists(family_name, file_info, save_lists = True):
             
             # add the genus to the genus list
             name = taxon["scientificName"].replace(taxon["authorship"], "").strip()
-            author = taxon["authorship"]
+            author = taxon["authorship"].strip()
             genus_id = taxon["genusKey"]
             link = f"{api_url}/species/{genus_id}"
             tax = Taxa.Taxa(name, author, link, None)

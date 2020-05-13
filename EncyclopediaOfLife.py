@@ -12,6 +12,7 @@ Created on Thu Apr  9 10:30:51 2020
 import request_handler
 import json
 import os
+import re
 
 import Taxa
 import ProgressBar
@@ -134,6 +135,9 @@ def generate_lists(family_name, fileinfo, save_lists = True):
             specie_name = parts[0] + " " + parts[1]
             # the rest is the author name
             author_name = "".join(p + " " for p in parts[2 : ])[:-1]
+            author_name = re.sub(" (\d\d\d\d)", r", \1", author_name)
+            
+            
             
             specie_link = eol_main + link.get("href")
             
@@ -175,6 +179,15 @@ if __name__ == "__main__":
     
     for d in spec_dict:
         print(d)
+    
+#    import re
+#    
+#    s = "(Staeger 1840)"
+#    
+#    a = re.sub(" (\d\d\d\d)", r", \1", s)
+#    
+#    
+#    print(a)
     
     
 

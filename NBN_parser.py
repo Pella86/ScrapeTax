@@ -8,6 +8,7 @@ Created on Wed Mar 18 09:55:42 2020
 import request_handler
 import Taxa
 import FileInfo
+import ProgressBar
 
 
 NBN_HOME = "https://species.nbnatlas.org"   
@@ -30,7 +31,6 @@ def gather_child_taxa(url, filename):
     if len(dts) != len(dds):
         raise Exception("Gather child taxa: dts / dds different length")
     
-    print("Child taxa found:", len(dts))
 
     # return the zipped elements
     return zip(dts, dds)
@@ -57,17 +57,12 @@ class NBNElement:
             return None  
     
     def get_name(self):
-        '''Method that gets the name (e.g. '''
+        '''Method that gets the name (e.g. Boletina plana)'''
         return self.html_name.find("span", class_="name").text
     
     def get_rank(self):
         '''Method that gets the rank (specie, genus, ...) '''
         return self.html_rank.text
-    
-    # def generate_filename(self, base_folder, prefix):
-    #     '''Method that generates the filename, same as generate_filename() 
-    #     function, but uses the name found in the get_name() function'''
-    #     return generate_filename(base_folder, prefix, self.get_name())
 
     def gather_child_elements(self):
         '''Method that gather the child elements from the page 
@@ -83,7 +78,7 @@ class NBNElement:
         '''Method that gets the author name for the element'''
         author = self.html_name.find("span", class_="author")
         if author:
-            return author.text
+            return author.text.strip()
         else:
             return "author not found"
 
@@ -106,17 +101,23 @@ def generate_lists(family_name, fileinfo, save_lists = True):
     
     family_guid = search_json["searchResults"]["results"][0]["guid"]
     
+    # parameters for the webpage corresponding to the family
     family_url = "https://species.nbnatlas.org/species/" + family_guid
-    
     
     filename = fileinfo.pickle_filename("family")
     
     taxa = gather_child_taxa(family_url, filename)
     
+    
+    # start getting the speceis
     genus_list = []
     species_list = []
     
+    pwheel = ProgressBar.ProgressWheel()
+    
     for dt, dd in taxa:
+        
+        pwheel.draw_symbol()
         
         element = NBNElement(dt, dd, fileinfo)
         
@@ -149,6 +150,7 @@ def generate_lists(family_name, fileinfo, save_lists = True):
             genus_list.append(Taxa.Taxa(name, author, element.get_link(), "none"))
                               
     for genus in genus_list:
+        pwheel.draw_symbol()
         
         filename = fileinfo.pickle_filename(f"{genus.name}_webpage")
         html_elements = gather_child_taxa(genus.link, filename)
@@ -158,7 +160,9 @@ def generate_lists(family_name, fileinfo, save_lists = True):
             
             taxa = Taxa.Taxa(specie.get_name(), specie.get_author(), specie.get_link(), genus)
             species_list.append(taxa)
-
+    
+    pwheel.end()
+    
     if save_lists:
 
         list_filename = fileinfo.mptaxa_filename("genus_list")
@@ -283,10 +287,9 @@ if __name__ == "__main__":
     base_folder = "./Data/NBN_test"
     prefix = "vespidae"
     
-    fi = FileInfo.FileInfo(base_folder, prefix)
-    
-    
     family_name = "Vespidae"
+    
+    fi = FileInfo.FileInfo(base_folder, "nbn", family_name)
     
     genus_list, specie_list = generate_lists(family_name, fi)
     

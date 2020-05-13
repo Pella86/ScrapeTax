@@ -64,7 +64,7 @@ class LabelTable:
         self.table = ET.SubElement(self.fhtml.body, "table")
         
  
-    def create_table(self, taxa_list, filename, source=""):
+    def create_table(self, taxa_list, filename):
         
         # fixed number of columns (fits an A4)
         n_cols = 4
@@ -142,9 +142,10 @@ class LabelTable:
                     else:
                         left.text = "Author not available"
                     
-                    right = ET.SubElement(last_line_div, "span")
-                    right.set("class", "right")
-                    right.text = source
+                    if taxa.source:
+                        right = ET.SubElement(last_line_div, "span")
+                        right.set("class", "right")
+                        right.text = "(" + taxa.source + ")"
     
         self.fhtml.generate_html_file(filename)
     

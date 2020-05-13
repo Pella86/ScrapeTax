@@ -124,20 +124,108 @@ def prod_main():
         
 
 
-PRODUCTION = True   
+PRODUCTION = False   
 
 if __name__ == "__main__":
     if PRODUCTION:
         prod_main()
     else:
         
-        base_folder = "./Data/Vespidae"
-        family_name = "Vespidae"
-        prefix = family_name.lower()
+        base_folder = "./Data/Fusion"
+        family_name = "Mycetophilidae"
         
-        fileinfo = FileInfo.FileInfo(base_folder, prefix)
+        print("EOL Analyisis")
+        fileinfo = FileInfo.FileInfo(base_folder, "eol", family_name)
         
-        glist, slist = EncyclopediaOfLife.generate_lists(family_name, fileinfo)
+        eol_glist, eol_slist = EncyclopediaOfLife.generate_lists(family_name, fileinfo)
+        
+        eol_list = eol_glist + eol_slist
+
+        print("NBN Analyisis")        
+        fileinfo = FileInfo.FileInfo(base_folder, "nbn", family_name)
+        
+        nbn_glist, nbn_slist = NBN_parser.generate_lists(family_name, fileinfo)
+        
+        nbn_list = nbn_glist + nbn_slist        
+
+        print("GBIF Analyisis")        
+        fileinfo = FileInfo.FileInfo(base_folder, "gbif", family_name)
+        
+        gbf_glist, gbf_slist = GBIF_downloader.generate_lists(family_name, fileinfo)
+        
+        gbf_list = gbf_glist + gbf_slist        
+        
+        fusion = []
+        
+        for gbf_taxa in gbf_list:
+            gbf_taxa.source = "g"
+            fusion.append(gbf_taxa)
+            
+        
+        for nbn_taxa in nbn_list:
+            for ftaxa in fusion:                
+                if nbn_taxa.name == ftaxa.name and nbn_taxa.author == ftaxa.author:
+                    ftaxa.source += "n"
+                    break
+            else:
+                nbn_taxa.source += "n"
+                fusion.append(nbn_taxa)
+
+
+        for eol_taxa in eol_list:
+            for ftaxa in fusion:
+                if eol_taxa.name == ftaxa.name and eol_taxa.author == ftaxa.author:
+                    ftaxa.source += "e"
+                    break
+            else:
+                eol_taxa.source += "e"
+                fusion.append(eol_taxa)                
+            
+        fusion.sort(key = lambda item : item.name)    
+#        for taxa in fusion:
+#            print(str(taxa) + "|" + taxa.source)
+#        
+        
+        genus_filtered = []
+        
+        #gfilter = ["Neoempheria", "Acnemia", "Azana", "Leptomorphus", "Neuratelia", "Neoplatyura", "Megalopelma", "Polylepta", "Sciophila", "Pyratula"]
+        #gfilter = ["Palaeodocosia", "Synplasta", "Syntemna", "Boletina", "Bolitophila", "Coelosia", "Gnoriste", "Grzegorzekia", "Docosia"]
+        gfilter = ["Leia", "Rondaniella", "Dynatosoma", "Mycetophila"]
+        
+        gdict = {}
+        
+        for g in gfilter:
+            gdict[g] = 0
+        
+        for taxa in fusion:
+            
+            for filt in gfilter:
+                if taxa.name.find(filt) != -1:
+                    genus_filtered.append(taxa)
+                    gdict[filt] += 1
+        
+        print("--- Items found ---")
+        for key, value in gdict.items():
+            print(key, value)
+        print("--------")
+        
+        fileinfo = FileInfo.FileInfo(base_folder, "all", family_name)
+        table = CreateLabelTable.LabelTable("safari")
+        table.create_table(genus_filtered, fileinfo.html_filename("taxa_table"))
+        
+        print("Table generated")
+            
+                    
+                    
+        
+        
+#        base_folder = "./Data/Vespidae"
+#        family_name = "Vespidae"
+#        prefix = family_name.lower()
+#        
+#        fileinfo = FileInfo.FileInfo(base_folder, prefix)
+#        
+#        glist, slist = EncyclopediaOfLife.generate_lists(family_name, fileinfo)
         
         # lt = CreateLabelTable.LabelTable()  
         # lt.create_table(slist, fileinfo.html_filename("table"))
