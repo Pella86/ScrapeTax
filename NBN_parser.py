@@ -83,96 +83,6 @@ class NBNElement:
             return "author not found"
 
 
-def generate_lists(family_name, fileinfo, save_lists = True):
-    '''Function that arranges the genuses and species in a list, the function
-    could be translated in a tree, but ... is difficult. The function returns
-    a list of Taxa with name, author and reference link'''
-    
-    api_url = "https://species-ws.nbnatlas.org/search?"
-    param = {}
-    param["q"] = family_name
-    param["fq"] = "idxtype:TAXON"
- 
-    req = request_handler.Request(api_url, fileinfo.pickle_filename("family_search"), param)
-    req.load()
-    
-    # pick the first result
-    search_json = req.get_json()
-    
-    family_guid = search_json["searchResults"]["results"][0]["guid"]
-    
-    # parameters for the webpage corresponding to the family
-    family_url = "https://species.nbnatlas.org/species/" + family_guid
-    
-    filename = fileinfo.pickle_filename("family")
-    
-    taxa = gather_child_taxa(family_url, filename)
-    
-    
-    # start getting the speceis
-    genus_list = []
-    species_list = []
-    
-    pwheel = ProgressBar.ProgressWheel()
-    
-    for dt, dd in taxa:
-        
-        pwheel.draw_symbol()
-        
-        element = NBNElement(dt, dd, fileinfo)
-        
-        if element.get_rank() == "subfamily":
-            
-            subfam = element.gather_child_elements()
-
-            for subf in subfam:
-                
-                if subf.get_rank() == "tribe":
-                    genuses = subf.gather_child_elements()
-                    
-                    for genus in genuses:
-                        if genus.get_rank() == "genus":
-                            name = genus.get_name()
-                            author = genus.get_author()
-                        
-                            genus_list.append(Taxa.Taxa(name, author, genus.get_link(), "none"))
-                
-                if subf.get_rank() == "genus":
-                    name = subf.get_name()
-                    author = subf.get_author()
-                    
-                    genus_list.append(Taxa.Taxa(name, author, subf.get_link(), "none"))
-        
-        if element.get_rank() == "genus":
-            name = element.get_name()
-            author = element.get_author()
-            
-            genus_list.append(Taxa.Taxa(name, author, element.get_link(), "none"))
-                              
-    for genus in genus_list:
-        pwheel.draw_symbol()
-        
-        filename = fileinfo.pickle_filename(f"{genus.name}_webpage")
-        html_elements = gather_child_taxa(genus.link, filename)
-        
-        for dt, dd in html_elements:
-            specie = NBNElement(dt, dd, fileinfo)            
-            
-            taxa = Taxa.Taxa(specie.get_name(), specie.get_author(), specie.get_link(), genus)
-            species_list.append(taxa)
-    
-    pwheel.end()
-    
-    if save_lists:
-
-        list_filename = fileinfo.mptaxa_filename("genus_list")
-        Taxa.save_taxa_list(genus_list, list_filename)
-        
-        list_filename = fileinfo.mptaxa_filename("species_list")
-        Taxa.save_taxa_list(species_list, list_filename)
-        
-    return genus_list, species_list
-
 def gather_taxonomy(url, filename):
     ''' Function that scraps the taxonomy of a specie,
     it searches in the classification section the various ranks, and groups
@@ -217,6 +127,168 @@ def gather_taxonomy(url, filename):
 
     return species
 
+
+def generate_lists(family_name, fileinfo, save_lists = True):
+    '''Function that arranges the genuses and species in a list, the function
+    could be translated in a tree, but ... is difficult. The function returns
+    a list of Taxa with name, author and reference link'''
+    
+    api_url = "https://species-ws.nbnatlas.org/search?"
+    param = {}
+    param["q"] = family_name
+    param["fq"] = "idxtype:TAXON"
+ 
+    req = request_handler.Request(api_url, fileinfo.pickle_filename("family_search"), param)
+    req.load()
+    
+    # pick the first result
+    search_json = req.get_json()
+    
+    family_guid = search_json["searchResults"]["results"][0]["guid"]
+    
+    # parameters for the webpage corresponding to the family
+    family_url = "https://species.nbnatlas.org/species/" + family_guid
+    
+    filename = fileinfo.pickle_filename("family")
+    
+    taxa = gather_child_taxa(family_url, filename)
+    
+    
+    # start getting the speceis
+    genus_list = []
+    species_list = []
+    
+    pwheel = ProgressBar.ProgressWheel()
+    
+    
+    for dt, dd in taxa:
+        
+        fam_taxa = Taxa.Taxa()
+        fam_taxa.family = family_name
+        
+        fam_taxa.rank = Taxa.Taxa.rank_genus
+        fam_taxa.source = "n"
+        
+        pwheel.draw_symbol()
+        
+        element = NBNElement(dt, dd, fileinfo)
+        
+        if element.get_rank() == "subfamily":
+            
+            subfam = element.gather_child_elements()
+
+            for subf in subfam:
+                
+                subfam_taxa = Taxa.Taxa()
+                subfam_taxa.copy_taxa(fam_taxa)
+                subfam_taxa.subfamily = element.get_name()
+                
+                if subf.get_rank() == "tribe":
+                    genuses = subf.gather_child_elements()
+                    
+                    for genus in genuses:
+                        if genus.get_rank() == "genus":
+                            
+                            taxa = Taxa.Taxa()
+                            taxa.copy_taxa(subfam_taxa)
+                            
+                            taxa.author = genus.get_author()
+                            taxa.genus = genus.get_name()
+                            taxa.links.append(genus.get_link())
+                            taxa.tribe = subf.get_name()
+                            
+                            genus_list.append(taxa)
+                
+                if subf.get_rank() == "genus":
+                    
+                    taxa = Taxa.Taxa()
+                    taxa.copy_taxa(subfam_taxa)
+
+                    taxa.author = genus.get_author()
+                    taxa.genus = genus.get_name()
+                    taxa.links.append(genus.get_link())
+                    
+                    genus_list.append(taxa)
+        
+        if element.get_rank() == "genus":
+            taxa = Taxa.Taxa()
+            taxa.copy_taxa(fam_taxa)
+
+            taxa.author = element.get_author()
+            taxa.genus = element.get_name()
+            taxa.links.append(element.get_link())
+            
+            genus_list.append(taxa)        
+                      
+    for genus in genus_list:
+        pwheel.draw_symbol()
+        
+        filename = fileinfo.pickle_filename(f"{genus.genus}_webpage")
+
+        html_elements = gather_child_taxa(genus.links[0], filename)
+        
+        for dt, dd in html_elements:
+            specie = NBNElement(dt, dd, fileinfo)            
+
+            taxa = Taxa.Taxa()
+            taxa.copy_taxa(genus)
+           
+            taxa.author = specie.get_author()
+            taxa.specie = specie.get_name().replace(genus.genus, "").strip()
+            taxa.rank = Taxa.Taxa.rank_specie
+            taxa.links.append(specie.get_link())
+            
+            species_list.append(taxa)
+            
+            # find subspecies somehow
+            soup = request_handler.get_soup(taxa.links[0], fileinfo.pickle_filename(taxa.specie))
+            children = soup.find("section", id="classification")
+            
+            dts = children.find_all("dt")
+            dds = children.find_all("dd")
+        
+            html_parts = zip(dts, dds)
+            
+            # compiles the specie + subspecie list
+            species = []
+            
+            species.append({})
+            
+            # find the subspecie and append the eventual subspecie name and author
+            
+            for dth, ddh in html_parts:
+                if dth.text == "subspecies":
+                    subspecie_name = ddh.find("span", class_="name").text.split(" ")[3]
+                    subspecie_author = ddh.find("span", class_="author").text
+                    species.append({"subspecies" : subspecie_name, "author" : subspecie_author})  
+                    
+                    staxa = Taxa.Taxa()
+                    staxa.copy_taxonomy(taxa)
+                    
+                    staxa.author = ddh.find("span", class_="author").text
+                    staxa.subspecie = ddh.find("span", class_="name").text.split(" ")[3]
+                    
+                    staxa.rank = Taxa.Taxa.rank_subspecie
+                    staxa.links.append(specie.get_link())
+                    staxa.source = "n"
+                    
+                    species_list.append(staxa)
+                    
+    
+    pwheel.end()
+    
+    if save_lists:
+
+        list_filename = fileinfo.mptaxa_filename("genus_list")
+        Taxa.save_taxa_list(genus_list, list_filename)
+        
+        list_filename = fileinfo.mptaxa_filename("species_list")
+        Taxa.save_taxa_list(species_list, list_filename)
+        
+    return genus_list, species_list
+
+
+
 def generate_species_dictionary(species_list, fileinfo):
     species_dicts = []
     
@@ -238,60 +310,21 @@ def generate_species_dictionary(species_list, fileinfo):
             
 
 if __name__ == "__main__":
-
-
-#    # Test the csv file construction
-#    
-#    # to do
-#    # - manage the authors for the subspecie
-#    # - move the non NBN specific functions to this file
-#    
-#    # load a specie taxa file
-#    
-#    # base_path = "./Data/Libellulidae"
-#    # family_url = "https://species.nbnatlas.org/species/NBNSYS0000160307" 
-#    # prefix = "libellulidae"
-#
-#    # base_path = "./Data/Psychidae"
-#    # family_url = "https://species.nbnatlas.org/species/NBNSYS0000160829" 
-#    # prefix = "psychidae"
-#
-#    base_path = "./Data/Vespidae"
-#    family_url = "https://species.nbnatlas.org/species/NBNSYS0000050803" 
-#    prefix = "vespidae"
-#
-#    # base_path = "./Data/Mycetophilidae"
-#    # family_url = "https://species.nbnatlas.org/species/NBNSYS0000160474" 
-#    # prefix = "mycetophilidae"   
-#    
-#    # base_path = "./Data/Formicidae"
-#    # family_url = "https://species.nbnatlas.org/species/NBNSYS0000037030" 
-#    # prefix = "formicidae"     
-#    
-#    # load family home page
-#    print("NBN_parser")
-#    
-#    base_folder = "./Data/Psychidae"
-#    prefix = "psychidae"
-#    url = "https://species.nbnatlas.org/species/NBNSYS0000160829"
-#    
-#    fileinfo = FileInfo.FileInfo(base_folder, prefix)
-#    
-#    genus_list, species_list = generate_lists(url, fileinfo)
-#    spec_dict = generate_species_dictionary(species_list, fileinfo)
-#    
-#    
-#    print(len(genus_list), len(spec_dict))
-    
     
     base_folder = "./Data/NBN_test"
-    prefix = "vespidae"
-    
     family_name = "Vespidae"
     
     fi = FileInfo.FileInfo(base_folder, "nbn", family_name)
     
     genus_list, specie_list = generate_lists(family_name, fi)
+    
+    
+    for genus in genus_list:
+        print(genus)
+    
+    for specie in specie_list:
+        specie.print_extended()
+    
     
 
         

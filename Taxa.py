@@ -10,25 +10,67 @@ import pickle
 
 class Taxa:
     ''' Small class that contains the taxon information'''
+
+    source_gbif = "g"
+    source_nbn = "n"
+    source_eol = "e"
     
-    def __init__(self, name, author, link, supertaxa):
-        # Name of the taxon, binomial for species, single for genus
-        self.name = str(name)
+    rank_subspecie = "subspecie"
+    rank_specie = "specie"
+    rank_genus = "genus"
+    rank_family = "family"
+    
+    def __init__(self):        
         
-        # author of the taxon
-        self.author = str(author)
+        self.specie = None
+        self.subspecie = None
+        self.genus = None
+        self.tribe = None
+        self.subfamily = None
+        self.family = None
         
-        # reference link, might change to reference links
-        self.link = link
+        self.author = None
         
-        # possible taxa connected to this taxa, never used?
-        self.super_taxa = supertaxa
+        self.links = []
         
-        # the website source, g for gbif, n for nbn, e for eol
-        self.source = ""
+        self.source = None
+        
+        self.rank = None
+        
+    def copy_taxonomy(self, taxa):
+        self.specie = taxa.specie
+        self.subspecie = taxa.subspecie
+        self.genus = taxa.genus
+        self.tribe = taxa.tribe
+        self.subfamily = taxa.subfamily
+        self.family = taxa.family
+        
+    def copy_attributes(self, taxa):
+        self.rank = taxa.rank
+        self.source = taxa.source
+    
+    def copy_taxa(self, taxa):
+        self.copy_attributes(taxa)
+        self.copy_taxonomy(taxa)
+    
+    def print_extended(self):
+        
+        print(self.rank.upper(), self.family, self.subfamily, self.tribe, self.genus, self.specie, self.subspecie, self.author)
         
     def __str__(self):
-        return self.name + " | " + self.author    
+        
+        if self.rank == self.rank_specie:
+            return self.genus + " " + self.specie + " | " + self.author
+        
+        elif self.rank == self.rank_genus:
+            return self.genus + " sp." + " | " + self.author
+        
+        elif self.rank == self.rank_subspecie:
+            return self.genus + " " + self.specie +  " " + self.subspecie + " | " + self.author
+        
+        else:
+            raise Exception("Taxa feature not implemented")
+        
 
 def save_taxa_list(taxa_list, filename):
     with open(filename, "wb") as f:
@@ -42,12 +84,17 @@ def load_taxa_list(filename):
     
 if __name__ == "__main__":
     
-    filename = "./Data/Vespidae/vespidae_genus_list.mptaxa"
+    taxa = Taxa()
     
+    taxa.specie = "edra"
+    taxa.genus = "Mycomiya"
+    taxa.author = "Vaisanen, 1994"
+    taxa.rank = Taxa.rank_specie
     
-    genus_list = load_taxa_list(filename)
+    print(taxa)
     
-    print(genus_list[0].link)
+    taxa.print_extended()
+    
     
     
     
