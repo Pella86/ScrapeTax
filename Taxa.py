@@ -9,12 +9,22 @@ import pickle
 
 
 class Taxa:
+    ''' Small class that contains the taxon information'''
     
     def __init__(self, name, author, link, supertaxa):
+        # Name of the taxon, binomial for species, single for genus
         self.name = str(name)
+        
+        # author of the taxon
         self.author = str(author)
+        
+        # reference link, might change to reference links
         self.link = link
+        
+        # possible taxa connected to this taxa, never used?
         self.super_taxa = supertaxa
+        
+        # the website source, g for gbif, n for nbn, e for eol
         self.source = ""
         
     def __str__(self):

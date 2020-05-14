@@ -135,6 +135,8 @@ class LabelTable:
                     # add the source to the last line
                     last_line_div = ET.SubElement(td, "div")
                     
+                    # The last line will contain on the left the author
+                    # and on the right the website souce
                     left = ET.SubElement(last_line_div, "span")
                     left.set("class", "left")
                     if taxa.author:

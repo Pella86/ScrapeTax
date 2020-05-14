@@ -79,7 +79,14 @@ class Request:
         print(self.url)
         
     def get_json(self):
+        if self.response == None:
+            self.load()
         return self.response.json()
+    
+    def get_soup(self):
+        if self.response == None:
+            self.load()
+        return bs4.BeautifulSoup(self.response.text, "html.parser")
 
 
 def load_request(url, filename):

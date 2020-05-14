@@ -133,9 +133,7 @@ def generate_lists(family_name, file_info, save_lists = True):
     #}
     
     
-    #print(json.dumps(req.response.json(), indent = 2, sort_keys = True))
-    
-    
+    # Get the childrens of the family
     limit_param = {}
     limit_param["limit"] = family_json["numDescendants"]
     
@@ -143,8 +141,10 @@ def generate_lists(family_name, file_info, save_lists = True):
     children_req.load()
     children_json = children_req.get_json()
     
+    # content of children json
     # children_json keys:
     # dict_keys(['offset', 'limit', 'endOfRecords', 'results'])
+    
     # example of the first element of the resulst (children_json[”results"][0])
     #  "authorship": "Hutton, 1904",
     #  "canonicalName": "Anomalomyia",
@@ -184,13 +184,15 @@ def generate_lists(family_name, file_info, save_lists = True):
     #  "taxonomicStatus": "ACCEPTED"
     
     
-    
-    
-    def generate_specie_mp_taxa(specie, mp_taxa_parent_genus):
-        name = specie["scientificName"].replace(specie["authorship"], "").strip()
-        author = specie["authorship"].strip()
-        specie_id = specie["speciesKey"]
-        link = f"{api_url}/species/{specie_id}"
+    # Small function to convert the json info in a Taxa
+    def generate_mp_taxa(gbif_taxon, mp_taxa_parent_genus):
+        name = gbif_taxon["scientificName"].replace(gbif_taxon["authorship"], "").strip()
+        author = gbif_taxon["authorship"].strip()
+        if gbif_taxon["rank"] == "GENUS":
+            taxon_id = gbif_taxon["genusKey"]
+        else:
+            taxon_id = gbif_taxon["speciesKey"]
+        link = f"{api_url}/species/{taxon_id}"
         
         return Taxa.Taxa(name, author, link, mp_taxa_parent_genus)
         
@@ -203,40 +205,47 @@ def generate_lists(family_name, file_info, save_lists = True):
     
     for i, taxon in enumerate(children_json["results"]):
         
+        # search for the genus, and if is a genus, find the children species
         if taxon["rank"] == "GENUS":
-            
-            # add the genus to the genus list
-            name = taxon["scientificName"].replace(taxon["authorship"], "").strip()
-            author = taxon["authorship"].strip()
-            genus_id = taxon["genusKey"]
-            link = f"{api_url}/species/{genus_id}"
-            tax = Taxa.Taxa(name, author, link, None)
-            
+            tax = generate_mp_taxa(taxon, None)
             genus_list.append(tax)
             
             # look for the next 
             limit_param["limit"] = taxon["numDescendants"]
             
-            genus_children_req = request_handler.Request(children_url(genus_id),
-                                                         file_info.pickle_filename(name),
-                                                         limit_param)
-            genus_children_req.load()
+            genus_id = taxon["genusKey"]
             
-            species_response = genus_children_req.get_json()
+            url = children_url(genus_id)
+            filename = file_info.pickle_filename(tax.name)
             
+            genus_child = request_handler.Request(url,
+                                                  filename,
+                                                  limit_param)
+            genus_child.load()
             
+            species_response = genus_child.get_json()
+            
+            # navigate throught the child taxa of the genus
             for specie in species_response["results"]:
                 
                 if specie["rank"] == "SPECIES":
-                    stax = generate_specie_mp_taxa(specie, tax)
+                    stax = generate_mp_taxa(specie, tax)
                 
                     species_list.append(stax)
+                                   
         
+        # pick the species that don't have a genus apparently
         if taxon["rank"] == "SPECIES":
-            stax = generate_specie_mp_taxa(taxon, None)
+            stax = generate_mp_taxa(taxon, None)
             species_list.append(stax)
         
         pbar.draw_bar(i)
+
+#        if taxon["rank"] != "GENUS" and taxon["rank"] != "SPECIES":
+#            if not ( "BOLD" in  taxon["scientificName"]):
+#                print(taxon["scientificName"])
+#                print(taxon["rank"])
+        
     
     species_list.sort(key=lambda t: t.name)
     
@@ -246,7 +255,7 @@ def generate_lists(family_name, file_info, save_lists = True):
 if __name__ == "__main__":    
     family_name = "Mycetophilidae"
     base_folder = "./Data/GBIF_test"
-    file_info = FileInfo.FileInfo(base_folder, family_name.lower())
+    file_info = FileInfo.FileInfo(base_folder, "gbif", family_name)
     
     genus_list, species_list = generate_lists(family_name, file_info)
     
