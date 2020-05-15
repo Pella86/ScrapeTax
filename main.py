@@ -153,35 +153,40 @@ if __name__ == "__main__":
         
         gbf_glist, gbf_slist = GBIF_downloader.generate_lists(family_name, fileinfo)
         
-        gbf_list = gbf_glist + gbf_slist        
+        gbf_list = gbf_glist + gbf_slist      
+        
+        print("Fusing the sources...")
         
         fusion = []
         
         for gbf_taxa in gbf_list:
-            gbf_taxa.source = "g"
             fusion.append(gbf_taxa)
             
         
         for nbn_taxa in nbn_list:
-            for ftaxa in fusion:                
-                if nbn_taxa.name == ftaxa.name and nbn_taxa.author == ftaxa.author:
-                    ftaxa.source += "n"
+            for ftaxa in fusion:   
+                
+                if ftaxa.is_equal(nbn_taxa):
+                    ftaxa.copy_taxonomy(nbn_taxa)
+                    ftaxa.source += nbn_taxa.source
+                    ftaxa.links += nbn_taxa.links
                     break
             else:
-                nbn_taxa.source += "n"
                 fusion.append(nbn_taxa)
 
 
         for eol_taxa in eol_list:
             for ftaxa in fusion:
-                if eol_taxa.name == ftaxa.name and eol_taxa.author == ftaxa.author:
-                    ftaxa.source += "e"
+                
+                if ftaxa.is_equal(eol_taxa):
+                    ftaxa.copy_taxonomy(eol_taxa)
+                    ftaxa.source += eol_taxa.source
+                    ftaxa.links += eol_taxa.links
                     break
             else:
-                eol_taxa.source += "e"
                 fusion.append(eol_taxa)                
             
-        fusion.sort(key = lambda item : item.name)    
+        fusion.sort(key = lambda item : item.genus + (item.specie if item.specie else ""))    
 #        for taxa in fusion:
 #            print(str(taxa) + "|" + taxa.source)
 #        
@@ -190,7 +195,9 @@ if __name__ == "__main__":
         
         #gfilter = ["Neoempheria", "Acnemia", "Azana", "Leptomorphus", "Neuratelia", "Neoplatyura", "Megalopelma", "Polylepta", "Sciophila", "Pyratula"]
         #gfilter = ["Palaeodocosia", "Synplasta", "Syntemna", "Boletina", "Bolitophila", "Coelosia", "Gnoriste", "Grzegorzekia", "Docosia"]
-        gfilter = ["Leia", "Rondaniella", "Dynatosoma", "Mycetophila"]
+        #gfilter = ["Leia", "Rondaniella", "Dynatosoma", "Mycetophila"]
+        gfilter = ["Phronia", "Trichonta", "Zygomyia", "Tarnania"]
+        
         
         gdict = {}
         
@@ -200,7 +207,7 @@ if __name__ == "__main__":
         for taxa in fusion:
             
             for filt in gfilter:
-                if taxa.name.find(filt) != -1:
+                if taxa.genus.find(filt) != -1:
                     genus_filtered.append(taxa)
                     gdict[filt] += 1
         
@@ -214,7 +221,6 @@ if __name__ == "__main__":
         table.create_table(genus_filtered, fileinfo.html_filename("taxa_table"))
         
         print("Table generated")
-            
                     
                     
         

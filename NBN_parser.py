@@ -244,35 +244,37 @@ def generate_lists(family_name, fileinfo, save_lists = True):
             soup = request_handler.get_soup(taxa.links[0], fileinfo.pickle_filename(taxa.specie))
             children = soup.find("section", id="classification")
             
-            dts = children.find_all("dt")
-            dds = children.find_all("dd")
-        
-            html_parts = zip(dts, dds)
+            if children:
             
-            # compiles the specie + subspecie list
-            species = []
+                dts = children.find_all("dt")
+                dds = children.find_all("dd")
             
-            species.append({})
-            
-            # find the subspecie and append the eventual subspecie name and author
-            
-            for dth, ddh in html_parts:
-                if dth.text == "subspecies":
-                    subspecie_name = ddh.find("span", class_="name").text.split(" ")[3]
-                    subspecie_author = ddh.find("span", class_="author").text
-                    species.append({"subspecies" : subspecie_name, "author" : subspecie_author})  
-                    
-                    staxa = Taxa.Taxa()
-                    staxa.copy_taxonomy(taxa)
-                    
-                    staxa.author = ddh.find("span", class_="author").text
-                    staxa.subspecie = ddh.find("span", class_="name").text.split(" ")[3]
-                    
-                    staxa.rank = Taxa.Taxa.rank_subspecie
-                    staxa.links.append(specie.get_link())
-                    staxa.source = "n"
-                    
-                    species_list.append(staxa)
+                html_parts = zip(dts, dds)
+                
+                # compiles the specie + subspecie list
+                species = []
+                
+                species.append({})
+                
+                # find the subspecie and append the eventual subspecie name and author
+                
+                for dth, ddh in html_parts:
+                    if dth.text == "subspecies":
+                        subspecie_name = ddh.find("span", class_="name").text.split(" ")[3]
+                        subspecie_author = ddh.find("span", class_="author").text
+                        species.append({"subspecies" : subspecie_name, "author" : subspecie_author})  
+                        
+                        staxa = Taxa.Taxa()
+                        staxa.copy_taxonomy(taxa)
+                        
+                        staxa.author = ddh.find("span", class_="author").text
+                        staxa.subspecie = ddh.find("span", class_="name").text.split(" ")[3]
+                        
+                        staxa.rank = Taxa.Taxa.rank_subspecie
+                        staxa.links.append(specie.get_link())
+                        staxa.source = "n"
+                        
+                        species_list.append(staxa)
                     
     
     pwheel.end()
@@ -287,25 +289,6 @@ def generate_lists(family_name, fileinfo, save_lists = True):
         
     return genus_list, species_list
 
-
-
-def generate_species_dictionary(species_list, fileinfo):
-    species_dicts = []
-    
-    for specie in species_list:
-        # get the specie link, is the member .link of the Taxa class
-        link = specie.link
-        if not link.startswith(NBN_HOME):
-            link = NBN_HOME + "/" + specie.link
-              
-        filename = fileinfo.pickle_filename(specie.name.replace(" ", "_"))
-        species = gather_taxonomy(link, filename)
-         
-        # add the author of the specie which is still not in the dictionary
-        species[0]["author"] = specie.author   
-    
-        species_dicts += species
-    return species_dicts
     
             
 

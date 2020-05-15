@@ -9,6 +9,8 @@ import xml.etree.ElementTree as ET
 
 import CreateHTMLFile
 
+import Taxa
+
 
 # =============================================================================
 # Labels table creation
@@ -94,20 +96,18 @@ class LabelTable:
                 if  cur_index < len(taxa_list):
                     
                     taxa = taxa_list[cur_index]
-
-                    # divide genus and specie
-                    genspe = taxa.name.split(" ")
-
-                    # if the name is binomial (e.g. Metisa plana)
-                    if len(genspe) >= 2:                        
-                        genus_str = genspe[0]
-                        specie_str = "".join([n + " " for n in genspe[1:]])
                     
-                    # if the name is only the genus (e.g Metisa)
-                    elif len(genspe) == 1:
-                        genus_str = genspe[0]
+                    genus_str = taxa.genus
+                    
+                    specie_str = ""
+                    if taxa.specie == None:
                         specie_str = "sp."
- 
+                    else:
+                        specie_str = taxa.specie
+                    
+                    if taxa.subspecie != None:
+                        specie_str += " " + taxa.subspecie
+                    
                     # Line corresponding to the genus
                     td = ET.SubElement(tr, "td")
                     
@@ -124,13 +124,6 @@ class LabelTable:
                         specie = ET.SubElement(td, "i")
                         specie.text = specie_str
                         ET.SubElement(td, "br")
-
-                    # Line corresponding to author
-#                    author = ET.SubElement(td, "div")
-#                    if taxa.author:
-#                        author.text = taxa.author
-#                    else:
-#                        author.text = "Author not available"
                     
                     # add the source to the last line
                     last_line_div = ET.SubElement(td, "div")

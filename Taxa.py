@@ -38,11 +38,11 @@ class Taxa:
         self.rank = None
         
     def copy_taxonomy(self, taxa):
-        self.specie = taxa.specie
+        self.specie = taxa.specie 
         self.subspecie = taxa.subspecie
         self.genus = taxa.genus
-        self.tribe = taxa.tribe
-        self.subfamily = taxa.subfamily
+        self.tribe = taxa.tribe if taxa.tribe else self.tribe
+        self.subfamily = taxa.subfamily if taxa.subfamily else self.subfamily
         self.family = taxa.family
         
     def copy_attributes(self, taxa):
@@ -57,16 +57,36 @@ class Taxa:
         
         print(self.rank.upper(), self.family, self.subfamily, self.tribe, self.genus, self.specie, self.subspecie, self.author)
         
+    
+    def is_equal(self, taxa):
+        
+        if self.subfamily != None and taxa.subfamily != None:
+            if self.subfamily != taxa.subfamily:
+                return False
+
+        if self.tribe != None and taxa.tribe != None:
+            if self.tribe != taxa.tribe:
+                return False
+        
+        if self.author != None and taxa.author != None:
+            if self.author != taxa.author:
+                return False
+        
+        if self.genus == taxa.genus and self.specie == taxa.specie and self.subspecie == taxa.subspecie:
+            return True
+        else:
+            return False
+        
     def __str__(self):
         
         if self.rank == self.rank_specie:
-            return self.genus + " " + self.specie + " | " + self.author
+            return self.genus + " " + self.specie + " | " + (self.author if self.author else "No author available")
         
         elif self.rank == self.rank_genus:
-            return self.genus + " sp." + " | " + self.author
+            return self.genus + " sp." + " | " + (self.author if self.author else "No author available")
         
         elif self.rank == self.rank_subspecie:
-            return self.genus + " " + self.specie +  " " + self.subspecie + " | " + self.author
+            return self.genus + " " + self.specie +  " " + self.subspecie + " | " + self.author 
         
         else:
             raise Exception("Taxa feature not implemented")

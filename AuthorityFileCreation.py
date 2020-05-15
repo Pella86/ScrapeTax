@@ -7,12 +7,13 @@ Created on Mon Apr 20 10:59:46 2020
 
 import ProgressBar
 import CreateHTMLFile
+import Taxa
 
 # =============================================================================
 # Function to create the authority file
 # =============================================================================
 
-def create_authority_lines(species_dicts):
+def create_authority_lines(taxa_list):
     ''' function that given a list of taxonomic dictionary of species creates
     a line of the authority file separated and formatted (utf-8). The file can
     be imported in excel'''
@@ -29,62 +30,53 @@ def create_authority_lines(species_dicts):
     lines = []
     
     
-    pb = ProgressBar.ProgressBar(len(species_dicts))
-
+    pb = ProgressBar.ProgressBar(len(taxa_list))
     
-    for n, tax_dict in enumerate(species_dicts):
+    
+    for i, taxa in enumerate(taxa_list):
         
-        # taxonomical names in order of how they are in the authority file
-        elements_list = []
-         
-        # creates the string based on the rank if  the rank exists
-        # else puts a space
-        taxonomical_names = []
-        for tax_rank in elements:
-            tax_name = tax_dict.get(tax_rank)
-            if tax_name:
-                taxonomical_names.append(tax_name)
-            else:
-                taxonomical_names.append(" ")
-                
-        elements_list.append(taxonomical_names)
-        
-        pb.draw_bar(n)
-        
-        # Compose the line from the elements
         line = ""
-        for taxonomical_names in elements_list:
-            
-            # creates the line enumerating the species
-            # it inserts a Excel formula so that is easier to remove rows
-            if n == 0:
-                line += "1" + separator     
-            else:
-                line += f"= A{n + 1} + 1" + separator
-                
-            
-            # attach to the line the corresponding names
-            for i, tax_name in enumerate(taxonomical_names):
-                # if the name has spaces surround it with "
-                if tax_name.find(" ") >= 0:
-                    tax_name = f'"{tax_name}"'
-                
-                # if is the last element dont put the separator
-                if i == len(taxonomical_names) - 1:
-                    line += tax_name
-                else:
-                    line += tax_name + separator
-            line += "\n"
+        
+        if i == 0:
+            line += "1" + separator     
+        else:
+            line += f"= A{i + 1} + 1" + separator     
+        
+        line += taxa.family + separator
+        
+        line += (f'"{taxa.subfamily}"' if taxa.subfamily else " ") + separator
+        
+        line += (f'"{taxa.tribe}"' if taxa.tribe else " ") + separator
+        
+        line += (f'"{taxa.genus}"' if taxa.genus else " ") + separator
+
+        line += (f'"{taxa.specie}"' if taxa.specie else "sp.") + separator
+
+        line += (f'"{taxa.subspecie}"' if taxa.subspecie else " ") + separator
+
+        line += " " + separator # infraspecific rank
+
+        line += " " + separator # infraspecific epithet
+
+        line +=  (f'"{taxa.author}"' if taxa.author else " ") + separator 
+
+        line +=  "".join(f'{link} ' for link in taxa.links )      
+        
+        line += "\n"
+        
+        print(line)
         
         lines.append(line)
-
+        
+        pb.draw_bar(i)
+    
     return lines    
     
-def save_authority_file(filename, species_dict):
+def save_authority_file(filename, taxa_list):
     ''' saves the authority file on disk and adds the headers'''
     
     csv_file = " ,Family,Subfamily,Tribe,Genus,SpecificEpithet,SubspecificEpithet,InfraspecificRank,InfraspecificEpithet,Authorship\n".encode("utf8")
-    lines = create_authority_lines(species_dict)
+    lines = create_authority_lines(taxa_list)
     for line in lines:
         csv_file += line.encode("utf8")
     
@@ -94,12 +86,12 @@ def save_authority_file(filename, species_dict):
     print("saved file in:", filename)
 
 
-def generate_authority_file(species_dict, fileinfo):
+def generate_authority_file(taxa_list, fileinfo):
     ''' generates the filename and passes it to the save functio'''
       
     csv_filename = fileinfo.csv_filename("authority_file")
         
-    save_authority_file(csv_filename, species_dict)
+    save_authority_file(csv_filename, taxa_list)
     
     
     
@@ -118,7 +110,7 @@ def generate_authority_list(genus_list, species_list, fileinfo):
     fhtml.add_line_break()
     
     for genus in genus_list:
-        fhtml.add_italics_element(genus.name)
+        fhtml.add_italics_element(genus.genus)
         fhtml.add_element(", ")
         fhtml.add_element(genus.author)
         fhtml.add_line_break()
@@ -127,7 +119,7 @@ def generate_authority_list(genus_list, species_list, fileinfo):
     fhtml.add_line_break()
     
     for specie in species_list:
-        fhtml.add_italics_element(specie.name)
+        fhtml.add_italics_element(specie.genus + " " + specie.specie)
         fhtml.add_element(", ")
         fhtml.add_element(specie.author)
         fhtml.add_line_break()

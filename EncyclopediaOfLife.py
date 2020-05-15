@@ -48,7 +48,7 @@ def generate_lists(family_name, fileinfo, save_lists = True):
     # params["filter_by_string"] = "???"
     # params["cache_ttl"] = "n seconds in cache"
     
-    print("Downloading infos from the query with parameters:", params)
+    print("EOL: Downloading infos from the query with parameters:", params["q"])
     
     path = fileinfo.pickle_filename("eol_query")
     req = request_handler.Request(eol_api, path, params)
@@ -57,6 +57,7 @@ def generate_lists(family_name, fileinfo, save_lists = True):
     json_data = req.response.json()
     
     # shows the results
+    print("EOL: Query results list:")
     for n, result in enumerate(json_data["results"]):
         print(n, result["title"])
 
@@ -87,6 +88,11 @@ def generate_lists(family_name, fileinfo, save_lists = True):
     genus_list = []
     collect_genus = False
     
+    fam_taxa = Taxa.Taxa()
+    fam_taxa.family = family_name
+    fam_taxa.source = "e"
+    fam_taxa.rank = Taxa.Taxa.rank_family
+    
     for name in names:
         
         if collect_genus == True:
@@ -95,10 +101,11 @@ def generate_lists(family_name, fileinfo, save_lists = True):
             if name.text[::-1][0:4] == "idae"[::-1]:
                 collect_genus = False
             else: 
-                genus = Taxa.Taxa(name.text,
-                                  None, # no author
-                                  eol_main + name.get("href"),
-                                  None)  # no super taxa
+                genus = Taxa.Taxa()
+                genus.copy_taxa(fam_taxa)
+                genus.rank = Taxa.Taxa.rank_genus
+                genus.genus = name.text
+                genus.links.append(eol_main + name.get("href"))
                 genus_list.append(genus)
             
         
@@ -113,9 +120,9 @@ def generate_lists(family_name, fileinfo, save_lists = True):
         
         #open the website, look for author and specie list
         
-        filename = fileinfo.pickle_filename(taxa.name)
+        filename = fileinfo.pickle_filename(taxa.genus)
 
-        s = request_handler.get_soup(taxa.link, filename)
+        s = request_handler.get_soup(taxa.links[0], filename)
         
         div = s.find("div", {"class": "page-children"})
         
@@ -132,34 +139,24 @@ def generate_lists(family_name, fileinfo, save_lists = True):
                 continue
                 
             # first 2 elements are the binomial nomenclature
-            specie_name = parts[0] + " " + parts[1]
+            specie_name = parts[1]
             # the rest is the author name
             author_name = "".join(p + " " for p in parts[2 : ])[:-1]
             author_name = re.sub(" (\d\d\d\d)", r", \1", author_name)
             
-            
-            
             specie_link = eol_main + link.get("href")
             
-            specie = Taxa.Taxa(specie_name, author_name,  specie_link, taxa)
+            specie = Taxa.Taxa()
+            specie.copy_taxa(taxa)
+            specie.rank = Taxa.Taxa.rank_specie
+            specie.specie = specie_name
+            specie.author = author_name
+            specie.links.append(specie_link)
+            
             species_list.append(specie)
     
         pbar.draw_bar(i)
     return genus_list, species_list
-
-
-def generate_specie_dictionary(species_list, family):
-    species_dicts = []
-    for specie in species_list:
-        
-        sdict = {}
-        sdict["family"] = family
-        name_parts = specie.name.split(" ")
-        sdict["genus"] = name_parts[0]
-        sdict["species"] = name_parts[1]
-        sdict["author"] = specie.author
-        species_dicts.append(sdict)
-    return species_dicts
     
 
 # create a function for the authority file independent from NBN Atlas
@@ -168,27 +165,28 @@ def generate_specie_dictionary(species_list, family):
 
 if __name__ == "__main__":
     family_name = "Formicidae"
-    base_folder = "./Data/Formicidae"
+    base_folder = "./Data/EOL_test"
     prefix = "formicidae"
     
     import FileInfo
-    fileinfo = FileInfo.FileInfo(base_folder, prefix)
+    fileinfo = FileInfo.FileInfo(base_folder, "eol", family_name)
     
-    _, species_list = generate_lists(family_name, fileinfo)
-    spec_dict = generate_specie_dictionary(species_list, family_name)
+#    _, species_list = generate_lists(family_name, fileinfo)
+#    spec_dict = generate_specie_dictionary(species_list, family_name)
+#    
+#    for d in spec_dict:
+#        print(d)
+#    
     
-    for d in spec_dict:
-        print(d)
+    genus_list, specie_list = generate_lists(family_name, fileinfo)
     
-#    import re
-#    
-#    s = "(Staeger 1840)"
-#    
-#    a = re.sub(" (\d\d\d\d)", r", \1", s)
-#    
-#    
-#    print(a)
     
+    import AuthorityFileCreation
+    
+    
+    AuthorityFileCreation.generate_authority_list(genus_list, specie_list, fileinfo)
+    
+    AuthorityFileCreation.generate_authority_file(genus_list + specie_list, fileinfo)
     
 
 
