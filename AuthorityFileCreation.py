@@ -18,10 +18,6 @@ def create_authority_lines(taxa_list):
     a line of the authority file separated and formatted (utf-8). The file can
     be imported in excel'''
     
-    # elements to be included in the file
-    elements = ["family", "subfamily", "tribe", "genus", "species",
-                "subspecies", "InfraspecificRank", "Infraspecific Epitheth",
-                "author"]
     
     # Data will be comma separated
     separator = ","
@@ -64,8 +60,6 @@ def create_authority_lines(taxa_list):
         
         line += "\n"
         
-        print(line)
-        
         lines.append(line)
         
         pb.draw_bar(i)
@@ -83,7 +77,7 @@ def save_authority_file(filename, taxa_list):
     with open(filename, "wb") as f:
         f.write(csv_file)
     
-    print("saved file in:", filename)
+    print("Authority file saved file in:", filename)
 
 
 def generate_authority_file(taxa_list, fileinfo):
@@ -99,7 +93,7 @@ def generate_authority_file(taxa_list, fileinfo):
 #  Function to create the authority list    
 # =============================================================================
 
-def generate_authority_list(genus_list, species_list, fileinfo):
+def generate_authority_list(taxa_list, fileinfo):
     
     fhtml = CreateHTMLFile.CreateHTMLFile()
     # add date of creation and how many taxas are in the file
@@ -109,16 +103,19 @@ def generate_authority_list(genus_list, species_list, fileinfo):
     fhtml.add_element("--- Genuses ---")
     fhtml.add_line_break()
     
-    for genus in genus_list:
+    for genus in filter(lambda taxa : taxa.rank == Taxa.Taxa.rank_genus, taxa_list):
         fhtml.add_italics_element(genus.genus)
         fhtml.add_element(", ")
-        fhtml.add_element(genus.author)
+        if genus.author:
+            fhtml.add_element(genus.author)
+        else:
+            fhtml.add_element("author not available")
         fhtml.add_line_break()
 
     fhtml.add_element("--- Species ---")
     fhtml.add_line_break()
     
-    for specie in species_list:
+    for specie in filter(lambda taxa : taxa.rank == Taxa.Taxa.rank_specie, taxa_list):
         fhtml.add_italics_element(specie.genus + " " + specie.specie)
         fhtml.add_element(", ")
         fhtml.add_element(specie.author)

@@ -80,7 +80,7 @@ class NBNElement:
         if author:
             return author.text.strip()
         else:
-            return "author not found"
+            return None
 
 
 def gather_taxonomy(url, filename):
@@ -160,7 +160,7 @@ def generate_lists(family_name, fileinfo, save_lists = True):
     
     pwheel = ProgressBar.ProgressWheel()
     
-    
+    # search for the child taxa
     for dt, dd in taxa:
         
         fam_taxa = Taxa.Taxa()
@@ -173,6 +173,7 @@ def generate_lists(family_name, fileinfo, save_lists = True):
         
         element = NBNElement(dt, dd, fileinfo)
         
+        # if is a subfamily
         if element.get_rank() == "subfamily":
             
             subfam = element.gather_child_elements()
@@ -186,6 +187,7 @@ def generate_lists(family_name, fileinfo, save_lists = True):
                 if subf.get_rank() == "tribe":
                     genuses = subf.gather_child_elements()
                     
+                    # if is a genus with a tribe and subfamily
                     for genus in genuses:
                         if genus.get_rank() == "genus":
                             
@@ -199,6 +201,7 @@ def generate_lists(family_name, fileinfo, save_lists = True):
                             
                             genus_list.append(taxa)
                 
+                # if is a genus with subfamily without a tribe
                 if subf.get_rank() == "genus":
                     
                     taxa = Taxa.Taxa()
@@ -210,6 +213,7 @@ def generate_lists(family_name, fileinfo, save_lists = True):
                     
                     genus_list.append(taxa)
         
+        # if is a genus without subfamily
         if element.get_rank() == "genus":
             taxa = Taxa.Taxa()
             taxa.copy_taxa(fam_taxa)

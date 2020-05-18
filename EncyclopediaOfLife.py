@@ -157,11 +157,7 @@ def generate_lists(family_name, fileinfo, save_lists = True):
     
         pbar.draw_bar(i)
     return genus_list, species_list
-    
 
-# create a function for the authority file independent from NBN Atlas
-# craete a function for EoL that returns the dict
-    
 
 if __name__ == "__main__":
     family_name = "Formicidae"

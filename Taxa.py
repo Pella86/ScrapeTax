@@ -22,22 +22,29 @@ class Taxa:
     
     def __init__(self):        
         
-        self.specie = None
+        # taxonomic informations
         self.subspecie = None
+        self.specie = None
         self.genus = None
         self.tribe = None
         self.subfamily = None
         self.family = None
         
+        # Author corresponding to the rank        
         self.author = None
         
+        # Relative links
         self.links = []
         
+        # Source website
         self.source = None
         
+        # rank of the taxonomic information
         self.rank = None
         
     def copy_taxonomy(self, taxa):
+        ''' Copies the taxonomy from a given taxa'''
+    
         self.specie = taxa.specie 
         self.subspecie = taxa.subspecie
         self.genus = taxa.genus
@@ -46,6 +53,7 @@ class Taxa:
         self.family = taxa.family
         
     def copy_attributes(self, taxa):
+        ''' Copy attributes not relevant to the taxonomy'''
         self.rank = taxa.rank
         self.source = taxa.source
     
@@ -54,12 +62,14 @@ class Taxa:
         self.copy_taxonomy(taxa)
     
     def print_extended(self):
-        
         print(self.rank.upper(), self.family, self.subfamily, self.tribe, self.genus, self.specie, self.subspecie, self.author)
         
     
     def is_equal(self, taxa):
-        
+        ''' Function that tells if two taxa are equal, 
+                if one field is None is considered as equal to an other but if
+                is specie, genus or author than the taxa are different
+        '''
         if self.subfamily != None and taxa.subfamily != None:
             if self.subfamily != taxa.subfamily:
                 return False

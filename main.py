@@ -18,6 +18,77 @@ import FileInfo
 import GBIF_downloader
 
 # =============================================================================
+# Fusion functions
+# =============================================================================
+
+
+def fuse_taxa(taxa_lists):
+    
+    if len(taxa_lists) < 1: 
+        raise Exception("Fuse data: taxa_lists has less than one element")
+    
+    fusion_list = []
+    
+    # fill the fusion list with the first element of taxa list
+    fusion_list += taxa_lists[0]
+    taxa_lists.pop(0)
+    
+    # for the rest compare them and add them to the fusion if is missing
+    for taxa_list in taxa_lists:
+        
+        # for each taxa in the list
+        for taxa in taxa_list:
+            
+            for ftaxa in fusion_list:
+                # compare it with the taxa, if is already there add the links 
+                # sources and eventual taxonomy differences
+                
+                if ftaxa.is_equal(taxa):
+                    ftaxa.copy_taxonomy(taxa)
+                    ftaxa.source += taxa.source
+                    ftaxa.links += taxa.links
+                    break
+            else:
+                fusion_list.append(taxa)
+                
+    fusion_list.sort(key = lambda item : item.genus + (item.specie if item.specie else ""))
+    
+    return fusion_list
+
+
+def filter_taxa(taxa_list, genera_filter):
+    
+    if genera_filter:
+    
+        genus_filtered = []
+    
+        # little counter    
+        
+        genus_count = {}
+            
+        for g in gfilter:
+            genus_count[g] = 0
+        
+        for taxa in fusion:
+            
+            for filt in genera_filter:
+                if taxa.genus.find(filt) != -1:
+                    genus_filtered.append(taxa)
+                    genus_count[filt] += 1
+        
+        print("--- Items found in genus filtering ---")
+        for key, value in genus_count.items():
+            print(key, value)
+        print("--------------------------------------")
+    
+    else:
+        genus_filtered = taxa_list
+    
+    return genus_filtered
+    
+        
+
+# =============================================================================
 # Main 
 # =============================================================================
  
@@ -32,42 +103,77 @@ def get_input(title, input_sentence, default = None):
     return choice
 
 
+def parse_sources():
+    
+    correct_answer = False
+    
+    while not correct_answer:
+        
+        sources = get_input("Chose a website (nbn, eol, gbif)", "website")
+        
+        sources_parts = sources.split(",")
+        sources_parts = [source.strip() for source in sources_parts]
+        
+        return sources_parts
+        
+
 def prod_main():
     
     
     # title
     print("Scrape Tax")
     print("Program to gather informations from online databases about species and genuses")
-     
+    
+    # Gather the path information
     base_folder = get_input("The path to the folder where the file will be saved, the folder must already exist. Use dot (.) to access the current folder",
                             "path",
                             "./Data")
 
+    
+    # gather the source website
+    sources = parse_sources()
 
-    source = get_input("Chose a website (nbn, eol, gbif)",
-                       "website",
-                       "gbif")
-
+    # Get the family
     family_name = get_input("Input the family name",
                                 "family",
                                 "Vespidae")
     
-    
-    fileinfo = FileInfo.FileInfo(base_folder, source, family_name)
-    
-    print("Generate lists...")
-    
-    # generate the lists
-    if source == "nbn":
-        genus_list, species_list = NBN_parser.generate_lists(family_name, fileinfo)
+    # Add the option to filter by genus
+    genera_filter = get_input("Give genera names comma separated", "genera", [])
+    if genera_filter:
+        genera_filter = [genus.strip() for genus in genera_filter.split(",")]
 
-    elif source == "eol":
-        genus_list, species_list = EncyclopediaOfLife.generate_lists(family_name, fileinfo)
+
+    print("Generate lists for: ", "".join(source + " " for source in sources))
     
-    elif source == "gbif":
-        genus_list, species_list = GBIF_downloader.generate_lists(family_name, fileinfo)        
+    taxa_lists = []
     
+    for s in sources:
+    # generate the lists
+        if s == "nbn":
+            fileinfo = FileInfo.FileInfo(base_folder, "nbn", family_name)
+            genus_list, species_list = NBN_parser.generate_lists(family_name, fileinfo)
+            taxa_lists.append(genus_list + species_list)
     
+        elif s == "eol":
+            fileinfo = FileInfo.FileInfo(base_folder, "eol", family_name)
+            genus_list, species_list = EncyclopediaOfLife.generate_lists(family_name, fileinfo)
+            taxa_lists.append(genus_list + species_list)
+        
+        elif s == "gbif":
+            fileinfo = FileInfo.FileInfo(base_folder, "gbif", family_name)
+            genus_list, species_list = GBIF_downloader.generate_lists(family_name, fileinfo)         
+            taxa_lists.append(genus_list + species_list)
+            
+    
+    # create the informations
+    fileinfo = FileInfo.FileInfo(base_folder, "".join(sources), family_name)    
+    
+    taxa_list = fuse_taxa(taxa_lists)
+    
+    taxa_list = filter_taxa(taxa_list, genera_filter)
+
+
     exit_command = False
     
     while not exit_command:
@@ -91,7 +197,7 @@ def prod_main():
             if choice == 1:
                 print("Generating authority list...")
                 
-                AuthorityFileCreation.generate_authority_list(genus_list, species_list, fileinfo)  
+                AuthorityFileCreation.generate_authority_list(taxa_list, fileinfo)  
                 
                 print("Authority list created")
             
@@ -100,22 +206,14 @@ def prod_main():
                 
                 table = CreateLabelTable.LabelTable("safari")
                 
-                whole_list = genus_list + species_list
-                
-                table.create_table(whole_list, fileinfo.html_filename("label_table"))
+                table.create_table(taxa_list, fileinfo.html_filename("label_table"))
 
                 print("Table created")
                 
             elif choice == 3:
                 print("Generating authority file...")
-                
-                if source == "nbn":
-                    spec_dict = NBN_parser.generate_species_dictionary(species_list, fileinfo)
-                elif source == "eol":
-                    spec_dict = EncyclopediaOfLife.generate_specie_dictionary(species_list, family_name)
                     
-                    
-                AuthorityFileCreation.generate_authority_file(spec_dict, fileinfo)
+                AuthorityFileCreation.generate_authority_file(taxa_list, fileinfo)
                 
                 print("Authority file created.")
             else:
@@ -124,7 +222,7 @@ def prod_main():
         
 
 
-PRODUCTION = False   
+PRODUCTION = True   
 
 if __name__ == "__main__":
     if PRODUCTION:
@@ -157,64 +255,17 @@ if __name__ == "__main__":
         
         print("Fusing the sources...")
         
-        fusion = []
         
-        for gbf_taxa in gbf_list:
-            fusion.append(gbf_taxa)
-            
-        
-        for nbn_taxa in nbn_list:
-            for ftaxa in fusion:   
-                
-                if ftaxa.is_equal(nbn_taxa):
-                    ftaxa.copy_taxonomy(nbn_taxa)
-                    ftaxa.source += nbn_taxa.source
-                    ftaxa.links += nbn_taxa.links
-                    break
-            else:
-                fusion.append(nbn_taxa)
-
-
-        for eol_taxa in eol_list:
-            for ftaxa in fusion:
-                
-                if ftaxa.is_equal(eol_taxa):
-                    ftaxa.copy_taxonomy(eol_taxa)
-                    ftaxa.source += eol_taxa.source
-                    ftaxa.links += eol_taxa.links
-                    break
-            else:
-                fusion.append(eol_taxa)                
-            
-        fusion.sort(key = lambda item : item.genus + (item.specie if item.specie else ""))    
-#        for taxa in fusion:
-#            print(str(taxa) + "|" + taxa.source)
-#        
-        
-        genus_filtered = []
+        fusion = fuse_taxa([gbf_list, nbn_list, eol_list])
         
         #gfilter = ["Neoempheria", "Acnemia", "Azana", "Leptomorphus", "Neuratelia", "Neoplatyura", "Megalopelma", "Polylepta", "Sciophila", "Pyratula"]
         #gfilter = ["Palaeodocosia", "Synplasta", "Syntemna", "Boletina", "Bolitophila", "Coelosia", "Gnoriste", "Grzegorzekia", "Docosia"]
         #gfilter = ["Leia", "Rondaniella", "Dynatosoma", "Mycetophila"]
-        gfilter = ["Phronia", "Trichonta", "Zygomyia", "Tarnania"]
+        #gfilter = ["Phronia", "Trichonta", "Zygomyia", "Tarnania"]
+        #gfilter = ["Allodia", "Allodiopsis", "Anatella", "Brevicornu", "Brevicornis", "Cordyla"]
+        gfilter = ["Exechia", "Exechiopsis", "Rymosia", "Epicypta"]
         
-        
-        gdict = {}
-        
-        for g in gfilter:
-            gdict[g] = 0
-        
-        for taxa in fusion:
-            
-            for filt in gfilter:
-                if taxa.genus.find(filt) != -1:
-                    genus_filtered.append(taxa)
-                    gdict[filt] += 1
-        
-        print("--- Items found ---")
-        for key, value in gdict.items():
-            print(key, value)
-        print("--------")
+        genus_filtered = filter_taxa(fusion, gfilter)
         
         fileinfo = FileInfo.FileInfo(base_folder, "all", family_name)
         table = CreateLabelTable.LabelTable("safari")
