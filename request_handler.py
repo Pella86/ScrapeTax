@@ -14,7 +14,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 
@@ -88,6 +88,9 @@ class Request:
         if self.response == None:
             self.load()
         return bs4.BeautifulSoup(self.response.text, "html.parser")
+    
+    def get_html(self):
+        return self.response.text
 
 
 def load_request(url, filename):

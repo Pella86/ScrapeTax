@@ -14,6 +14,7 @@ class Taxa:
     source_gbif = "g"
     source_nbn = "n"
     source_eol = "e"
+    source_bold = "b"
     
     rank_subspecie = "subspecie"
     rank_specie = "specie"
@@ -93,19 +94,28 @@ class Taxa:
         else:
             return False
         
+    
+    def str_author(self):
+        return self.author if self.author else "No author available"
+        
     def __str__(self):
         
         if self.rank == self.rank_specie:
-            return self.genus + " " + self.specie + " | " + (self.author if self.author else "No author available")
+            return self.genus + " " + self.specie + " | " + self.str_author()
         
         elif self.rank == self.rank_genus:
-            return self.genus + " sp." + " | " + (self.author if self.author else "No author available")
+            return self.genus + " sp." + " | " + self.str_author()
         
         elif self.rank == self.rank_subspecie:
-            return self.genus + " " + self.specie +  " " + self.subspecie + " | " + self.author 
+            return self.genus + " " + self.specie +  " " + self.subspecie + " | " + self.str_author()
         
+        elif self.rank == self.rank_subfamily:
+            return self.subfamily + " | " + self.str_author()
+        
+        elif self.rank == self.rank_tribe:
+            return self.tribe + " | " + self.str_author()
         else:
-            raise Exception("Taxa feature not implemented")
+            raise Exception("Taxa feature not implemented: " + self.rank)
         
 
 def save_taxa_list(taxa_list, filename):
