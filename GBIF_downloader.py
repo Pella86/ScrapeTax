@@ -232,6 +232,8 @@ def generate_lists(family_name, file_info, save_lists = True):
         taxa.links.append(link)
         taxa.author = author
         
+        taxa.taxonomic_status = gbif_taxon["taxonomicStatus"]
+        
         return taxa
         
     def generate_specie(gbif_taxon):    
@@ -253,6 +255,8 @@ def generate_lists(family_name, file_info, save_lists = True):
         
         author = gbif_taxon["authorship"].strip()      
         taxa.author = author
+        
+        taxa.taxonomic_status = gbif_taxon["taxonomicStatus"]
         
         return taxa        
         

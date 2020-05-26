@@ -14,7 +14,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 
@@ -46,8 +46,9 @@ class Request:
     
     def download(self):
         ''' Makes a connection to the website and downloads the webpage'''
-        logger.debug("Downloading data from:" + self.url)
+        logger.debug("sending request...")
         self.response = requests.get(self.url, params=self.params)
+        logger.debug("Downloaded data from: " + self.response.request.url)
         logger.debug("Response status: " + str(self.response))
     
     def save(self):

@@ -62,14 +62,14 @@ def filter_taxa(taxa_list, genera_filter):
     
         genus_filtered = []
     
-        # little counter    
+        # little debug counter to check how many are selected    
         
         genus_count = {}
             
-        for g in gfilter:
+        for g in genera_filter:
             genus_count[g] = 0
         
-        for taxa in fusion:
+        for taxa in taxa_list:
             
             for filt in genera_filter:
                 if taxa.genus.find(filt) != -1:
@@ -85,6 +85,18 @@ def filter_taxa(taxa_list, genera_filter):
         genus_filtered = taxa_list
     
     return genus_filtered
+
+
+def filter_status(taxa_list):
+    
+    def check_status(item):
+        if item.taxonomic_status != None:
+            return item.taxonomic_status == "ACCEPTED"
+        else:
+            return True
+    
+    return filter(lambda item : check_status(item), taxa_list)
+    
     
         
 
@@ -109,10 +121,12 @@ def parse_sources():
     
     while not correct_answer:
         
-        sources = get_input("Chose a website (nbn, eol, gbif)", "website")
+        sources = get_input("Chose a website (nbn, eol, gbif)", "website", "eol, nbn, gbif")
         
         sources_parts = sources.split(",")
         sources_parts = [source.strip() for source in sources_parts]
+        
+        print("Sources: ", sources_parts)
         
         return sources_parts
         
@@ -128,6 +142,8 @@ def prod_main():
     base_folder = get_input("The path to the folder where the file will be saved, the folder must already exist. Use dot (.) to access the current folder",
                             "path",
                             "./Data")
+    
+    print("Base folder:", base_folder)
 
     
     # gather the source website
@@ -138,14 +154,15 @@ def prod_main():
                                 "family",
                                 "Vespidae")
     
+    print("Family:", family_name)
+    
     # Add the option to filter by genus
     genera_filter = get_input("Give genera names comma separated", "genera", [])
     if genera_filter:
         genera_filter = [genus.strip() for genus in genera_filter.split(",")]
 
+    print("Generating lists...")
 
-    print("Generate lists for: ", "".join(source + " " for source in sources))
-    
     taxa_lists = []
     
     for s in sources:
@@ -208,7 +225,7 @@ def prod_main():
                 
                 table.create_table(taxa_list, fileinfo.html_filename("label_table"))
 
-                print("Table created")
+                print("Table created.")
                 
             elif choice == 3:
                 print("Generating authority file...")
@@ -216,13 +233,14 @@ def prod_main():
                 AuthorityFileCreation.generate_authority_file(taxa_list, fileinfo)
                 
                 print("Authority file created.")
+            
             else:
                 print("Choice not available")
                 exit_command = True            
         
 
 
-PRODUCTION = True   
+PRODUCTION = False   
 
 if __name__ == "__main__":
     if PRODUCTION:
@@ -263,15 +281,25 @@ if __name__ == "__main__":
         #gfilter = ["Leia", "Rondaniella", "Dynatosoma", "Mycetophila"]
         #gfilter = ["Phronia", "Trichonta", "Zygomyia", "Tarnania"]
         #gfilter = ["Allodia", "Allodiopsis", "Anatella", "Brevicornu", "Brevicornis", "Cordyla"]
-        gfilter = ["Exechia", "Exechiopsis", "Rymosia", "Epicypta"]
+        #gfilter = ["Exechia", "Exechiopsis", "Rymosia", "Epicypta"]
+        #gfilter = ["Phthinia"]
+        gfilter = []
         
         genus_filtered = filter_taxa(fusion, gfilter)
         
-        fileinfo = FileInfo.FileInfo(base_folder, "all", family_name)
-        table = CreateLabelTable.LabelTable("safari")
-        table.create_table(genus_filtered, fileinfo.html_filename("taxa_table"))
+        tlist = filter_status(genus_filtered)
+
+        for taxa in tlist:
+            if taxa.genus == "Docosia" and taxa.specie == "setosa":
+                print(taxa)
+                print(taxa.taxonomic_status)
+
         
-        print("Table generated")
+#        fileinfo = FileInfo.FileInfo(base_folder, "all", family_name)
+#        table = CreateLabelTable.LabelTable("safari")
+#        table.create_table(genus_filtered, fileinfo.html_filename("taxa_table"))
+#        
+#        print("Table generated")
                     
                     
         

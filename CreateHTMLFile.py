@@ -77,6 +77,11 @@ class CreateHTMLFile:
         el = ET.Element("")
         el.text = (text)
         self.add_body_element(el)
+    
+    def add_heading(self, level, text):
+        el = ET.Element(f"h{level}")
+        el.text = text
+        self.add_body_element(el)
         
     
     def generate_html_file(self, filename):

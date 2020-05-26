@@ -133,6 +133,8 @@ def generate_lists(family_name, fileinfo, save_lists = True):
     could be translated in a tree, but ... is difficult. The function returns
     a list of Taxa with name, author and reference link'''
     
+    print("Generating taxa list for NBN Atlas...")
+    
     api_url = "https://species-ws.nbnatlas.org/search?"
     param = {}
     param["q"] = family_name

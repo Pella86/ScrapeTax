@@ -18,7 +18,10 @@ class Taxa:
     rank_subspecie = "subspecie"
     rank_specie = "specie"
     rank_genus = "genus"
+    rank_tribe = "tribe"
+    rank_subfamily = "subfamily"
     rank_family = "family"
+    
     
     def __init__(self):        
         
@@ -41,6 +44,9 @@ class Taxa:
         
         # rank of the taxonomic information
         self.rank = None
+        
+        # taxonomic status
+        self.taxonomic_status = None
         
     def copy_taxonomy(self, taxa):
         ''' Copies the taxonomy from a given taxa'''

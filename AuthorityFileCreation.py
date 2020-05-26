@@ -56,7 +56,7 @@ def create_authority_lines(taxa_list):
 
         line +=  (f'"{taxa.author}"' if taxa.author else " ") + separator 
 
-        line +=  "".join(f'{link} ' for link in taxa.links )      
+        line +=  '"' + "".join(f'{link}, ' for link in taxa.links )[:-2] +'"'  
         
         line += "\n"
         
@@ -100,7 +100,9 @@ def generate_authority_list(taxa_list, fileinfo):
     # maybe add the possibility to save the generate tree for later use?
     # could be useless since it will be not modifiable
     
-    fhtml.add_element("--- Genuses ---")
+    fhtml.add_heading(1, "Species list for " + fileinfo.family_name)
+    
+    fhtml.add_heading(2, "Genuses")
     fhtml.add_line_break()
     
     for genus in filter(lambda taxa : taxa.rank == Taxa.Taxa.rank_genus, taxa_list):
@@ -109,10 +111,10 @@ def generate_authority_list(taxa_list, fileinfo):
         if genus.author:
             fhtml.add_element(genus.author)
         else:
-            fhtml.add_element("author not available")
+            fhtml.add_element("author not found")
         fhtml.add_line_break()
 
-    fhtml.add_element("--- Species ---")
+    fhtml.add_heading(2, "Species")
     fhtml.add_line_break()
     
     for specie in filter(lambda taxa : taxa.rank == Taxa.Taxa.rank_specie, taxa_list):

@@ -135,7 +135,7 @@ class LabelTable:
                     if taxa.author:
                         left.text = taxa.author
                     else:
-                        left.text = "Author not available"
+                        left.text = "Author not found"
                     
                     if taxa.source:
                         right = ET.SubElement(last_line_div, "span")
