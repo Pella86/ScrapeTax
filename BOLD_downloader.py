@@ -7,224 +7,171 @@ Created on Wed May 20 12:55:37 2020
 """
 
 # small program that interacts with the bold API
-#https://www.boldsystems.org/index.php/resources/api?type=taxonomy
+#https://www.boldsystems.org/
+
+# =============================================================================
+# Imports
+# =============================================================================
+
+import urllib
 
 import request_handler
-import FileInfo
-import json
-
-api_url = "http://www.boldsystems.org/index.php/API_Tax/TaxonSearch"
-taxonid_api_url = "http://www.boldsystems.org/index.php/API_Tax/TaxonData"
-
-
-base_folder = "./Data/BOLD_test"
-
-fileinfo = FileInfo.FileInfo(base_folder, "bold", "Mycetophilidae")
+import Taxa
+import ProgressBar
 
 
 # =============================================================================
-# retrive taxonomy
+# API URL
 # =============================================================================
-#
-#param = {"taxName":fileinfo.family_name}
-#
-#req = request_handler.Request(api_url, fileinfo.pickle_filename("test"), param)
-#
-#res_json = req.get_json()
-#
-#print(json.dumps(res_json, indent=2))
-#
-#print("Matches:", res_json["total_matched_names"])
-#
-#for match in res_json["top_matched_names"]:
-#    
-#    print(match["taxon"])
-#    
-#    
-## Pick the first match
-#    
-#family = res_json["top_matched_names"][0]
-#
-## use the id to get the stats
-#
-#param = {"taxId" : family["taxid"],
-#         "dataTypes" : "all"
-#         }
-#
-#req = request_handler.Request(taxonid_api_url, fileinfo.pickle_filename("taxid_info"), param)
-#
-#res_json = req.get_json()
-#
-#
-##print(json.dumps(res_json, indent=2))
-#
+
+main_url = "http://www.boldsystems.org"
+
+taxon_search_api_url = main_url + "/index.php/API_Tax/TaxonSearch"
+taxonid_api_url = main_url + "/index.php/API_Tax/TaxonData"
+specimen_api_url = main_url + "/index.php/API_Public/specimen"
+taxon_search_url = main_url + "/index.php/Taxbrowser_Taxonpage"
 
 # =============================================================================
 # retrive all the specimens they have
-# =============================================================================
+# =============================================================================$
 
-#import urllib
-#
-#api_specimen = "http://www.boldsystems.org/index.php/API_Public/specimen"
-#
-#param = {"taxon":"Mycetophilidae",
-#         "format":"json"}
-#
-#param = urllib.parse.urlencode(param, quote_via=urllib.parse.quote)
-#
-#req = request_handler.Request(api_specimen, fileinfo.pickle_filename("api_specimen"), param)
-#
-#j = req.get_json()
-#
-#print(j["bold_records"]["records"].keys())
-#
-#records = j["bold_records"]["records"]
-#
-#first_key = list(records.keys())[0]
-#
-#first_record = records[first_key]
-#
-#print(json.dumps(first_record, indent=2))
-#
-#
-#print(first_record["taxonomy"]["family"]["taxon"]["name"])
-#print(first_record["taxonomy"]["subfamily"]["taxon"]["name"])
-##print(first_record["taxonomy"]["tribe"]["taxon"]["name"])
-#print(first_record["taxonomy"]["genus"]["taxon"]["name"])
-#print(first_record["taxonomy"]["species"]["taxon"]["name"])
-#
-#
-#
-#def get_taxon_name(taxon, record):
-#    
-#    taxon = record["taxonomy"].get(taxon)
-#    
-#    if taxon:
-#        return taxon["taxon"]["name"]
-#    else:
-#        return None
-#    
-#def get_author(record):
-#    return record["taxonomy"]["species"]["taxon"].get("reference")
-#
-#
-#class Record:
-#    
-#    def __init__(self, record):
-#        self.record = record
-#        
-#        self.specie = None
-#        self.genus = None
-#        self.author = None
-#        self.rank = None
-#        
-#        
-#        specie_taxon = self.get_taxon("species")
-#        
-#        if specie_taxon:
-#            self.specie = self.get_name("species").split(" ")[1]
-#            self.author = self.get_author("species")
-#            self.rank = Taxa.Taxa.rank_specie
-#        
-#        
-#        genus_taxon = self.get_taxon("genus")
-#        
-#        if genus_taxon:
-#            if specie_taxon == None:
-#                self.rank = Taxa.Taxa.rank_genus
-#                self.author = self.get_author("genus")
-#            
-#            self.genus = self.get_name("genus")
-#            
-#        
-#        self.tribe = self.assign_name("tribe")
-#        self.subfamily = self.assign_name("subfamily")
-#        self.family = self.assign_name("family")
-#            
-#                 
-#            
-#    
-#    def get_taxon(self, taxon_name):
-#        return self.record["taxonomy"].get(taxon_name)
-#
-#    def get_name(self, taxon_name):
-#        return self.record["taxonomy"][taxon_name]["taxon"]["name"]
-#
-#    def get_author(self, taxon_name):
-#        return self.record["taxonomy"][taxon_name].get("reference")    
-#    
-#    def assign_name(self, taxon_name):
-#        
-#        taxon = self.get_taxon(taxon_name)
-#        if taxon:
-#            return self.get_name(taxon_name)
-#        else:
-#            return None
-#        
-#
-#import Taxa
-#
-#
-#print(list(records.values())[0]["taxonomy"].keys())
-#
-#tax_keys = ['identification_provided_by', 'identification_method', 'phylum', 'class', 'order', 'family', 'subfamily', 'genus', 'species']
-#
-#for record in records.values():
-#    print("-"*79)
-#    #print(record["taxonomy"])
-#    
-#    tax_list = list(record["taxonomy"].keys())
-#    
-#    for word in tax_list:
-#        if word in tax_keys:
-#            print(".", end="")
-#        else:
-#            print(word)
-#    print()
-#            
+class Record:
+    ''' Class that manages the specimen records returned by the BOLD system'''
     
-#    rec = Record(record)
-#    
-#    if rec.genus == None and rec.specie == None:
-#        continue
-#    
-#    taxa = Taxa.Taxa()
-#    
-#    taxa.family = rec.family
-#    taxa.subfamily = rec.subfamily
-#    taxa.tribe = rec.tribe
-#    taxa.genus = rec.genus
-#    taxa.specie = rec.specie
-#    taxa.author = rec.author
-#    taxa.rank = rec.rank
-#    
-#    taxa.print_extended()
+    def __init__(self, record):
+        self.record = record
+        
+        self.specie = None
+        self.genus = None
+        self.author = None
+        self.rank = None
+        
+        # get the taxons
+        
+        # check if is a specie
+        
+        specie_taxon = self.get_taxon("species")
+        
+        if specie_taxon:
+            self.specie = self.get_name("species").split(" ")[1]
+            self.author = self.get_author("species")
+            self.rank = Taxa.Taxa.rank_specie
+        
+        # if is not a specie then the taxa might be a genus
+        # if that is the case set rank and author accordingly
+        # if the specie is present then the author refers to the specie
+        # and the genus is part of the binomial name
+        
+        genus_taxon = self.get_taxon("genus")
+        
+        if genus_taxon:
+            if specie_taxon == None:
+                self.rank = Taxa.Taxa.rank_genus
+                self.author = self.get_author("genus")
+            
+            self.genus = self.get_name("genus")
+        
+        # add the higher taxonomy
+        
+        self.tribe = self.assign_name("tribe")
+        self.subfamily = self.assign_name("subfamily")
+        self.family = self.assign_name("family")
 
+    def get_taxon(self, taxon_rank):
+        return self.record["taxonomy"].get(taxon_rank)
+
+    def get_name(self, taxon_rank):
+        return self.record["taxonomy"][taxon_rank]["taxon"]["name"]
+
+    def get_author(self, taxon_rank):
+        return self.record["taxonomy"][taxon_rank]["taxon"].get("reference")
+    
+    def assign_name(self, taxon_rank):
+        taxon = self.get_taxon(taxon_rank)
+        if taxon:
+            return self.get_name(taxon_rank)
+        else:
+            return None
+
+
+def specimen_list(family_name, fileinfo):
+    ''' This function produces the list of specimen that they have in the
+        database, the function filters out all the specimen that have the 
+        same taxonomic designation
+    '''
+    
+    # request all the specimens that have family_name in their stuff
+    param = {"taxon": family_name,
+             "format":"json"}    
+    
+    # in case the parameters have a space it encodes it as "name%20name"
+    # instead of "name+name". There shouldnt be spaces in a family_name yet
+    # this is here for legacy purposes?
+    param = urllib.parse.urlencode(param, quote_via=urllib.parse.quote)
+    filename = fileinfo.pickle_filename("specimen_api")
+    
+    # performs the request
+    req = request_handler.Request(specimen_api_url, filename, param)
+    res_json = req.get_json()
+    
+    # selects the respective records from the response
+    records = res_json["bold_records"]["records"]
+    
+    # This are the possible dict keys of the record, if there is a response
+    # with more keys the program will give a error
+    tax_keys = ['identification_provided_by', 'identification_method',
+                'phylum', 'class', 'order', 'family', 'subfamily', 'genus',
+                'species']
+    
+    
+    # converts the records in taxas
+    taxa_list = list()
+    for record in records.values():
+         
+        # check if the taxon program selects all possible taxon ranks
+        tax_list = list(record["taxonomy"].keys())
+        
+        for word in tax_list:
+            if word in tax_keys:
+                #print(".", end="")
+                continue
+            else:
+                raise Exception("BOLD_downloader: the key is not present:" + word)
+        
+        # create the record class which will parse the JSON
+        rec = Record(record)
+        
+        # We are only intereseted in genus + specie not family, subfamily, 
+        # which anyway dont have author and information to the associated genus
+        if rec.genus == None and rec.specie == None:
+            continue
+        
+        # transform the recod to the taxa
+        taxa = Taxa.Taxa()
+        
+        taxa.family = rec.family
+        taxa.subfamily = rec.subfamily
+        taxa.tribe = rec.tribe
+        taxa.genus = rec.genus
+        taxa.specie = rec.specie
+        taxa.author = rec.author
+        taxa.rank = rec.rank
+        
+        # if the taxa is already present dont add it
+        # if is not present add it to the list
+        for existing_taxa in taxa_list:
+            if existing_taxa.is_equal(taxa):
+                break
+        else:
+            taxa_list.append(taxa)
+
+    return taxa_list
 
 # =============================================================================
-# scrape the taxon pages
+# Get taxon information from the taxon pages
 # =============================================================================
 
-
-main_page = "https://www.boldsystems.org"
-
-taxon_search_url = "https://www.boldsystems.org/index.php/Taxbrowser_Taxonpage"
-
-# taxon=mycetophilidae&searchTax=Search+Taxonomy
-#param = {"taxon":fileinfo.family_name.lower(),
-#         "searchTax":"Search Taxonomy"}
-#
-#req = request_handler.Request(taxon_search_url, fileinfo.pickle_filename("taxon_search"), param)
-#
-#req.load()
-#
-#soup = req.get_soup()
-#
-#print(soup.find("Sub"))
-
-import Taxa
-
-def get_children(taxid, parent_taxa = None):
+def get_children(taxid, fileinfo, parent_taxa = None):
     ''' The function scans the webpage with the taxid and finds the subtaxa 
         asssociated with it'''
     
@@ -240,7 +187,6 @@ def get_children(taxid, parent_taxa = None):
     # sections it means that the page doesn't have sub taxa
     sections = soup.find_all("div", {"class":"col-md-6"})
     if len(sections) <= 6:
-        #print("There are no subtaxa")
         return None
     else:
         subtaxa = sections[6]
@@ -266,6 +212,7 @@ def get_children(taxid, parent_taxa = None):
         # format the rank Subfamilies (7) -> subfamilies
         frank = rank.text.split(" ")[0].lower()
         
+        # comvert into Taxa rank type
         taxa_ranks = {"subfamilies" : Taxa.Taxa.rank_subfamily,
                       "tribes"      : Taxa.Taxa.rank_tribe,
                       "genera"      : Taxa.Taxa.rank_genus,
@@ -276,11 +223,8 @@ def get_children(taxid, parent_taxa = None):
         try:
             retrived_taxa.rank = taxa_ranks[frank]
         except KeyError:
-            raise Exception("Taxon rank not present")
+            raise Exception("BOLD_downloader: Taxon rank not present")
         
-            
-        # once defined which rank is the taxon, then add the name to the 
-        # corresponding field in the class
         # get the names associated with the rank
         
         taxon_names = tax.find_all("a")
@@ -291,7 +235,6 @@ def get_children(taxid, parent_taxa = None):
             taxa.copy_taxa(retrived_taxa)
             
             # parse the name
-            
             if taxa.rank == Taxa.Taxa.rank_specie:
                 text = name.text.split(" ")[1].strip()
                 
@@ -302,13 +245,12 @@ def get_children(taxid, parent_taxa = None):
                 text = name.text.split(" ")[0].strip()
 
             # the "sp." is marked under species but has no designated name
-            # has only a code like CB-12. There are some species taht probably
+            # has only a code like CB-12. There are some species that probably
             # are provisory names that contain codes and symbols
             if text == "sp." or text == "cf." or "-" in text or "_" in text:
                 continue
 
             # assign the name
-            
             if taxa.rank == Taxa.Taxa.rank_subfamily:
                 taxa.subfamily = text
 
@@ -327,7 +269,8 @@ def get_children(taxid, parent_taxa = None):
             else:
                 raise Exception("Taxon rank not present")
             
-            link = main_page + name.get("href")
+            # assign the relative link, used then to find the relative subtaxa
+            link = main_url + name.get("href")
             taxa.links.append(link)
             
             taxa_list.append(taxa)
@@ -343,79 +286,233 @@ def get_id_from_taxa(taxa):
     
     # select the link
     link = taxa.links[0]
+    
     # find where taxid is 
-    pos_taxid = link.find("taxid")    
+    pos_taxid = link.find("taxid")  
+    
     # cut the string sto that only the id remains
     taxid = int(link[pos_taxid + len("taxid") + 1 :])
     
     return taxid
 
 
-taxa_list = []
 
-# generate a taxa for the family
-
-# get taxa related to family
-family_id = 168441
-family_taxa_list = get_children(family_id)
-
-taxa_list += family_taxa_list
-
-for ftaxa in family_taxa_list:
+def generate_children_list(family_id, fileinfo, parent_taxa):
     
-    subfamily_taxa = get_children(get_id_from_taxa(ftaxa), ftaxa)
+    pwheel = ProgressBar.ProgressWheel()
     
-    if subfamily_taxa:
+    taxa_list = []
+    
+    # get taxa related to family
+    family_taxa_list = get_children(family_id, fileinfo, parent_taxa)
+    
+    taxa_list += family_taxa_list
+    
+    for ftaxa in family_taxa_list:
         
-        taxa_list += subfamily_taxa
-    
-        for staxa in subfamily_taxa:
+        pwheel.draw_symbol()
+        
+        subfamily_taxa = get_children(get_id_from_taxa(ftaxa), fileinfo, ftaxa)
+        
+        if subfamily_taxa:
             
-            tribes_taxa = get_children(get_id_from_taxa(staxa), staxa)
-            
-            if tribes_taxa:
+            taxa_list += subfamily_taxa
+        
+            for staxa in subfamily_taxa:
+
+                pwheel.draw_symbol()                
+        
+                tribes_taxa = get_children(get_id_from_taxa(staxa), fileinfo, staxa)
                 
-                taxa_list += tribes_taxa
-            
-                for gtaxa in tribes_taxa:
+                if tribes_taxa:
                     
-                    genus_taxa = get_children(get_id_from_taxa(gtaxa), gtaxa)
-                    
-                    if genus_taxa:
+                    taxa_list += tribes_taxa
+                
+                    for gtaxa in tribes_taxa:
+        
+                        pwheel.draw_symbol()
                         
-                        taxa_list += genus_taxa
+                        genus_taxa = get_children(get_id_from_taxa(gtaxa), fileinfo, gtaxa)
                         
-                        for sptaxa in genus_taxa:
+                        if genus_taxa:
                             
-                            subspecie_taxa = get_children(get_id_from_taxa(sptaxa), sptaxa)
+                            taxa_list += genus_taxa
                             
-                            if subspecie_taxa:
+                            for sptaxa in genus_taxa:
                                 
-                                taxa_list += subspecie_taxa
+                                pwheel.draw_symbol()
+                                
+                                subspecie_taxa = get_children(get_id_from_taxa(sptaxa), fileinfo, sptaxa)
+                                
+                                if subspecie_taxa:
+                                    
+                                    taxa_list += subspecie_taxa
+                                    
+    # filter out all the taxon that don't have specie or genus
+    return list(filter(lambda taxa : taxa.specie != None or taxa.genus != None, taxa_list))
+
+# =============================================================================
+# Generate the complete taxa list
+# =============================================================================
+
+def generate_lists(family_name, fileinfo):
+    print("Gathering data from BOLD Databases...")
+    print("Input name:", family_name)
     
+    # Use the search API to search for the name
     
+    param = {"taxName" : family_name}
+    
+    req = request_handler.Request(taxon_search_api_url, fileinfo.pickle_filename("test"), param)
+    
+    res_json = req.get_json()
+    
+    print("Possible matches:", res_json["total_matched_names"])
+    
+    for match in res_json["top_matched_names"]:
+        print("    - " + match["taxon"])
+    
+    # get the tax id from the search    
         
-print(len(taxa_list))        
+    # Pick the first match
+    family = res_json["top_matched_names"][0]
+
+    # use the id to get the information about the taxon
+    param = {"taxId" : family["taxid"],
+             "dataTypes" : "basic"}
+    
+    req = request_handler.Request(taxonid_api_url, fileinfo.pickle_filename("taxid_info"), param)
+    res_json = req.get_json()
+    
+    # keys: dict_keys(['taxid', 'taxon', 'tax_rank', 'tax_division',
+    #         'parentid', 'parentname', 'taxonrep', 'stats', 'country',
+    #         'sitemap', 'images', 'sequencinglabs', 'depositry',
+    #         'wikipedia_summary', 'wikipedia_link'])
+    
+    print("Rank\tName\tTaxon id")
+    print(res_json["tax_rank"] + "\t" + res_json["taxon"] + "\t" + res_json["taxid"])
+    
+    if res_json["tax_rank"] != "family":
+        raise Exception("BOLD_downloader: the selected result is not a family")
+    
+    
+    family_taxa = Taxa.Taxa()
+    
+    family_taxa.rank = Taxa.Taxa.rank_family
+    family_taxa.family = res_json["taxon"]
+    
+    family_id = res_json["taxid"]
+    
+    print("Downloading subtaxas...")
+    
+    # use the retrived information to scavenge the sub taxa
+    taxa_list = generate_children_list(family_id, fileinfo, family_taxa)
+    
+    print("Gathering specimens...")
+    
+    # use the specimen database to find the authors
+    specimens = specimen_list(family_name, fileinfo)
+    
+    print("Composing the list...")
+    
+    # assign the authors from the specimen database
+    for taxa in taxa_list:
+        for specimen in specimens:
+            if taxa.specie == specimen.specie and taxa.genus == specimen.genus:
+                if taxa.author == None:
+                    taxa.author = specimen.author    
+    
+    return taxa_list
 
 
-for taxa in taxa_list:
-    if taxa.rank == Taxa.Taxa.rank_specie:
-        taxa.print_extended()      
+
+class AssociatedTaxa:
+    ''' class that couples a taxa with a list of subtaxa, like a subfamily
+        coupled with a genus
+    '''
+        
+    def __init__(self, main_taxa, rank):
+        
+        self.rank = rank
+        self.main_taxa = main_taxa
+        self.associates = []
+    
+    def add_associate(self, associate):
+        self.associates.append(associate)
+    
+    def __eq__(self, other):
+        return self.main_taxa == other
+    
+    def __str__(self):
+        return self.main_taxa + ":" + str(self.associates)
+
+def construct_associations(taxa_list):
+    ''' Function that finds from a taxa list which subfamilies and tribes are
+    associated wit which genus'''
+    
+    subfamilies = []
+    tribes = []    
+    for taxa in taxa_list:
+        if taxa.subfamily not in subfamilies and taxa.subfamily != None:
+            main_taxon = AssociatedTaxa(taxa.subfamily, Taxa.Taxa.rank_subfamily)
+            subfamilies.append(main_taxon)
+
+        if taxa.tribe not in tribes and taxa.tribe != None:
+            main_taxon = AssociatedTaxa(taxa.tribe, Taxa.Taxa.rank_tribe)
+            tribes.append(main_taxon)
+    
+    for taxa in taxa_list:
+        
+        for subfamily in subfamilies:
             
-
-#def get_children_recursive(taxid, taxa_list):
-#    
-#    tlist = get_children(taxid)
-#    
-#    if tlist:
-#        taxa_list += tlist
-#        for t in taxa_list:    
-#            return get_children_recursive(get_id_from_taxa(t), taxa_list)
-#    
-#    else:
-#        return taxa_list
-#    
-#
-#l = get_children_recursive(family_id, [])
+            if taxa.subfamily == subfamily:
+                
+                if taxa.genus not in subfamily.associates:
+                    subfamily.add_associate(taxa.genus)
         
+        
+        for tribe in tribes:
+            
+            if taxa.tribe == tribe:
+                
+                if taxa.genus not in tribe.associates:
+                    tribe.add_associate(taxa.genus)
+    
+    sf = "Subfamilies"
+    print(f"{sf:-^79}")
+    for subfamily in subfamilies:
+        print(subfamily)    
+    
+    st = "Tribes"
+    print(f"{st:-^79}")   
+    for tribe in tribes:
+        print(tribe)                
+    
+    return subfamilies, tribes
+    
+    
+    
 
+if __name__ == "__main__":
+    
+    import FileInfo
+    
+    base_folder = "./Data/BOLD_test"
+    
+    fileinfo = FileInfo.FileInfo(base_folder, "bold", "Vespidae")
+    
+    taxa_list = generate_lists(fileinfo.family_name, fileinfo)
+
+    for taxa in taxa_list:
+        print(taxa)
+        
+        
+    Taxa.save_taxa_list(taxa_list, fileinfo.pickle_filename("taxa_list"))
+    
+    taxa_list = Taxa.load_taxa_list(fileinfo.pickle_filename("taxa_list"))
+    
+    construct_associations(taxa_list)
+
+
+    
+    
