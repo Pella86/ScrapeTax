@@ -47,20 +47,33 @@ def children_url(key):
 family_name = "Mycetophilidae"
 base_folder = "./Data/GBIF_test"
 
-def generate_lists(family_name, file_info, save_lists = True):
-    print("GBIF database")
-    print("Gathering family info...")
+def generate_lists(family_name, file_info, load_lists = True):
+    print("Generating taxa list from GBIF database...")
+    print("Input name: ", family_name)
+    
+    
+    if load_lists:
+        if file_info.mptaxa_exists("species_list") and file_info.mptaxa_exists("genus_list"):
+            print("Loading lists form disk", file_info.base_path)
+            species_list = Taxa.load_taxa_list(file_info.mptaxa_filename("species_list"))
+            genus_list = Taxa.load_taxa_list(file_info.mptaxa_filename("genus_list"))
+            return genus_list, species_list
+    
     # establish the first query
     
     #file_info = FileInfo.FileInfo(base_folder, family_name.lower())
     
-    param = {}
-    param["name"] = family_name
+    param = {"name" : family_name}
     family_query = request_handler.Request(match_api_url, file_info.pickle_filename("family_query"), param)
     family_query.load()
     
     
     family_json = family_query.get_json()
+    
+    if family_json.get("family") != None: 
+        print("Found:", family_json["family"], "Confidence:", str(family_json["confidence"]) + "%", "match type:", family_json["matchType"])
+    else:
+        raise Exception("GBIF: Name not found because: " +  family_json["note"])
     
     # Json structure of the family json
     #import json
@@ -134,8 +147,7 @@ def generate_lists(family_name, file_info, save_lists = True):
     
     
     # Get the childrens of the family
-    limit_param = {}
-    limit_param["limit"] = family_json["numDescendants"]
+    limit_param = {"limit" : family_json["numDescendants"]}
     
     children_req = request_handler.Request(children_url(family_json["familyKey"]), file_info.pickle_filename("children"), limit_param)
     children_req.load()
@@ -312,22 +324,28 @@ def generate_lists(family_name, file_info, save_lists = True):
     
     species_list.sort(key=lambda t: t.genus)
     
+    list_filename = file_info.mptaxa_filename("genus_list")
+    Taxa.save_taxa_list(genus_list, list_filename)
+        
+    list_filename = file_info.mptaxa_filename("species_list")
+    Taxa.save_taxa_list(species_list, list_filename)
+    
     return genus_list, species_list
 
 
 if __name__ == "__main__":    
-    family_name = "Mycetophilidae"
+    family_name = "Formicidae"
     base_folder = "./Data/GBIF_test"
     file_info = FileInfo.FileInfo(base_folder, "gbif", family_name)
     
     genus_list, species_list = generate_lists(family_name, file_info)
     
-    for genus in genus_list:
-        print(genus)
-        
-        
-    for specie in species_list:
-        print(specie)
+#    for genus in genus_list:
+#        print(genus)
+#        
+#        
+#    for specie in species_list:
+#        print(specie)
     
        
 #    AuthorityFileCreation.generate_authority_list(genus_list, species_list, file_info)    

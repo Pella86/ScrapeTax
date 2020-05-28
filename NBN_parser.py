@@ -128,25 +128,39 @@ def gather_taxonomy(url, filename):
     return species
 
 
-def generate_lists(family_name, fileinfo, save_lists = True):
+def generate_lists(family_name, fileinfo, load_lists = True):
     '''Function that arranges the genuses and species in a list, the function
     could be translated in a tree, but ... is difficult. The function returns
     a list of Taxa with name, author and reference link'''
     
-    print("Generating taxa list for NBN Atlas...")
+    print("Generating taxa list from NBN Atlas...")
+    print("Input name: ", family_name)
+    
+    if load_lists:
+        if fileinfo.mptaxa_exists("species_list") and fileinfo.mptaxa_exists("genus_list"):
+            print("Loading lists form disk", fileinfo.base_path)
+            species_list = Taxa.load_taxa_list(fileinfo.mptaxa_filename("species_list"))
+            genus_list = Taxa.load_taxa_list(fileinfo.mptaxa_filename("genus_list"))
+            return genus_list, species_list
     
     api_url = "https://species-ws.nbnatlas.org/search?"
-    param = {}
-    param["q"] = family_name
-    param["fq"] = "idxtype:TAXON"
+    
+    param = {"q" : family_name,
+             "fq": "idxtype:TAXON"}
  
     req = request_handler.Request(api_url, fileinfo.pickle_filename("family_search"), param)
     req.load()
     
-    # pick the first result
     search_json = req.get_json()
+    search_results = search_json["searchResults"]["results"]
     
-    family_guid = search_json["searchResults"]["results"][0]["guid"]
+    # display the possible matches
+    print("Possible matches:", len(search_results))
+    for result in search_results:
+        print("    -", result["name"], f"({result['guid']})")
+    
+    # pick the first result
+    family_guid = search_results[0]["guid"]
     
     # parameters for the webpage corresponding to the family
     family_url = "https://species.nbnatlas.org/species/" + family_guid
@@ -285,13 +299,13 @@ def generate_lists(family_name, fileinfo, save_lists = True):
     
     pwheel.end()
     
-    if save_lists:
-
-        list_filename = fileinfo.mptaxa_filename("genus_list")
-        Taxa.save_taxa_list(genus_list, list_filename)
+    list_filename = fileinfo.mptaxa_filename("genus_list")
+    Taxa.save_taxa_list(genus_list, list_filename)
         
-        list_filename = fileinfo.mptaxa_filename("species_list")
-        Taxa.save_taxa_list(species_list, list_filename)
+    list_filename = fileinfo.mptaxa_filename("species_list")
+    Taxa.save_taxa_list(species_list, list_filename)
+    
+    print("Genus retrived:", len(genus_list), "Species retrived:", len(species_list))
         
     return genus_list, species_list
 

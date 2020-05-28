@@ -95,6 +95,25 @@ class Taxa:
             return False
         
     
+    def sort_key(self):
+        skey = ""
+        
+        def test_none(rank):
+            if rank == None:
+                return "z"*10
+            else:
+                return rank
+        
+        skey += test_none(self.subfamily)
+        skey += test_none(self.tribe)
+        skey += test_none(self.genus)
+        skey += test_none(self.specie)
+        skey += test_none(self.subspecie)
+        
+        
+        
+        return skey
+    
     def str_author(self):
         return self.author if self.author else "No author available"
         
@@ -126,7 +145,76 @@ def load_taxa_list(filename):
     with open(filename, "rb") as f:
         data = pickle.load(f)
     return data
+
+
+
+class AssociatedTaxa:
+    ''' class that couples a taxa with a list of subtaxa, like a subfamily
+        coupled with a genus
+    '''
+        
+    def __init__(self, main_taxa, rank):
+        
+        self.rank = rank
+        self.main_taxa = main_taxa
+        self.associates = []
     
+    def add_associate(self, associate):
+        self.associates.append(associate)
+    
+    def __eq__(self, other):
+        return self.main_taxa == other
+    
+    def __str__(self):
+        
+        associates_str = "".join(associate + ", " for associate in self.associates)
+        associates_str = associates_str[:-2]
+        return "- " + self.main_taxa + ": " + associates_str
+
+def construct_associations(taxa_list):
+    ''' Function that finds from a taxa list which subfamilies and tribes are
+    associated wit which genus'''
+    
+    subfamilies = []
+    tribes = []    
+    for taxa in taxa_list:
+        if taxa.subfamily not in subfamilies and taxa.subfamily != None:
+            main_taxon = AssociatedTaxa(taxa.subfamily, Taxa.rank_subfamily)
+            subfamilies.append(main_taxon)
+
+        if taxa.tribe not in tribes and taxa.tribe != None:
+            main_taxon = AssociatedTaxa(taxa.tribe, Taxa.rank_tribe)
+            tribes.append(main_taxon)
+    
+    for taxa in taxa_list:
+        
+        for subfamily in subfamilies:
+            
+            if taxa.subfamily == subfamily:
+                
+                if taxa.genus not in subfamily.associates:
+                    subfamily.add_associate(taxa.genus)
+        
+        
+        for tribe in tribes:
+            
+            if taxa.tribe == tribe:
+                
+                if taxa.genus not in tribe.associates:
+                    tribe.add_associate(taxa.genus)
+    
+    sf = "Subfamilies"
+    print(f"{sf:-^79}")
+    for subfamily in subfamilies:
+        print(subfamily)    
+    
+    st = "Tribes"
+    print(f"{st:-^79}")   
+    for tribe in tribes:
+        print(tribe)                
+    
+    return subfamilies, tribes
+        
     
 if __name__ == "__main__":
     

@@ -31,14 +31,24 @@ eol_test_folder ="./Data/EOL_test/"
 # Functions
 # =============================================================================
 
-def generate_lists(family_name, fileinfo, save_lists = True):
+def generate_lists(family_name, fileinfo, load_lists = True):
     ''' Function that generates both the genera and species lists'''
+    
+    print("Generating taxa list from Encyclopedia of Life (EOL)...")
+    print("Input name: ", family_name)
+    
+    if load_lists:
+        if fileinfo.mptaxa_exists("species_list") and fileinfo.mptaxa_exists("genus_list"):
+            print("Loading lists form disk", fileinfo.base_path)
+            species_list = Taxa.load_taxa_list(fileinfo.mptaxa_filename("species_list"))
+            genus_list = Taxa.load_taxa_list(fileinfo.mptaxa_filename("genus_list"))
+            return genus_list, species_list    
+    
     # could in principle split the genrate list names
     # shall I add a eol prefix so data dont get overwritten?
     
     # performs a query to the website
-    params = {}
-    params["q"] = family_name.lower()
+    params = {"q":family_name.lower()}
     
     # different parameters for the query on eol
     # params["filter_by_hierarchy_entry_id"] = "any hierarchy id"
@@ -48,8 +58,6 @@ def generate_lists(family_name, fileinfo, save_lists = True):
     # params["filter_by_string"] = "???"
     # params["cache_ttl"] = "n seconds in cache"
     
-    print("EOL: Downloading infos from the query with parameters:", params["q"])
-    
     path = fileinfo.pickle_filename("eol_query")
     req = request_handler.Request(eol_api, path, params)
     req.load()
@@ -57,9 +65,9 @@ def generate_lists(family_name, fileinfo, save_lists = True):
     json_data = req.response.json()
     
     # shows the results
-    print("EOL: Query results list:")
-    for n, result in enumerate(json_data["results"]):
-        print(n, result["title"])
+    print("Possible matches: ", len(json_data["results"]))
+    for result in json_data["results"]:
+        print("    -", result["title"])
 
     # select the first result in the query
     result_link  = json_data["results"][0]["link"]
@@ -156,31 +164,31 @@ def generate_lists(family_name, fileinfo, save_lists = True):
             species_list.append(specie)
     
         pbar.draw_bar(i)
+
+    list_filename = fileinfo.mptaxa_filename("genus_list")
+    Taxa.save_taxa_list(genus_list, list_filename)
+        
+    list_filename = fileinfo.mptaxa_filename("species_list")
+    Taxa.save_taxa_list(species_list, list_filename)
+        
+    print("Genus retrived:", len(genus_list), "Species retrived:", len(species_list))
     return genus_list, species_list
 
 
 if __name__ == "__main__":
-    family_name = "Formicidae"
+    family_name = "Mycetophilidae"
     base_folder = "./Data/EOL_test"
-    prefix = "formicidae"
     
     import FileInfo
     fileinfo = FileInfo.FileInfo(base_folder, "eol", family_name)
-    
-#    _, species_list = generate_lists(family_name, fileinfo)
-#    spec_dict = generate_specie_dictionary(species_list, family_name)
-#    
-#    for d in spec_dict:
-#        print(d)
-#    
-    
+        
     genus_list, specie_list = generate_lists(family_name, fileinfo)
     
     
     import AuthorityFileCreation
     
     
-    AuthorityFileCreation.generate_authority_list(genus_list, specie_list, fileinfo)
+    AuthorityFileCreation.generate_authority_list(genus_list + specie_list, fileinfo)
     
     AuthorityFileCreation.generate_authority_file(genus_list + specie_list, fileinfo)
     

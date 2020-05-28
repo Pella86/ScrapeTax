@@ -121,7 +121,7 @@ def specimen_list(family_name, fileinfo):
     # with more keys the program will give a error
     tax_keys = ['identification_provided_by', 'identification_method',
                 'phylum', 'class', 'order', 'family', 'subfamily', 'genus',
-                'species']
+                'species', 'subspecies']
     
     
     # converts the records in taxas
@@ -347,7 +347,7 @@ def generate_children_list(family_id, fileinfo, parent_taxa):
                                 if subspecie_taxa:
                                     
                                     taxa_list += subspecie_taxa
-                                    
+    pwheel.end()
     # filter out all the taxon that don't have specie or genus
     return list(filter(lambda taxa : taxa.specie != None or taxa.genus != None, taxa_list))
 
@@ -355,9 +355,16 @@ def generate_children_list(family_id, fileinfo, parent_taxa):
 # Generate the complete taxa list
 # =============================================================================
 
-def generate_lists(family_name, fileinfo):
+def generate_lists(family_name, fileinfo, load_lists = True):
     print("Gathering data from BOLD Databases...")
     print("Input name:", family_name)
+    
+    if load_lists:
+        if fileinfo.mptaxa_exists("species_list") and fileinfo.mptaxa_exists("genus_list"):
+            print("Loading lists form disk", fileinfo.base_path)
+            species_list = Taxa.load_taxa_list(fileinfo.mptaxa_filename("species_list"))
+            genus_list = Taxa.load_taxa_list(fileinfo.mptaxa_filename("genus_list"))
+            return genus_list, species_list
     
     # Use the search API to search for the name
     
@@ -370,7 +377,7 @@ def generate_lists(family_name, fileinfo):
     print("Possible matches:", res_json["total_matched_names"])
     
     for match in res_json["top_matched_names"]:
-        print("    - " + match["taxon"])
+        print("    - " + match["taxon"], f"({match['taxid']})" )
     
     # get the tax id from the search    
         
@@ -389,9 +396,6 @@ def generate_lists(family_name, fileinfo):
     #         'sitemap', 'images', 'sequencinglabs', 'depositry',
     #         'wikipedia_summary', 'wikipedia_link'])
     
-    print("Rank\tName\tTaxon id")
-    print(res_json["tax_rank"] + "\t" + res_json["taxon"] + "\t" + res_json["taxid"])
-    
     if res_json["tax_rank"] != "family":
         raise Exception("BOLD_downloader: the selected result is not a family")
     
@@ -403,7 +407,7 @@ def generate_lists(family_name, fileinfo):
     
     family_id = res_json["taxid"]
     
-    print("Downloading subtaxas...")
+    print("Retriving subtaxas...")
     
     # use the retrived information to scavenge the sub taxa
     taxa_list = generate_children_list(family_id, fileinfo, family_taxa)
@@ -422,96 +426,44 @@ def generate_lists(family_name, fileinfo):
                 if taxa.author == None:
                     taxa.author = specimen.author    
     
-    return taxa_list
+    # divide species and genus
+    species_list = list(filter(lambda t : t.rank == t.rank_specie, taxa_list))
+    genus_list = list(filter(lambda t : t.rank == t.rank_genus, taxa_list))
 
+    list_filename = fileinfo.mptaxa_filename("genus_list")
+    Taxa.save_taxa_list(genus_list, list_filename)
+        
+    list_filename = fileinfo.mptaxa_filename("species_list")
+    Taxa.save_taxa_list(species_list, list_filename)
+    
+    
+    print("Genus retrived:", len(genus_list), "Species retrived:", len(species_list))
+    
+    return genus_list, species_list
 
-
-class AssociatedTaxa:
-    ''' class that couples a taxa with a list of subtaxa, like a subfamily
-        coupled with a genus
-    '''
-        
-    def __init__(self, main_taxa, rank):
-        
-        self.rank = rank
-        self.main_taxa = main_taxa
-        self.associates = []
-    
-    def add_associate(self, associate):
-        self.associates.append(associate)
-    
-    def __eq__(self, other):
-        return self.main_taxa == other
-    
-    def __str__(self):
-        return self.main_taxa + ":" + str(self.associates)
-
-def construct_associations(taxa_list):
-    ''' Function that finds from a taxa list which subfamilies and tribes are
-    associated wit which genus'''
-    
-    subfamilies = []
-    tribes = []    
-    for taxa in taxa_list:
-        if taxa.subfamily not in subfamilies and taxa.subfamily != None:
-            main_taxon = AssociatedTaxa(taxa.subfamily, Taxa.Taxa.rank_subfamily)
-            subfamilies.append(main_taxon)
-
-        if taxa.tribe not in tribes and taxa.tribe != None:
-            main_taxon = AssociatedTaxa(taxa.tribe, Taxa.Taxa.rank_tribe)
-            tribes.append(main_taxon)
-    
-    for taxa in taxa_list:
-        
-        for subfamily in subfamilies:
-            
-            if taxa.subfamily == subfamily:
-                
-                if taxa.genus not in subfamily.associates:
-                    subfamily.add_associate(taxa.genus)
-        
-        
-        for tribe in tribes:
-            
-            if taxa.tribe == tribe:
-                
-                if taxa.genus not in tribe.associates:
-                    tribe.add_associate(taxa.genus)
-    
-    sf = "Subfamilies"
-    print(f"{sf:-^79}")
-    for subfamily in subfamilies:
-        print(subfamily)    
-    
-    st = "Tribes"
-    print(f"{st:-^79}")   
-    for tribe in tribes:
-        print(tribe)                
-    
-    return subfamilies, tribes
-    
-    
-    
 
 if __name__ == "__main__":
+    
+    
     
     import FileInfo
     
     base_folder = "./Data/BOLD_test"
     
-    fileinfo = FileInfo.FileInfo(base_folder, "bold", "Vespidae")
+    fileinfo = FileInfo.FileInfo(base_folder, "bold", "Mycetophilidae")
     
-    taxa_list = generate_lists(fileinfo.family_name, fileinfo)
-
-    for taxa in taxa_list:
-        print(taxa)
-        
-        
+    # get the stuff
+    
+    species_list, genus_list = generate_lists(fileinfo.family_name, fileinfo) 
+    taxa_list = species_list + genus_list
+    
     Taxa.save_taxa_list(taxa_list, fileinfo.pickle_filename("taxa_list"))
+    
+    # load list
     
     taxa_list = Taxa.load_taxa_list(fileinfo.pickle_filename("taxa_list"))
     
-    construct_associations(taxa_list)
+    Taxa.construct_associations(taxa_list)
 
 
     

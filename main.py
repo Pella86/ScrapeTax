@@ -16,6 +16,8 @@ import Chrysis_net
 import AuthorityFileCreation
 import FileInfo
 import GBIF_downloader
+import BOLD_downloader
+import Taxa
 
 # =============================================================================
 # Fusion functions
@@ -29,11 +31,12 @@ def fuse_taxa(taxa_lists):
     
     fusion_list = []
     
-    # fill the fusion list with the first element of taxa list
+    # Fill the fusion list with the first element of taxa lists which is a list
+    # of taxa coming from one of the different sources
     fusion_list += taxa_lists[0]
     taxa_lists.pop(0)
     
-    # for the rest compare them and add them to the fusion if is missing
+    # Now scan the other lists for duplicates and fill in missing informations
     for taxa_list in taxa_lists:
         
         # for each taxa in the list
@@ -45,6 +48,10 @@ def fuse_taxa(taxa_lists):
                 
                 if ftaxa.is_equal(taxa):
                     ftaxa.copy_taxonomy(taxa)
+                    
+                    if ftaxa.author == None and taxa.author != None:
+                        ftaxa.author = taxa.author
+                    
                     ftaxa.source += taxa.source
                     ftaxa.links += taxa.links
                     break
@@ -121,7 +128,7 @@ def parse_sources():
     
     while not correct_answer:
         
-        sources = get_input("Chose a website (nbn, eol, gbif)", "website", "eol, nbn, gbif")
+        sources = get_input("Chose a website (nbn, eol, gbif, bold)", "website", "eol, nbn, gbif, bold")
         
         sources_parts = sources.split(",")
         sources_parts = [source.strip() for source in sources_parts]
@@ -165,22 +172,41 @@ def prod_main():
 
     taxa_lists = []
     
-    for s in sources:
-    # generate the lists
-        if s == "nbn":
-            fileinfo = FileInfo.FileInfo(base_folder, "nbn", family_name)
-            genus_list, species_list = NBN_parser.generate_lists(family_name, fileinfo)
-            taxa_lists.append(genus_list + species_list)
+    source_module = {"nbn"  : NBN_parser,
+                     "eol"  : EncyclopediaOfLife,
+                     "gbif" : GBIF_downloader,
+                     "bold" : BOLD_downloader
+                     }
     
-        elif s == "eol":
-            fileinfo = FileInfo.FileInfo(base_folder, "eol", family_name)
-            genus_list, species_list = EncyclopediaOfLife.generate_lists(family_name, fileinfo)
-            taxa_lists.append(genus_list + species_list)
-        
-        elif s == "gbif":
-            fileinfo = FileInfo.FileInfo(base_folder, "gbif", family_name)
-            genus_list, species_list = GBIF_downloader.generate_lists(family_name, fileinfo)         
-            taxa_lists.append(genus_list + species_list)
+    def generate_lists(source):
+        fileinfo = FileInfo.FileInfo(base_folder, source, family_name)
+        genus_list, species_list = source_module[source].generate_lists(family_name, fileinfo)
+        return genus_list + species_list
+    
+    for s in sources:
+        taxa_lists.append(generate_lists(s))
+    
+#    for s in sources:
+#    # generate the lists
+#        if s == "nbn":
+#            fileinfo = FileInfo.FileInfo(base_folder, "nbn", family_name)
+#            genus_list, species_list = NBN_parser.generate_lists(family_name, fileinfo)
+#            taxa_lists.append(genus_list + species_list)
+#    
+#        elif s == "eol":
+#            fileinfo = FileInfo.FileInfo(base_folder, "eol", family_name)
+#            genus_list, species_list = EncyclopediaOfLife.generate_lists(family_name, fileinfo)
+#            taxa_lists.append(genus_list + species_list)
+#        
+#        elif s == "gbif":
+#            fileinfo = FileInfo.FileInfo(base_folder, "gbif", family_name)
+#            genus_list, species_list = GBIF_downloader.generate_lists(family_name, fileinfo)         
+#            taxa_lists.append(genus_list + species_list)
+#        
+#        elif s == "bold":
+#            fileinfo = FileInfo.FileInfo(base_folder, "bold", family_name)
+#            genus_list, species_list = BOLD_downloader.generate_lists(family_name, fileinfo)         
+#            taxa_lists.append(genus_list + species_list)            
             
     
     # create the informations
@@ -189,6 +215,28 @@ def prod_main():
     taxa_list = fuse_taxa(taxa_lists)
     
     taxa_list = filter_taxa(taxa_list, genera_filter)
+    
+    # gather the tribes / subfamilies information
+    
+    subfamilies, tribes = Taxa.construct_associations(taxa_list)
+    
+    # use the associations assign the families to the extant genera
+    
+    for taxa in taxa_list:
+        if taxa.subfamily == None:
+            for subfamily in subfamilies:
+                if taxa.genus in subfamily.associates:
+                    taxa.subfamily = subfamily.main_taxa
+                    break
+
+        if taxa.tribe == None:
+            for tribe in tribes:
+                if taxa.genus in tribe.associates:
+                    taxa.tribe = tribe.main_taxa
+                    break
+    
+    taxa_list.sort(key=lambda t : t.sort_key())
+                
 
 
     exit_command = False
@@ -240,7 +288,7 @@ def prod_main():
         
 
 
-PRODUCTION = False   
+PRODUCTION = True   
 
 if __name__ == "__main__":
     if PRODUCTION:

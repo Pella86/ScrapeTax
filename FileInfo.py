@@ -42,6 +42,9 @@ class FileInfo:
             logger.debug("Folder already present")
         else:
             os.mkdir(self.base_path)
+    
+    def mptaxa_exists(self, name):
+        return os.path.isfile(self.mptaxa_filename(name))
 
     def filename(self, name, extention):
         fname = f"{self.prefix}_{name}.{extention}"
