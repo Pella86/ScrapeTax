@@ -44,8 +44,6 @@ def generate_lists(family_name, fileinfo, load_lists = True):
             genus_list = Taxa.load_taxa_list(fileinfo.mptaxa_filename("genus_list"))
             return genus_list, species_list    
     
-    # could in principle split the genrate list names
-    # shall I add a eol prefix so data dont get overwritten?
     
     # performs a query to the website
     params = {"q":family_name.lower()}
@@ -98,7 +96,7 @@ def generate_lists(family_name, fileinfo, load_lists = True):
     
     fam_taxa = Taxa.Taxa()
     fam_taxa.family = family_name
-    fam_taxa.source = "e"
+    fam_taxa.source = Taxa.Taxa.source_eol
     fam_taxa.rank = Taxa.Taxa.rank_family
     
     for name in names:
@@ -126,7 +124,7 @@ def generate_lists(family_name, fileinfo, load_lists = True):
     species_list = []
     for i, taxa in enumerate(genus_list):
         
-        #open the website, look for author and specie list
+        #open the website, look for specie list
         
         filename = fileinfo.pickle_filename(taxa.genus)
 
@@ -150,6 +148,7 @@ def generate_lists(family_name, fileinfo, load_lists = True):
             specie_name = parts[1]
             # the rest is the author name
             author_name = "".join(p + " " for p in parts[2 : ])[:-1]
+            # add the comma before the year
             author_name = re.sub(" (\d\d\d\d)", r", \1", author_name)
             
             specie_link = eol_main + link.get("href")

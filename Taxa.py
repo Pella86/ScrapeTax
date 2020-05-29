@@ -109,9 +109,7 @@ class Taxa:
         skey += test_none(self.genus)
         skey += test_none(self.specie)
         skey += test_none(self.subspecie)
-        
-        
-        
+
         return skey
     
     def str_author(self):

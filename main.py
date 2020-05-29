@@ -25,9 +25,10 @@ import Taxa
 
 
 def fuse_taxa(taxa_lists):
+    ''' The function fuses multiple taxa list together'''
     
     if len(taxa_lists) < 1: 
-        raise Exception("Fuse data: taxa_lists has less than one element")
+        raise Exception("Fuse data: taxa_lists is empty")
     
     fusion_list = []
     
@@ -42,10 +43,10 @@ def fuse_taxa(taxa_lists):
         # for each taxa in the list
         for taxa in taxa_list:
             
+            # compare it with the taxa, if is already there add the links 
+            # sources and eventual taxonomy differences
             for ftaxa in fusion_list:
-                # compare it with the taxa, if is already there add the links 
-                # sources and eventual taxonomy differences
-                
+    
                 if ftaxa.is_equal(taxa):
                     ftaxa.copy_taxonomy(taxa)
                     
@@ -58,12 +59,11 @@ def fuse_taxa(taxa_lists):
             else:
                 fusion_list.append(taxa)
                 
-    fusion_list.sort(key = lambda item : item.genus + (item.specie if item.specie else ""))
-    
     return fusion_list
 
 
 def filter_taxa(taxa_list, genera_filter):
+    ''' The function filters the taxa list according to genera'''
     
     if genera_filter:
     
@@ -95,6 +95,9 @@ def filter_taxa(taxa_list, genera_filter):
 
 
 def filter_status(taxa_list):
+    ''' Tests wether the status of the taxonomic name is accepted, the
+        taxonomic status information are retrived from the GBIF database
+    '''
     
     def check_status(item):
         if item.taxonomic_status != None:
@@ -104,6 +107,7 @@ def filter_status(taxa_list):
     
     return filter(lambda item : check_status(item), taxa_list)
     
+
     
         
 
@@ -159,7 +163,7 @@ def prod_main():
     # Get the family
     family_name = get_input("Input the family name",
                                 "family",
-                                "Vespidae")
+                                "Noctuidae")
     
     print("Family:", family_name)
     
@@ -185,29 +189,7 @@ def prod_main():
     
     for s in sources:
         taxa_lists.append(generate_lists(s))
-    
-#    for s in sources:
-#    # generate the lists
-#        if s == "nbn":
-#            fileinfo = FileInfo.FileInfo(base_folder, "nbn", family_name)
-#            genus_list, species_list = NBN_parser.generate_lists(family_name, fileinfo)
-#            taxa_lists.append(genus_list + species_list)
-#    
-#        elif s == "eol":
-#            fileinfo = FileInfo.FileInfo(base_folder, "eol", family_name)
-#            genus_list, species_list = EncyclopediaOfLife.generate_lists(family_name, fileinfo)
-#            taxa_lists.append(genus_list + species_list)
-#        
-#        elif s == "gbif":
-#            fileinfo = FileInfo.FileInfo(base_folder, "gbif", family_name)
-#            genus_list, species_list = GBIF_downloader.generate_lists(family_name, fileinfo)         
-#            taxa_lists.append(genus_list + species_list)
-#        
-#        elif s == "bold":
-#            fileinfo = FileInfo.FileInfo(base_folder, "bold", family_name)
-#            genus_list, species_list = BOLD_downloader.generate_lists(family_name, fileinfo)         
-#            taxa_lists.append(genus_list + species_list)            
-            
+              
     
     # create the informations
     fileinfo = FileInfo.FileInfo(base_folder, "".join(sources), family_name)    
@@ -235,6 +217,7 @@ def prod_main():
                     taxa.tribe = tribe.main_taxa
                     break
     
+    # sort the list
     taxa_list.sort(key=lambda t : t.sort_key())
                 
 

@@ -330,6 +330,7 @@ def generate_lists(family_name, file_info, load_lists = True):
     list_filename = file_info.mptaxa_filename("species_list")
     Taxa.save_taxa_list(species_list, list_filename)
     
+    print("Genus retrived:", len(genus_list), "Species retrived:", len(species_list))
     return genus_list, species_list
 
 

@@ -377,7 +377,7 @@ def generate_lists(family_name, fileinfo, load_lists = True):
     print("Possible matches:", res_json["total_matched_names"])
     
     for match in res_json["top_matched_names"]:
-        print("    - " + match["taxon"], f"({match['taxid']})" )
+        print("    - " + match["taxon"], f"(id: {match['taxid']})" )
     
     # get the tax id from the search    
         

@@ -62,6 +62,9 @@ class FileInfo:
     def csv_filename(self, name):
         return self.filename(name, "csv")
     
+    def txt_filename(self, name):
+        return self.filename(name, "txt")
+    
 
 
 if __name__ == "__main__":

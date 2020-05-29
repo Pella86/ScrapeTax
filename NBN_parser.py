@@ -261,7 +261,10 @@ def generate_lists(family_name, fileinfo, load_lists = True):
             species_list.append(taxa)
             
             # find subspecies somehow
-            soup = request_handler.get_soup(taxa.links[0], fileinfo.pickle_filename(taxa.specie))
+            # is possible that the name of the specie wuld be separated by / 
+            # like tritici/obelisca and will break the file name
+            filename = fileinfo.pickle_filename(taxa.specie.replace("/", "_"))
+            soup = request_handler.get_soup(taxa.links[0], filename)
             children = soup.find("section", id="classification")
             
             if children:
@@ -271,24 +274,15 @@ def generate_lists(family_name, fileinfo, load_lists = True):
             
                 html_parts = zip(dts, dds)
                 
-                # compiles the specie + subspecie list
-                species = []
-                
-                species.append({})
-                
                 # find the subspecie and append the eventual subspecie name and author
                 
                 for dth, ddh in html_parts:
                     if dth.text == "subspecies":
-                        subspecie_name = ddh.find("span", class_="name").text.split(" ")[3]
-                        subspecie_author = ddh.find("span", class_="author").text
-                        species.append({"subspecies" : subspecie_name, "author" : subspecie_author})  
-                        
                         staxa = Taxa.Taxa()
                         staxa.copy_taxonomy(taxa)
                         
                         staxa.author = ddh.find("span", class_="author").text
-                        staxa.subspecie = ddh.find("span", class_="name").text.split(" ")[3]
+                        staxa.subspecie = ddh.find("span", class_="name").text.split(" ")[2]
                         
                         staxa.rank = Taxa.Taxa.rank_subspecie
                         staxa.links.append(specie.get_link())
