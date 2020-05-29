@@ -10,13 +10,9 @@ Created on Fri May  8 10:28:00 2020
 # Imports
 # =============================================================================
 
-# python imports
-import os
-
 # my imports
 import request_handler
 import Taxa
-import AuthorityFileCreation
 import FileInfo
 import ProgressBar
 
@@ -50,14 +46,6 @@ base_folder = "./Data/GBIF_test"
 def generate_lists(family_name, file_info, load_lists = True):
     print("Generating taxa list from GBIF database...")
     print("Input name: ", family_name)
-    
-    
-    if load_lists:
-        if file_info.mptaxa_exists("species_list") and file_info.mptaxa_exists("genus_list"):
-            print("Loading lists form disk", file_info.base_path)
-            species_list = Taxa.load_taxa_list(file_info.mptaxa_filename("species_list"))
-            genus_list = Taxa.load_taxa_list(file_info.mptaxa_filename("genus_list"))
-            return genus_list, species_list
     
     # establish the first query
     
@@ -324,11 +312,6 @@ def generate_lists(family_name, file_info, load_lists = True):
     
     species_list.sort(key=lambda t: t.genus)
     
-    list_filename = file_info.mptaxa_filename("genus_list")
-    Taxa.save_taxa_list(genus_list, list_filename)
-        
-    list_filename = file_info.mptaxa_filename("species_list")
-    Taxa.save_taxa_list(species_list, list_filename)
     
     print("Genus retrived:", len(genus_list), "Species retrived:", len(species_list))
     return genus_list, species_list

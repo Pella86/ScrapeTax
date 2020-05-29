@@ -18,95 +18,96 @@ import FileInfo
 import GBIF_downloader
 import BOLD_downloader
 import Taxa
+import TaxaList
 
-# =============================================================================
-# Fusion functions
-# =============================================================================
-
-
-def fuse_taxa(taxa_lists):
-    ''' The function fuses multiple taxa list together'''
-    
-    if len(taxa_lists) < 1: 
-        raise Exception("Fuse data: taxa_lists is empty")
-    
-    fusion_list = []
-    
-    # Fill the fusion list with the first element of taxa lists which is a list
-    # of taxa coming from one of the different sources
-    fusion_list += taxa_lists[0]
-    taxa_lists.pop(0)
-    
-    # Now scan the other lists for duplicates and fill in missing informations
-    for taxa_list in taxa_lists:
-        
-        # for each taxa in the list
-        for taxa in taxa_list:
-            
-            # compare it with the taxa, if is already there add the links 
-            # sources and eventual taxonomy differences
-            for ftaxa in fusion_list:
-    
-                if ftaxa.is_equal(taxa):
-                    ftaxa.copy_taxonomy(taxa)
-                    
-                    if ftaxa.author == None and taxa.author != None:
-                        ftaxa.author = taxa.author
-                    
-                    ftaxa.source += taxa.source
-                    ftaxa.links += taxa.links
-                    break
-            else:
-                fusion_list.append(taxa)
-                
-    return fusion_list
-
-
-def filter_taxa(taxa_list, genera_filter):
-    ''' The function filters the taxa list according to genera'''
-    
-    if genera_filter:
-    
-        genus_filtered = []
-    
-        # little debug counter to check how many are selected    
-        
-        genus_count = {}
-            
-        for g in genera_filter:
-            genus_count[g] = 0
-        
-        for taxa in taxa_list:
-            
-            for filt in genera_filter:
-                if taxa.genus.find(filt) != -1:
-                    genus_filtered.append(taxa)
-                    genus_count[filt] += 1
-        
-        print("--- Items found in genus filtering ---")
-        for key, value in genus_count.items():
-            print(key, value)
-        print("--------------------------------------")
-    
-    else:
-        genus_filtered = taxa_list
-    
-    return genus_filtered
-
-
-def filter_status(taxa_list):
-    ''' Tests wether the status of the taxonomic name is accepted, the
-        taxonomic status information are retrived from the GBIF database
-    '''
-    
-    def check_status(item):
-        if item.taxonomic_status != None:
-            return item.taxonomic_status == "ACCEPTED"
-        else:
-            return True
-    
-    return filter(lambda item : check_status(item), taxa_list)
-    
+## =============================================================================
+## Fusion functions
+## =============================================================================
+#
+#
+#def fuse_taxa(taxa_lists):
+#    ''' The function fuses multiple taxa list together'''
+#    
+#    if len(taxa_lists) < 1: 
+#        raise Exception("Fuse data: taxa_lists is empty")
+#    
+#    fusion_list = []
+#    
+#    # Fill the fusion list with the first element of taxa lists which is a list
+#    # of taxa coming from one of the different sources
+#    fusion_list += taxa_lists[0]
+#    taxa_lists.pop(0)
+#    
+#    # Now scan the other lists for duplicates and fill in missing informations
+#    for taxa_list in taxa_lists:
+#        
+#        # for each taxa in the list
+#        for taxa in taxa_list:
+#            
+#            # compare it with the taxa, if is already there add the links 
+#            # sources and eventual taxonomy differences
+#            for ftaxa in fusion_list:
+#    
+#                if ftaxa.is_equal(taxa):
+#                    ftaxa.copy_taxonomy(taxa)
+#                    
+#                    if ftaxa.author == None and taxa.author != None:
+#                        ftaxa.author = taxa.author
+#                    
+#                    ftaxa.source += taxa.source
+#                    ftaxa.links += taxa.links
+#                    break
+#            else:
+#                fusion_list.append(taxa)
+#                
+#    return fusion_list
+#
+#
+#def filter_taxa(taxa_list, genera_filter):
+#    ''' The function filters the taxa list according to genera'''
+#    
+#    if genera_filter:
+#    
+#        genus_filtered = []
+#    
+#        # little debug counter to check how many are selected    
+#        
+#        genus_count = {}
+#            
+#        for g in genera_filter:
+#            genus_count[g] = 0
+#        
+#        for taxa in taxa_list:
+#            
+#            for filt in genera_filter:
+#                if taxa.genus.find(filt) != -1:
+#                    genus_filtered.append(taxa)
+#                    genus_count[filt] += 1
+#        
+#        print("--- Items found in genus filtering ---")
+#        for key, value in genus_count.items():
+#            print(key, value)
+#        print("--------------------------------------")
+#    
+#    else:
+#        genus_filtered = taxa_list
+#    
+#    return genus_filtered
+#
+#
+#def filter_status(taxa_list):
+#    ''' Tests wether the status of the taxonomic name is accepted, the
+#        taxonomic status information are retrived from the GBIF database
+#    '''
+#    
+#    def check_status(item):
+#        if item.taxonomic_status != None:
+#            return item.taxonomic_status == "ACCEPTED"
+#        else:
+#            return True
+#    
+#    return filter(lambda item : check_status(item), taxa_list)
+#    
 
     
         
@@ -173,59 +174,16 @@ def prod_main():
         genera_filter = [genus.strip() for genus in genera_filter.split(",")]
 
     print("Generating lists...")
+    
+    fileinfo = FileInfo.FileInfo(base_folder, "_".join(sources), family_name)
 
-    taxa_lists = []
-    
-    source_module = {"nbn"  : NBN_parser,
-                     "eol"  : EncyclopediaOfLife,
-                     "gbif" : GBIF_downloader,
-                     "bold" : BOLD_downloader
-                     }
-    
-    def generate_lists(source):
-        fileinfo = FileInfo.FileInfo(base_folder, source, family_name)
-        genus_list, species_list = source_module[source].generate_lists(family_name, fileinfo)
-        return genus_list + species_list
-    
-    for s in sources:
-        taxa_lists.append(generate_lists(s))
-              
-    
-    # create the informations
-    fileinfo = FileInfo.FileInfo(base_folder, "".join(sources), family_name)    
-    
-    taxa_list = fuse_taxa(taxa_lists)
-    
-    taxa_list = filter_taxa(taxa_list, genera_filter)
-    
-    # gather the tribes / subfamilies information
-    
-    subfamilies, tribes = Taxa.construct_associations(taxa_list)
-    
-    # use the associations assign the families to the extant genera
-    
-    for taxa in taxa_list:
-        if taxa.subfamily == None:
-            for subfamily in subfamilies:
-                if taxa.genus in subfamily.associates:
-                    taxa.subfamily = subfamily.main_taxa
-                    break
-
-        if taxa.tribe == None:
-            for tribe in tribes:
-                if taxa.genus in tribe.associates:
-                    taxa.tribe = tribe.main_taxa
-                    break
-    
-    # sort the list
-    taxa_list.sort(key=lambda t : t.sort_key())
-                
+    taxa_list = TaxaList.generate_taxa_list(base_folder, sources, family_name, genera_filter)
 
 
     exit_command = False
     
     while not exit_command:
-        print("What you would like to do?")
+        print("{:-^79}".format("What you would like to do?"))
         print("  1. Generate authority list")
         print("  2. Generate label table")
         print("  3. Create csv authority file")
@@ -245,7 +203,7 @@ def prod_main():
             if choice == 1:
                 print("Generating authority list...")
                 
-                AuthorityFileCreation.generate_authority_list(taxa_list, fileinfo)  
+                AuthorityFileCreation.generate_authority_list(taxa_list.taxa, fileinfo)  
                 
                 print("Authority list created")
             
@@ -254,14 +212,14 @@ def prod_main():
                 
                 table = CreateLabelTable.LabelTable("safari")
                 
-                table.create_table(taxa_list, fileinfo.html_filename("label_table"))
+                table.create_table(taxa_list.taxa, fileinfo.html_filename("label_table"))
 
                 print("Table created.")
                 
             elif choice == 3:
                 print("Generating authority file...")
                     
-                AuthorityFileCreation.generate_authority_file(taxa_list, fileinfo)
+                AuthorityFileCreation.generate_authority_file(taxa_list.taxa, fileinfo)
                 
                 print("Authority file created.")
             

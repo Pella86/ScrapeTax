@@ -359,12 +359,6 @@ def generate_lists(family_name, fileinfo, load_lists = True):
     print("Gathering data from BOLD Databases...")
     print("Input name:", family_name)
     
-    if load_lists:
-        if fileinfo.mptaxa_exists("species_list") and fileinfo.mptaxa_exists("genus_list"):
-            print("Loading lists form disk", fileinfo.base_path)
-            species_list = Taxa.load_taxa_list(fileinfo.mptaxa_filename("species_list"))
-            genus_list = Taxa.load_taxa_list(fileinfo.mptaxa_filename("genus_list"))
-            return genus_list, species_list
     
     # Use the search API to search for the name
     
@@ -429,14 +423,7 @@ def generate_lists(family_name, fileinfo, load_lists = True):
     # divide species and genus
     species_list = list(filter(lambda t : t.rank == t.rank_specie, taxa_list))
     genus_list = list(filter(lambda t : t.rank == t.rank_genus, taxa_list))
-
-    list_filename = fileinfo.mptaxa_filename("genus_list")
-    Taxa.save_taxa_list(genus_list, list_filename)
         
-    list_filename = fileinfo.mptaxa_filename("species_list")
-    Taxa.save_taxa_list(species_list, list_filename)
-    
-    
     print("Genus retrived:", len(genus_list), "Species retrived:", len(species_list))
     
     return genus_list, species_list

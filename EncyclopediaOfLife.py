@@ -10,8 +10,6 @@ Created on Thu Apr  9 10:30:51 2020
 # =============================================================================
 
 import request_handler
-import json
-import os
 import re
 
 import Taxa
@@ -36,14 +34,6 @@ def generate_lists(family_name, fileinfo, load_lists = True):
     
     print("Generating taxa list from Encyclopedia of Life (EOL)...")
     print("Input name: ", family_name)
-    
-    if load_lists:
-        if fileinfo.mptaxa_exists("species_list") and fileinfo.mptaxa_exists("genus_list"):
-            print("Loading lists form disk", fileinfo.base_path)
-            species_list = Taxa.load_taxa_list(fileinfo.mptaxa_filename("species_list"))
-            genus_list = Taxa.load_taxa_list(fileinfo.mptaxa_filename("genus_list"))
-            return genus_list, species_list    
-    
     
     # performs a query to the website
     params = {"q":family_name.lower()}
@@ -164,11 +154,6 @@ def generate_lists(family_name, fileinfo, load_lists = True):
     
         pbar.draw_bar(i)
 
-    list_filename = fileinfo.mptaxa_filename("genus_list")
-    Taxa.save_taxa_list(genus_list, list_filename)
-        
-    list_filename = fileinfo.mptaxa_filename("species_list")
-    Taxa.save_taxa_list(species_list, list_filename)
         
     print("Genus retrived:", len(genus_list), "Species retrived:", len(species_list))
     return genus_list, species_list
