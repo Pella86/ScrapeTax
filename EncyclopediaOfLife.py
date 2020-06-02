@@ -62,13 +62,18 @@ def generate_lists(family_name, fileinfo, load_lists = True):
     
     # creates the reference link
     family_page = result_link + "/names"
+    
+    print("Downloading data from:", family_page)
 
     # soups the link
     path = fileinfo.pickle_filename("eol_webpage")
     s = request_handler.get_soup(family_page, path)
+    
+    
 
     # select the section corresponding to the Hierarchical tree
     samples = s.select("body > div.l-basic-main > div.l-content > div > div.ui.segments > div:nth-child(1)")
+    
 
     # gather the names encapsulated in the divs
     divs = samples[0].find_all("div")

@@ -291,8 +291,6 @@ def generate_lists(family_name, fileinfo, load_lists = True):
         
     return genus_list, species_list
 
-    
-            
 
 if __name__ == "__main__":
     
@@ -303,10 +301,12 @@ if __name__ == "__main__":
     
     genus_list, specie_list = generate_lists(family_name, fi)
     
-    
+    print("{:-^79}".format(" GENERA "))
+    print("rank family subfamily tribe genus specie subspecie author")
     for genus in genus_list:
         genus.print_extended()
-    
+
+    print("{:-^79}".format(" SPECIES "))    
     for specie in specie_list:
         print(specie)
     

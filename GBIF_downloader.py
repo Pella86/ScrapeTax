@@ -61,7 +61,7 @@ def generate_lists(family_name, file_info, load_lists = True):
     if family_json.get("family") != None: 
         print("Found:", family_json["family"], "Confidence:", str(family_json["confidence"]) + "%", "match type:", family_json["matchType"])
     else:
-        raise Exception("GBIF: Name not found because: " +  family_json["note"])
+        raise Exception("GBIF: Name not found because: " +  str(family_json))
     
     # Json structure of the family json
     #import json
