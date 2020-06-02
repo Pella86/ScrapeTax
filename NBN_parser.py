@@ -275,7 +275,8 @@ def generate_lists(family_name, fileinfo, load_lists = True):
                         staxa.copy_taxonomy(taxa)
                         
                         staxa.author = ddh.find("span", class_="author").text
-                        staxa.subspecie = ddh.find("span", class_="name").text.split(" ")[2]
+                        staxa.subspecie = ddh.find("span", class_="name").text.split(" ")[3]
+                        
                         
                         staxa.rank = Taxa.Taxa.rank_subspecie
                         staxa.links.append(specie.get_link())
@@ -304,10 +305,10 @@ if __name__ == "__main__":
     
     
     for genus in genus_list:
-        print(genus)
+        genus.print_extended()
     
     for specie in specie_list:
-        specie.print_extended()
+        print(specie)
     
     
 
