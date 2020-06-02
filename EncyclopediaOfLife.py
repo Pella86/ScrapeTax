@@ -138,11 +138,19 @@ def generate_lists(family_name, fileinfo, load_lists = True):
             if len(parts) < 3:
                 #print(f"Name is not rightfully formatted: {link.text}")
                 continue
+            
+            n_specie = 1
+            
+            # this is a sub genus
+            if parts[n_specie].startswith("("):
+                n_specie = 2
                 
             # first 2 elements are the binomial nomenclature
-            specie_name = parts[1]
+            specie_name = parts[n_specie]
+            
             # the rest is the author name
-            author_name = "".join(p + " " for p in parts[2 : ])[:-1]
+            author_name = "".join(p + " " for p in parts[n_specie + 1 : ])[:-1]
+            
             # add the comma before the year
             author_name = re.sub(" (\d\d\d\d)", r", \1", author_name)
             
