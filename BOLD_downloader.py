@@ -146,6 +146,10 @@ def specimen_list(family_name, fileinfo):
         if rec.genus == None and rec.specie == None:
             continue
         
+        # there are species that arent determined yet?
+        if rec.specie == "n. sp.":
+            continue
+        
         # transform the recod to the taxa
         taxa = Taxa.Taxa()
         

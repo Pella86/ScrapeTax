@@ -154,6 +154,25 @@ def generate_lists(family_name, fileinfo, load_lists = True):
             # add the comma before the year
             author_name = re.sub(" (\d\d\d\d)", r", \1", author_name)
             
+            # filter out common names in author
+            # '(Linne, 1758) (European mantis)'
+            
+            # if the name has a final parentheses that is not connected to a year
+            if author_name[-1] == ")":
+                if not author_name[-2].isdigit():
+                    
+                    # look where the parentesis starts
+                    reverse_name = author_name[::-1]
+                    
+                    par_position = 0
+                    
+                    while par_position < len(author_name) and reverse_name[par_position] != "(":
+                        par_position += 1
+                    
+                    # slice the string 1 character before
+                    slice_position = len(author_name) - par_position - 2
+                    author_name = author_name[ : slice_position]
+
             specie_link = eol_main + link.get("href")
             
             specie = Taxa.Taxa()
