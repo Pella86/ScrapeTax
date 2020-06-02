@@ -111,6 +111,21 @@ class Taxa:
         skey += test_none(self.subspecie)
 
         return skey
+
+    def sort_key_genus(self):
+        skey = ""
+        
+        def test_none(rank):
+            if rank == None:
+                return "z"*10
+            else:
+                return rank
+        
+        skey += test_none(self.genus)
+        skey += test_none(self.specie)
+        skey += test_none(self.subspecie)
+
+        return skey
     
     def str_author(self):
         return self.author if self.author else "No author available"

@@ -105,6 +105,8 @@ def generate_authority_list(taxa_list, fileinfo):
     fhtml.add_heading(2, "Genuses")
     fhtml.add_line_break()
     
+    taxa_list.sort(key=lambda t : t.sort_key_genus())
+    
     for genus in filter(lambda taxa : taxa.rank == Taxa.Taxa.rank_genus, taxa_list):
         fhtml.add_italics_element(genus.genus)
         fhtml.add_element(", ")

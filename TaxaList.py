@@ -228,8 +228,9 @@ class TaxaList:
                         taxa.tribe = tribe.main_taxa
                         break
         
-    def sort(self):
+    def sort(self, rank = None):
         self.taxa.sort(key=lambda t : t.sort_key())
+            
 
 
 # =============================================================================
