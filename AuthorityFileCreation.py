@@ -30,7 +30,7 @@ def create_authority_lines(taxa_list):
     
     
     for i, taxa in enumerate(taxa_list):
-        
+
         line = ""
         
         if i == 0:

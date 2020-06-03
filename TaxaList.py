@@ -230,6 +230,12 @@ class TaxaList:
         
     def sort(self, rank = None):
         self.taxa.sort(key=lambda t : t.sort_key())
+
+    def clean_noauthor(self):
+        
+        self.taxa = list(filter(lambda item : True if item.author else False, self.taxa))
+        
+        
             
 
 
@@ -320,6 +326,8 @@ def generate_taxa_list(base_folder, sources, family_name, genera_filter):
     taxa_list_filtered.sort()
     
     return taxa_list_filtered
+
+
     
 
 if __name__ == "__main__":

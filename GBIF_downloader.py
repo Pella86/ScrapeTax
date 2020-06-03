@@ -141,6 +141,8 @@ def generate_lists(family_name, file_info, load_lists = True):
     children_req.load()
     children_json = children_req.get_json()
     
+   
+    
     # content of children json
     # children_json keys:
     # dict_keys(['offset', 'limit', 'endOfRecords', 'results'])
@@ -264,13 +266,28 @@ def generate_lists(family_name, file_info, load_lists = True):
     genus_list = []
     species_list = []
     
-    pbar = ProgressBar.ProgressBar(len(children_json["results"]))
+    #pbar = ProgressBar.ProgressBar(len(children_json["results"]))
+    
+
+    num_desc = family_json["numDescendants"]
+    num_res  = len(children_json["results"])
+    
+    if num_res != num_desc:
+        print(f"GBIF_downlaoder: Results({num_res}) dont match num descendant({num_desc})")
     
     for i, taxon in enumerate(children_json["results"]):
         
         # search for the genus, and if is a genus, find the children species
         if taxon["rank"] == "GENUS":
+            
+            
+            
             tax = generate_genus(taxon)
+            
+            #print(tax.genus)
+            if tax.genus == "Fotella":
+                print(tax)
+            
             genus_list.append(tax)
             
             # look for the next 
@@ -290,9 +307,12 @@ def generate_lists(family_name, file_info, load_lists = True):
             
             # navigate throught the child taxa of the genus
             for specie in species_response["results"]:
+
                 
                 if specie["rank"] == "SPECIES":
                     stax = generate_specie(specie)
+                    
+                    
                 
                     species_list.append(stax)
                                    
@@ -302,7 +322,9 @@ def generate_lists(family_name, file_info, load_lists = True):
             stax = generate_specie(taxon)
             species_list.append(stax)
         
-        pbar.draw_bar(i)
+        #pbar.draw_bar(i)
+        
+
 
 #        if taxon["rank"] != "GENUS" and taxon["rank"] != "SPECIES":
 #            if not ( "BOLD" in  taxon["scientificName"]):
@@ -310,7 +332,6 @@ def generate_lists(family_name, file_info, load_lists = True):
 #                print(taxon["rank"])
         
     
-    species_list.sort(key=lambda t: t.genus)
     
     
     print("Genus retrived:", len(genus_list), "Species retrived:", len(species_list))
@@ -318,7 +339,7 @@ def generate_lists(family_name, file_info, load_lists = True):
 
 
 if __name__ == "__main__":    
-    family_name = "Formicidae"
+    family_name = "Noctuidae"
     base_folder = "./Data/GBIF_test"
     file_info = FileInfo.FileInfo(base_folder, "gbif", family_name)
     

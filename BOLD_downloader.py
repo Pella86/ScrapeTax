@@ -33,7 +33,7 @@ taxon_search_url = main_url + "/index.php/Taxbrowser_Taxonpage"
 
 # =============================================================================
 # retrive all the specimens they have
-# =============================================================================$
+# =============================================================================
 
 class Record:
     ''' Class that manages the specimen records returned by the BOLD system'''
@@ -150,6 +150,8 @@ def specimen_list(family_name, fileinfo):
         if rec.specie == "n. sp.":
             continue
         
+        
+        
         # transform the recod to the taxa
         taxa = Taxa.Taxa()
         
@@ -252,6 +254,20 @@ def get_children(taxid, fileinfo, parent_taxa = None):
             # has only a code like CB-12. There are some species that probably
             # are provisory names that contain codes and symbols
             if text == "sp." or text == "cf." or "-" in text or "_" in text:
+                continue
+            
+            if text.find("sp.") != -1:
+                print("sp. in text", text)
+                continue
+            
+            if text.find("nr.") != -1:
+                print("nr. in text", text)
+                continue
+                        
+            
+            
+            # skip names containing digits
+            if any(c.isdigit() for c in text):
                 continue
 
             # assign the name

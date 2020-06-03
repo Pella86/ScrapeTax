@@ -9,6 +9,8 @@ Created on Fri Jan 10 09:21:27 2020
 # Imports
 # =============================================================================
 
+import copy
+
 import CreateLabelTable
 import AuthorityFileCreation
 import FileInfo
@@ -23,15 +25,17 @@ def scrape_taxonomy(family_name, base_folder, sources, genera_filter, actions):
     fileinfo = FileInfo.FileInfo(base_folder, "_".join(sources), family_name)
 
     taxa_list = TaxaList.generate_taxa_list(base_folder, sources, family_name, genera_filter)
+    
+    
+    taxa_list.clean_noauthor()
 
-        
     for action in actions:
         
         if action == "authority list":
-            AuthorityFileCreation.generate_authority_list(taxa_list.taxa, fileinfo)
+            AuthorityFileCreation.generate_authority_list(copy.copy(taxa_list.taxa), fileinfo)
         
         elif action == "authority file":
-            AuthorityFileCreation.generate_authority_file(taxa_list.taxa, fileinfo)
+            AuthorityFileCreation.generate_authority_file(copy.copy(taxa_list.taxa), fileinfo)
         
         elif action == "label table":
             table = CreateLabelTable.LabelTable("safari")                
@@ -101,7 +105,7 @@ def prod_main():
     sources_input = UserInput()
     sources_input.title = "Chose a website (nbn, eol, gbif, bold)"
     sources_input.input_sentence = "website(s)"
-    sources_input.default = "eol, nbn, gbif, bold"
+    sources_input.default = "gbif, bold"
     sources_input.comma_values = True
     
     sources = sources_input.get_input()
@@ -110,7 +114,7 @@ def prod_main():
     family_name_input = UserInput()
     family_name_input.title = "Input the family name"
     family_name_input.input_sentence = "family"
-    family_name_input.default = "Mantidae"
+    family_name_input.default = "Mycetophilidae"
     
     family_name = family_name_input.get_input()
     
@@ -129,59 +133,6 @@ def prod_main():
     
     scrape_taxonomy(family_name, base_folder, sources, genera_filter, actions)
     
-    
-#    fileinfo = FileInfo.FileInfo(base_folder, "_".join(sources), family_name)
-#
-#    taxa_list = TaxaList.generate_taxa_list(base_folder, sources, family_name, genera_filter)
-#
-#
-#    exit_command = False
-#    
-#    while not exit_command:
-#        print("{:-^79}".format("What you would like to do?"))
-#        print("  1. Generate authority list")
-#        print("  2. Generate label table")
-#        print("  3. Create csv authority file")
-#        print("  4. Exit (e, exit, quit)")
-#        
-#        
-#        choice = input("pick a number >")    
-#        if choice == "e" or choice == "exit" or choice == "quit" or choice == "4":
-#            exit_command = True
-#        else:
-#            try:
-#                choice = int(choice)
-#            except ValueError:
-#                print("not a value from 1 to 3")
-#                choice = None 
-#
-#            if choice == 1:
-#                print("Generating authority list...")
-#                
-#                AuthorityFileCreation.generate_authority_list(taxa_list.taxa, fileinfo)  
-#                
-#                print("Authority list created")
-#            
-#            elif choice == 2:
-#                print("Generating label table...")
-#                
-#                table = CreateLabelTable.LabelTable("safari")
-#                
-#                table.create_table(taxa_list.taxa, fileinfo.html_filename("label_table"))
-#
-#                print("Table created.")
-#                
-#            elif choice == 3:
-#                print("Generating authority file...")
-#                    
-#                AuthorityFileCreation.generate_authority_file(taxa_list.taxa, fileinfo)
-#                
-#                print("Authority file created.")
-#            
-#            else:
-#                print("Choice not available")
-#                exit_command = True            
-#        
 
 
 PRODUCTION = True   

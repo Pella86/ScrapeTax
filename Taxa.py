@@ -94,36 +94,30 @@ class Taxa:
         else:
             return False
         
+
+    def test_none(self, rank):
+        if rank == None:
+            return "z" * 20
+        else:
+            return rank
     
     def sort_key(self):
-        skey = ""
-        
-        def test_none(rank):
-            if rank == None:
-                return "z"*10
-            else:
-                return rank
-        
-        skey += test_none(self.subfamily)
-        skey += test_none(self.tribe)
-        skey += test_none(self.genus)
-        skey += test_none(self.specie)
-        skey += test_none(self.subspecie)
 
-        return skey
+        subfamily = self.test_none(self.subfamily)
+        tribe = self.test_none(self.tribe)
+        genus = self.test_none(self.genus)
+        specie = self.test_none(self.specie)
+        subspecie = self.test_none(self.subspecie)
+
+        return subfamily + tribe + genus + specie + subspecie
+
 
     def sort_key_genus(self):
         skey = ""
         
-        def test_none(rank):
-            if rank == None:
-                return "z"*10
-            else:
-                return rank
-        
-        skey += test_none(self.genus)
-        skey += test_none(self.specie)
-        skey += test_none(self.subspecie)
+        skey += self.test_none(self.genus)
+        skey += self.test_none(self.specie)
+        skey += self.test_none(self.subspecie)
 
         return skey
     
