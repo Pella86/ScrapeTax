@@ -15,6 +15,7 @@ import CreateLabelTable
 import AuthorityFileCreation
 import FileInfo
 import TaxaList
+import Levenshtein_distance
 
 # =============================================================================
 # Main 
@@ -42,6 +43,111 @@ def scrape_taxonomy(family_name, base_folder, sources, genera_filter, actions):
             table.create_table(taxa_list.taxa, fileinfo.html_filename("label_table"))
         else:
             print("Action not supported")
+            
+
+def get_author_name(author):
+    pos = author.rfind(",")
+    
+    
+    author_name = author[:pos]
+    if author_name.startswith("("):
+        author_name = author_name[1:]    
+    
+    return author_name
+
+
+            
+
+
+def scrape_gbif(family_name, base_folder, genera_filter, actions):
+    
+    
+    gbif_taxa_list = TaxaList.generate_taxa_list_single(base_folder, "gbif", family_name)
+    
+    # filter the non accepted name
+    gbif_taxa_list.filter_status()
+    
+    # filter the list for the relevant genuses
+    gbif_taxa_list.filter_taxa(genera_filter)
+
+    # remove taxa without authors
+    gbif_taxa_list.clean_noauthor()
+
+    
+    # scrape the bold website to get the subfamilies and tribes
+    bold_taxa_list = TaxaList.generate_taxa_list_single(base_folder, "bold", family_name)
+    
+    # find subfamilies and tribes
+    associations = bold_taxa_list.find_associations()
+    
+    gbif_taxa_list.fill_associations(associations)
+
+    
+    
+    # use the NBN_Atlas for the authors
+    nbn_taxa_list = TaxaList.generate_taxa_list_single(base_folder, "nbn", family_name)
+    
+    for gbif_taxon in gbif_taxa_list.taxa:
+        
+        for nbn_taxon in nbn_taxa_list.taxa:
+            
+            if gbif_taxon.genus == nbn_taxon.genus and gbif_taxon.specie == nbn_taxon.specie:
+                
+                
+                if gbif_taxon.author != nbn_taxon.author:
+
+                    gbif_author_name = get_author_name(gbif_taxon.author)
+                    nbn_author_name = get_author_name(nbn_taxon.author)
+                    
+                    # if the name is the same, it means that is a parenthesis
+                    # issue or a year issue, thus the name of the author is
+                    # spelled correctly, we take the year from the nbn as a 
+                    # reference
+                    if gbif_author_name == nbn_author_name:
+                        gbif_taxon.author = nbn_taxon.author
+                    
+                    else:
+                        # if is a name issue check if the name is similar
+                        # with the Levenshtein distance
+                        distance = Levenshtein_distance.levenshtein(gbif_author_name, nbn_author_name)
+
+                        # if the distance is less then 2 letters his means that
+                        # is a probable spelling mistake so all the authors name
+                        # should be substituted accordingly
+                        if distance <= 2:
+                            # substitute all the name in the list
+                            for sub_author_taxon in gbif_taxa_list.taxa:
+                                if get_author_name(sub_author_taxon.author) == gbif_author_name:
+                                    sub_author_taxon.author = sub_author_taxon.author.replace(gbif_author_name, nbn_author_name)
+                        # else there is a true author conflict so we take teh 
+                        # nbn one?
+                        else:
+                            if nbn_taxon.author.find("misident.") != -1:
+                                continue
+                            else:
+                                print("Name conflict")
+                                print("GBIF:", gbif_taxon)
+                                print("NBN:", nbn_taxon)
+                                gbif_taxon.author = nbn_taxon.author
+ 
+    taxa_list = gbif_taxa_list
+    taxa_list.sort()
+    
+    fileinfo = FileInfo.FileInfo(base_folder, "gbif", family_name)
+    for action in actions:
+        
+        if action == "authority list":
+            AuthorityFileCreation.generate_authority_list(copy.copy(taxa_list.taxa), fileinfo)
+        
+        elif action == "authority file":
+            AuthorityFileCreation.generate_authority_file(copy.copy(taxa_list.taxa), fileinfo)
+        
+        elif action == "label table":
+            table = CreateLabelTable.LabelTable("safari")                
+            table.create_table(taxa_list.taxa, fileinfo.html_filename("label_table"))
+        else:
+            print("Action not supported")
+
             
 class UserInput:
 
@@ -135,13 +241,19 @@ def prod_main():
     
 
 
-PRODUCTION = True   
+PRODUCTION = False   
 
 if __name__ == "__main__":
     if PRODUCTION:
         prod_main()
     else:
-        pass
+        
+        family_name = "Chrysididae"
+        base_folder = "./Data"
+        genera_filter = []
+        actions = ["authority list", "authority file", "label table"]
+        
+        scrape_gbif(family_name, base_folder, genera_filter, actions)
         
         
 # =============================================================================

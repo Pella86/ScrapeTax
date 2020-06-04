@@ -208,12 +208,16 @@ class TaxaList:
         return subfamilies, tribes
 
 
-    def fill_associations(self):
+    def fill_associations(self, associations = None):
         ''' the function acts on the list itself and fills in which genera
         are still missing the subfamily/tribe selected form the function
         find_associations'''
         
-        subfamilies, tribes = self.find_associations()
+        if associations:
+            subfamilies = associations[0]
+            tribes = associations[1]
+        else:
+            subfamilies, tribes = self.find_associations()
         
         for taxa in self.taxa:
             if taxa.subfamily == None:
@@ -242,6 +246,21 @@ class TaxaList:
 # =============================================================================
 # Function that generate the list giving the basic parameter
 # =============================================================================
+
+def generate_taxa_list_single(base_folder, source, family_name):
+    fileinfo = FileInfo.FileInfo(base_folder, source, family_name)
+    
+    taxa_list = TaxaList()
+    
+    # load the files from disk if they exists, else generate the lists
+    
+    if taxa_list.load_existing(fileinfo, "taxa_list"):
+        pass
+    else:
+        taxa_list.generate_list(family_name, fileinfo, source)
+        taxa_list.save(fileinfo, "taxa_list")
+    
+    return taxa_list
 
 def generate_taxa_list(base_folder, sources, family_name, genera_filter):
     

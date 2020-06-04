@@ -5,6 +5,8 @@ Created on Wed Mar 18 09:55:42 2020
 @author: maurop
 """
 
+import re
+
 import request_handler
 import Taxa
 import FileInfo
@@ -12,6 +14,28 @@ import ProgressBar
 
 
 NBN_HOME = "https://species.nbnatlas.org"   
+
+
+def process_author(html_element):
+    author = html_element.text
+
+    
+    # remove the nomen nudum here
+    author = author.replace("nomen nudum", "")
+    author = author.strip()
+    
+    regex = re.compile(r"[^,] [(\[]?\d\d\d\d[)\]]?")
+    
+    # add the comma before the year
+    rematch = regex.findall(author)
+    
+    if rematch:
+        
+        pos = author.find(rematch[0])
+        
+        author = author[:pos + 1] + "," + author[pos + 1:]    
+    
+    return author
 
 
 def gather_child_taxa(url, filename):
@@ -78,7 +102,7 @@ class NBNElement:
         '''Method that gets the author name for the element'''
         author = self.html_name.find("span", class_="author")
         if author:
-            return author.text.strip()
+            return process_author(author)
         else:
             return None
 
@@ -109,7 +133,7 @@ def gather_taxonomy(url, filename):
     for dt, dd in html_parts:
         if dt.text == "subspecies":
             subspecie_name = dd.find("span", class_="name").text.split(" ")[3]
-            subspecie_author = dd.find("span", class_="author").text
+            subspecie_author = process_author(dd.find("span", class_="author"))
             species.append({"subspecies" : subspecie_name, "author" : subspecie_author})
     
     # fill in the dictionary the rest of the taxonomy
@@ -274,7 +298,7 @@ def generate_lists(family_name, fileinfo, load_lists = True):
                         staxa = Taxa.Taxa()
                         staxa.copy_taxonomy(taxa)
                         
-                        staxa.author = ddh.find("span", class_="author").text
+                        staxa.author = process_author(ddh.find("span", class_="author"))
                         staxa.subspecie = ddh.find("span", class_="name").text.split(" ")[3]
                         
                         
@@ -295,7 +319,7 @@ def generate_lists(family_name, fileinfo, load_lists = True):
 if __name__ == "__main__":
     
     base_folder = "./Data/NBN_test"
-    family_name = "Vespidae"
+    family_name = "Mycetophilidae"
     
     fi = FileInfo.FileInfo(base_folder, "nbn", family_name)
     
@@ -307,7 +331,7 @@ if __name__ == "__main__":
         genus.print_extended()
 
     print("{:-^79}".format(" SPECIES "))    
-    for specie in specie_list:
+    for specie in specie_list[:50]:
         print(specie)
     
     
