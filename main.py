@@ -91,7 +91,9 @@ def scrape_gbif(family_name, base_folder, genera_filter, actions):
         
         for nbn_taxon in nbn_taxa_list.taxa:
             
-            if gbif_taxon.genus == nbn_taxon.genus and gbif_taxon.specie == nbn_taxon.specie:
+            if (gbif_taxon.genus == nbn_taxon.genus and
+                gbif_taxon.specie == nbn_taxon.specie and
+                gbif_taxon.subspecie == nbn_taxon.subspecie):
                 
                 
                 if gbif_taxon.author != nbn_taxon.author:
@@ -105,7 +107,8 @@ def scrape_gbif(family_name, base_folder, genera_filter, actions):
                     # reference
                     if gbif_author_name == nbn_author_name:
                         gbif_taxon.author = nbn_taxon.author
-                    
+                        gbif_taxon.links += nbn_taxon.links
+                        
                     else:
                         # if is a name issue check if the name is similar
                         # with the Levenshtein distance
@@ -119,6 +122,8 @@ def scrape_gbif(family_name, base_folder, genera_filter, actions):
                             for sub_author_taxon in gbif_taxa_list.taxa:
                                 if get_author_name(sub_author_taxon.author) == gbif_author_name:
                                     sub_author_taxon.author = sub_author_taxon.author.replace(gbif_author_name, nbn_author_name)
+                                    sub_author_taxon.author.links += ["Author spelling from NBN Atlas"]
+                                    
                         # else there is a true author conflict so we take teh 
                         # nbn one?
                         else:
@@ -129,6 +134,7 @@ def scrape_gbif(family_name, base_folder, genera_filter, actions):
                                 print("GBIF:", gbif_taxon)
                                 print("NBN:", nbn_taxon)
                                 gbif_taxon.author = nbn_taxon.author
+                                gbif_taxon.links += nbn_taxon.links
  
     taxa_list = gbif_taxa_list
     taxa_list.sort()
