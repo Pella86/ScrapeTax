@@ -10,6 +10,7 @@ Created on Fri Jan 10 09:21:27 2020
 # =============================================================================
 
 import copy
+import re
 
 import CreateLabelTable
 import AuthorityFileCreation
@@ -56,7 +57,17 @@ def get_author_name(author):
     return author_name
 
 
-            
+def validate_author(author):
+    author_regex = re.compile(r"\(?[\w| |,|&|.|\-|']+, \[?\d\d\d\d\]?\)?")
+    
+    match = author_regex.match(author)
+    
+    if match:
+        return True
+    else:
+        return False
+    
+                
 
 
 def scrape_gbif(family_name, base_folder, genera_filter, actions):
@@ -122,7 +133,7 @@ def scrape_gbif(family_name, base_folder, genera_filter, actions):
                             for sub_author_taxon in gbif_taxa_list.taxa:
                                 if get_author_name(sub_author_taxon.author) == gbif_author_name:
                                     sub_author_taxon.author = sub_author_taxon.author.replace(gbif_author_name, nbn_author_name)
-                                    sub_author_taxon.author.links += ["Author spelling from NBN Atlas"]
+                                    sub_author_taxon.links += ["Author spelling from NBN Atlas"]
                                     
                         # else there is a true author conflict so we take teh 
                         # nbn one?
@@ -138,6 +149,19 @@ def scrape_gbif(family_name, base_folder, genera_filter, actions):
  
     taxa_list = gbif_taxa_list
     taxa_list.sort()
+    
+    
+    print("WARNING ABOUT AUTHORS NOT CORRECTLY FORMATTED")
+    def validate_author_filter(taxa):
+        if validate_author(taxa.author):
+            return True
+        else:
+            print(taxa)
+            for link in taxa.links:
+                print("  ", link)
+            return False
+        
+    taxa_list.taxa = list(filter(lambda taxa : validate_author_filter(taxa), taxa_list.taxa))
     
     fileinfo = FileInfo.FileInfo(base_folder, "gbif", family_name)
     for action in actions:
@@ -254,7 +278,7 @@ if __name__ == "__main__":
         prod_main()
     else:
         
-        family_name = "Chrysididae"
+        family_name = "Mycetophilidae"
         base_folder = "./Data"
         genera_filter = []
         actions = ["authority list", "authority file", "label table"]

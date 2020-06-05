@@ -40,21 +40,24 @@ def create_authority_lines(taxa_list):
         
         line += taxa.family + separator
         
-        line += (f'"{taxa.subfamily}"' if taxa.subfamily else " ") + separator
+        line += (f'"{taxa.subfamily}"' if taxa.subfamily else "") + separator
         
-        line += (f'"{taxa.tribe}"' if taxa.tribe else " ") + separator
+        line += (f'"{taxa.tribe}"' if taxa.tribe else "") + separator
         
-        line += (f'"{taxa.genus}"' if taxa.genus else " ") + separator
+        line += (f'"{taxa.genus}"' if taxa.genus else "") + separator
+        
+        if taxa.rank == Taxa.Taxa.rank_genus:
+            line += "sp." + separator
+        else:
+            line += (f'"{taxa.specie}"' if taxa.specie else "") + separator
 
-        line += (f'"{taxa.specie}"' if taxa.specie else "sp.") + separator
+        line += (f'"{taxa.subspecie}"' if taxa.subspecie else "") + separator
 
-        line += (f'"{taxa.subspecie}"' if taxa.subspecie else " ") + separator
+        line += "" + separator # infraspecific rank
 
-        line += " " + separator # infraspecific rank
+        line += "" + separator # infraspecific epithet
 
-        line += " " + separator # infraspecific epithet
-
-        line +=  (f'"{taxa.author}"' if taxa.author else " ") + separator 
+        line +=  (f'"{taxa.author}"' if taxa.author else "") + separator 
 
         line +=  '"' + "".join(f'{link}, ' for link in taxa.links )[:-2] +'"'  
         
