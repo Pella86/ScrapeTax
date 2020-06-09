@@ -10,10 +10,10 @@ import os
 import pickle
 
 import Taxa
-import NBN_parser
-import EncyclopediaOfLife
-import GBIF_downloader
-import BOLD_downloader
+import ParseNBN
+import ParseEOL
+import ParseGBIF
+import ParseBOLD
 import FileInfo
 
 
@@ -52,10 +52,10 @@ class TaxaList:
 
     def generate_list(self, family_name, fileinfo, source):
         ''' The function generates the list given the source'''
-        source_module = {"nbn"  : NBN_parser,
-                         "eol"  : EncyclopediaOfLife,
-                         "gbif" : GBIF_downloader,
-                         "bold" : BOLD_downloader
+        source_module = {"nbn"  : ParseNBN,
+                         "eol"  : ParseEOL,
+                         "gbif" : ParseGBIF,
+                         "bold" : ParseBOLD
                          }
 
         genus_list, species_list = source_module[source].generate_lists(family_name, fileinfo)
@@ -351,7 +351,7 @@ def generate_taxa_list(base_folder, sources, family_name, genera_filter):
 
 if __name__ == "__main__":
     
-    base_folder = "./Data/test_TaxaList/"
+    base_folder = "./Tests/test_TaxaList/"
     sources = ["eol", "nbn", "gbif", "bold"]
     family_name = "Chrysididae"
     genera_filter = []

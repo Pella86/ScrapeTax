@@ -9,7 +9,7 @@ Created on Thu Apr  9 10:30:51 2020
 # Imports
 # =============================================================================
 
-import request_handler
+import RequestsHandler
 import re
 
 import Taxa
@@ -46,8 +46,8 @@ def generate_lists(family_name, fileinfo, load_lists = True):
     # params["filter_by_string"] = "???"
     # params["cache_ttl"] = "n seconds in cache"
     
-    path = fileinfo.pickle_filename("eol_query")
-    req = request_handler.Request(eol_api, path, params)
+    path = fileinfo.cache_filename("eol_query")
+    req = RequestsHandler.Request(eol_api, path, params)
     req.load()
 
     json_data = req.response.json()
@@ -66,8 +66,8 @@ def generate_lists(family_name, fileinfo, load_lists = True):
     print("Downloading data from:", family_page)
 
     # soups the link
-    path = fileinfo.pickle_filename("eol_webpage")
-    s = request_handler.get_soup(family_page, path)
+    path = fileinfo.cache_filename("eol_webpage")
+    s = RequestsHandler.get_soup(family_page, path)
     
     
 
@@ -121,9 +121,9 @@ def generate_lists(family_name, fileinfo, load_lists = True):
         
         #open the website, look for specie list
         
-        filename = fileinfo.pickle_filename(taxa.genus)
+        filename = fileinfo.cache_filename(taxa.genus)
 
-        s = request_handler.get_soup(taxa.links[0], filename)
+        s = RequestsHandler.get_soup(taxa.links[0], filename)
         
         div = s.find("div", {"class": "page-children"})
         
@@ -193,7 +193,7 @@ def generate_lists(family_name, fileinfo, load_lists = True):
 
 if __name__ == "__main__":
     family_name = "Mycetophilidae"
-    base_folder = "./Data/EOL_test"
+    base_folder = "./Tests/test_EOL"
     
     import FileInfo
     fileinfo = FileInfo.FileInfo(base_folder, "eol", family_name)

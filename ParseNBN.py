@@ -7,7 +7,7 @@ Created on Wed Mar 18 09:55:42 2020
 
 import re
 
-import request_handler
+import RequestsHandler
 import Taxa
 import FileInfo
 import ProgressBar
@@ -41,7 +41,7 @@ def process_author(html_element):
 def gather_child_taxa(url, filename):
     '''Function that scans the web page and gathers the child taxa of the url'''
     
-    soup = request_handler.get_soup(url, filename)
+    soup = RequestsHandler.get_soup(url, filename)
     
     # search for the child taxa section that contains all the names
     children = soup.find("dl", class_="child-taxa")
@@ -93,7 +93,7 @@ class NBNElement:
         pointed by the get_link() method'''
         if self.get_link():
             link = self.get_link()
-            filename = self.fileinfo.pickle_filename(self.get_name())
+            filename = self.fileinfo.cache_filename(self.get_name())
             html_elements = gather_child_taxa(link, filename)
             
             return [NBNElement(dt, dd, self.fileinfo) for dt, dd in html_elements]
@@ -115,7 +115,7 @@ def gather_taxonomy(url, filename):
     always present, the other elements are subspecies in case they exist'''
     
     # find ranks and the name associated
-    soup = request_handler.get_soup(url, filename)
+    soup = RequestsHandler.get_soup(url, filename)
     children = soup.find("section", id="classification")
     
     dts = children.find_all("dt")
@@ -165,7 +165,7 @@ def generate_lists(family_name, fileinfo, load_lists = True):
     param = {"q" : family_name,
              "fq": "idxtype:TAXON"}
  
-    req = request_handler.Request(api_url, fileinfo.pickle_filename("family_search"), param)
+    req = RequestsHandler.Request(api_url, fileinfo.cache_filename("family_search"), param)
     req.load()
     
     search_json = req.get_json()
@@ -182,7 +182,7 @@ def generate_lists(family_name, fileinfo, load_lists = True):
     # parameters for the webpage corresponding to the family
     family_url = "https://species.nbnatlas.org/species/" + family_guid
     
-    filename = fileinfo.pickle_filename("family")
+    filename = fileinfo.cache_filename("family")
     
     taxa = gather_child_taxa(family_url, filename)
     
@@ -260,7 +260,7 @@ def generate_lists(family_name, fileinfo, load_lists = True):
     for genus in genus_list:
         pwheel.draw_symbol()
         
-        filename = fileinfo.pickle_filename(f"{genus.genus}_webpage")
+        filename = fileinfo.cache_filename(f"{genus.genus}_webpage")
 
         html_elements = gather_child_taxa(genus.links[0], filename)
         
@@ -280,8 +280,8 @@ def generate_lists(family_name, fileinfo, load_lists = True):
             # find subspecies somehow
             # is possible that the name of the specie wuld be separated by / 
             # like tritici/obelisca and will break the file name
-            filename = fileinfo.pickle_filename(taxa.specie.replace("/", "_"))
-            soup = request_handler.get_soup(taxa.links[0], filename)
+            filename = fileinfo.cache_filename(taxa.specie.replace("/", "_"))
+            soup = RequestsHandler.get_soup(taxa.links[0], filename)
             children = soup.find("section", id="classification")
             
             if children:
@@ -318,7 +318,7 @@ def generate_lists(family_name, fileinfo, load_lists = True):
 
 if __name__ == "__main__":
     
-    base_folder = "./Data/NBN_test"
+    base_folder = "./Tests/test_NBN"
     family_name = "Mycetophilidae"
     
     fi = FileInfo.FileInfo(base_folder, "nbn", family_name)
@@ -330,7 +330,7 @@ if __name__ == "__main__":
     for genus in genus_list:
         genus.print_extended()
 
-    print("{:-^79}".format(" SPECIES "))    
+    print("{:-^79}".format(" SPECIES (first 50) "))    
     for specie in specie_list[:50]:
         print(specie)
     

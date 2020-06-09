@@ -94,7 +94,11 @@ class Taxa:
         else:
             return False
         
-
+    def compare_specie(self, taxa):
+        if self.genus == taxa.genus and self.specie == taxa.specie and self.subspecie == taxa.subspecie:
+            return True
+        return False
+        
     def test_none(self, rank):
         if rank == None:
             return "z" * 20
@@ -161,7 +165,7 @@ if __name__ == "__main__":
     
     taxa.specie = "edra"
     taxa.genus = "Mycomiya"
-    taxa.author = "Vaisanen, 1994"
+    taxa.author = "Väisänen, 1994"
     taxa.rank = Taxa.rank_specie
     
     print(taxa)

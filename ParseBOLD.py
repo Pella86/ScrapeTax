@@ -15,7 +15,7 @@ Created on Wed May 20 12:55:37 2020
 
 import urllib
 
-import request_handler
+import RequestsHandler
 import Taxa
 import ProgressBar
 
@@ -108,10 +108,10 @@ def specimen_list(family_name, fileinfo):
     # instead of "name+name". There shouldnt be spaces in a family_name yet
     # this is here for legacy purposes?
     param = urllib.parse.urlencode(param, quote_via=urllib.parse.quote)
-    filename = fileinfo.pickle_filename("specimen_api")
+    filename = fileinfo.cache_filename("specimen_api")
     
     # performs the request
-    req = request_handler.Request(specimen_api_url, filename, param)
+    req = RequestsHandler.Request(specimen_api_url, filename, param)
     res_json = req.get_json()
     
     # selects the respective records from the response
@@ -183,8 +183,8 @@ def get_children(taxid, fileinfo, parent_taxa = None):
     
     # construct the request
     param = {"taxid" : taxid}
-    filename = fileinfo.pickle_filename(f"taxid_search_{taxid}")
-    req = request_handler.Request(taxon_search_url, filename, param)
+    filename = fileinfo.cache_filename(f"taxid_search_{taxid}")
+    req = RequestsHandler.Request(taxon_search_url, filename, param)
     
     # get the soup
     soup = req.get_soup()
@@ -257,11 +257,11 @@ def get_children(taxid, fileinfo, parent_taxa = None):
                 continue
             
             if text.find("sp.") != -1:
-                print("sp. in text", text)
+                print("sp. in text, text:", text)
                 continue
             
             if text.find("nr.") != -1:
-                print("nr. in text", text)
+                print("nr. in text, text:", text)
                 continue
                         
             
@@ -384,7 +384,7 @@ def generate_lists(family_name, fileinfo, load_lists = True):
     
     param = {"taxName" : family_name}
     
-    req = request_handler.Request(taxon_search_api_url, fileinfo.pickle_filename("test"), param)
+    req = RequestsHandler.Request(taxon_search_api_url, fileinfo.cache_filename("test"), param)
     
     res_json = req.get_json()
     
@@ -402,7 +402,7 @@ def generate_lists(family_name, fileinfo, load_lists = True):
     param = {"taxId" : family["taxid"],
              "dataTypes" : "basic"}
     
-    req = request_handler.Request(taxonid_api_url, fileinfo.pickle_filename("taxid_info"), param)
+    req = RequestsHandler.Request(taxonid_api_url, fileinfo.cache_filename("taxid_info"), param)
     res_json = req.get_json()
     
     # keys: dict_keys(['taxid', 'taxon', 'tax_rank', 'tax_division',
@@ -455,7 +455,7 @@ if __name__ == "__main__":
     
     import FileInfo
     
-    base_folder = "./Data/BOLD_test"
+    base_folder = "./Tests/test_BOLD"
     
     fileinfo = FileInfo.FileInfo(base_folder, "bold", "Mycetophilidae")
     

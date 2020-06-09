@@ -11,7 +11,7 @@ Created on Fri May  8 10:28:00 2020
 # =============================================================================
 
 # my imports
-import request_handler
+import RequestsHandler
 import Taxa
 import FileInfo
 import ProgressBar
@@ -52,7 +52,7 @@ def generate_lists(family_name, file_info, load_lists = True):
     #file_info = FileInfo.FileInfo(base_folder, family_name.lower())
     
     param = {"name" : family_name}
-    family_query = request_handler.Request(match_api_url, file_info.pickle_filename("family_query"), param)
+    family_query = RequestsHandler.Request(match_api_url, file_info.cache_filename("family_query"), param)
     family_query.load()
     
     
@@ -91,7 +91,7 @@ def generate_lists(family_name, file_info, load_lists = True):
     
     # get the family main page
     
-    family_page = request_handler.Request(taxon_page(family_json["familyKey"]), file_info.pickle_filename("family_page"))
+    family_page = RequestsHandler.Request(taxon_page(family_json["familyKey"]), file_info.cache_filename("family_page"))
     family_page.load()
     family_json = family_page.get_json()
     
@@ -137,7 +137,7 @@ def generate_lists(family_name, file_info, load_lists = True):
     # Get the childrens of the family
     limit_param = {"limit" : family_json["numDescendants"]}
     
-    children_req = request_handler.Request(children_url(family_json["familyKey"]), file_info.pickle_filename("children"), limit_param)
+    children_req = RequestsHandler.Request(children_url(family_json["familyKey"]), file_info.cache_filename("children"), limit_param)
     children_req.load()
     children_json = children_req.get_json()
     
@@ -296,9 +296,9 @@ def generate_lists(family_name, file_info, load_lists = True):
             genus_id = taxon["genusKey"]
             
             url = children_url(genus_id)
-            filename = file_info.pickle_filename(tax.genus)
+            filename = file_info.cache_filename(tax.genus)
             
-            genus_child = request_handler.Request(url,
+            genus_child = RequestsHandler.Request(url,
                                                   filename,
                                                   limit_param)
             genus_child.load()
@@ -339,8 +339,8 @@ def generate_lists(family_name, file_info, load_lists = True):
 
 
 if __name__ == "__main__":    
-    family_name = "Noctuidae"
-    base_folder = "./Data/GBIF_test"
+    family_name = "Mycetophilidae"
+    base_folder = "./Tests/test_GBIF"
     file_info = FileInfo.FileInfo(base_folder, "gbif", family_name)
     
     genus_list, species_list = generate_lists(family_name, file_info)

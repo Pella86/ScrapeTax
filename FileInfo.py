@@ -41,13 +41,16 @@ class FileInfo:
         if os.path.isdir(self.base_path):
             logger.debug("Folder already present")
         else:
-            os.mkdir(self.base_path)
+            os.makedirs(self.base_path)
     
     def mptaxa_exists(self, name):
         return os.path.isfile(self.mptaxa_filename(name))
+    
+    def format_name(self, name, extention):
+        return f"{self.prefix}_{name}.{extention}"
 
     def filename(self, name, extention):
-        fname = f"{self.prefix}_{name}.{extention}"
+        fname = self.format_name(name, extention)
         return os.path.join(self.base_path, fname)
     
     def html_filename(self, name):
@@ -65,12 +68,21 @@ class FileInfo:
     def txt_filename(self, name):
         return self.filename(name, "txt")
     
+    def cache_filename(self, name):
+        # generate a subfolder named cache
+        cache_subfolder = os.path.join(self.base_path, "cache/")
+        if not os.path.isdir(cache_subfolder):
+            os.mkdir(cache_subfolder)
+        
+        return os.path.join(cache_subfolder, self.format_name(name, ".pickle"))
+        
+    
 
 
 if __name__ == "__main__":
     
     
-    fi = FileInfo("./Data/", "fi", "FileInfoTest")
+    fi = FileInfo("./Tests/test_Fileinfo", "fi", "FileInfoTest")
     
     print(fi.pickle_filename("webpage"))
     
