@@ -338,6 +338,9 @@ def generate_lists(family_name, file_info, load_lists = True):
     return genus_list, species_list
 
 
+def create_synonym_list():
+    
+
 if __name__ == "__main__":    
     family_name = "Mycetophilidae"
     base_folder = "./Tests/test_GBIF"
