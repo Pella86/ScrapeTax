@@ -11,6 +11,13 @@ Created on Fri Jan 10 09:21:27 2020
 
 import GenerateTaxaListGBIF
 import GenerateFiles
+import LogFiles
+
+# =============================================================================
+# Logging
+# =============================================================================
+
+logger = LogFiles.Logger(__name__)
 
 # =============================================================================
 # User Input class 
@@ -121,6 +128,18 @@ if __name__ == "__main__":
         base_folder = "./Tests/test_main"
         genera_filter = []
         actions = ["authority list", "authority file", "label table"]
+        
+        import FileInfo
+        
+        fi = FileInfo.FileInfo(base_folder, "gbif", family_name)
+        
+        logger.set_run_log_filename(fi.name_only("run_log"))
+        
+        logger.log_action("Family name: " + family_name)
+
+        logger.log_action("Output Folder: " + fi.base_path)
+        logger.log_action("Genera Filter: " + str(genera_filter))
+        logger.log_action("Actions: " + str(actions))
         
         taxa_list = GenerateTaxaListGBIF.scrape_gbif(family_name, base_folder, genera_filter)
     

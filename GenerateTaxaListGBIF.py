@@ -15,9 +15,20 @@ import re
 import LevenshteinDistance
 import TaxaList
 import ParseGBIF
-import Taxa
 import FileInfo
+import LogFiles
 
+
+# =============================================================================
+# Logging
+# =============================================================================
+
+
+logger = LogFiles.Logger(__name__)
+
+# =============================================================================
+# Main functions
+# =============================================================================
 
 def get_author_name(author):
     pos = author.rfind(",")
@@ -46,20 +57,28 @@ def validate_author(author):
     else:
         return False
     
-def correct_author(gbif_taxa_list, nbn_taxa_list):    
+def correct_author(gbif_taxa_list, nbn_taxa_list):  
+    
+    logger.log_action("--- Correcting name conflicts ---")
+    
     for gbif_taxon in gbif_taxa_list.taxa:        
         for nbn_taxon in nbn_taxa_list.taxa:            
             
             # This is the same genus, specie and subspecie
             if gbif_taxon.compare_specie(nbn_taxon):            
+
+                if gbif_taxon.author == nbn_taxon.author:
+                    continue
+
                 gbif_author_name = get_author_name(gbif_taxon.author)
                 nbn_author_name = get_author_name(nbn_taxon.author)
                 
                 # if the name is the same, it means that is a parenthesis
                 # issue or a year issue, thus the name of the author is
                 # spelled correctly, we take the year parentheses from the nbn as a 
-                # reference
+                # reference                
                 if gbif_author_name == nbn_author_name:
+                    logger.log_action(f"Corrected name for {gbif_taxon} with {nbn_taxon}")
                     gbif_taxon.author = nbn_taxon.author
                     gbif_taxon.links += nbn_taxon.links
                     
@@ -75,6 +94,7 @@ def correct_author(gbif_taxa_list, nbn_taxa_list):
                         # substitute all the name in the list
                         for sub_author_taxon in gbif_taxa_list.taxa:
                             if get_author_name(sub_author_taxon.author) == gbif_author_name:
+                                logger.log_action(f"Correcting spelling for {sub_author_taxon} with {nbn_author_name}")
                                 sub_author_taxon.author = sub_author_taxon.author.replace(gbif_author_name, nbn_author_name)
                                 sub_author_taxon.links += ["Author spelling from NBN Atlas"]
                                 
@@ -84,15 +104,16 @@ def correct_author(gbif_taxa_list, nbn_taxa_list):
                         if nbn_taxon.author.find("misident.") != -1:
                             continue
                         else:
-                            print("Name conflict")
-                            print("GBIF:", gbif_taxon)
-                            print("NBN:", nbn_taxon)
+                            logger.log_action(f"Name conflict {gbif_taxon} VS {nbn_taxon}")
                             gbif_taxon.author = nbn_taxon.author
                             gbif_taxon.links += nbn_taxon.links
 
 def scrape_gbif(family_name, base_folder, genera_filter):
     
+    
     # GET NAMES FROM GBIF
+    
+    logger.log_action("Gathering names from GBIF")
     
     gbif_taxa_list = TaxaList.generate_taxa_list_single(base_folder, "gbif", family_name)
     
