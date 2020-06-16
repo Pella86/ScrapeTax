@@ -102,6 +102,10 @@ def prod_main():
     
     GenerateFiles.generate_files(base_folder, "gbif", family_name, taxa_list, actions)
     
+    synonym_list = GenerateTaxaListGBIF.generate_synonym_list(family_name, base_folder, genera_filter)  
+        
+    GenerateFiles.generate_files(base_folder, "gbif", family_name, synonym_list, ["synonyms file"])        
+    
 # =============================================================================
 # Main function
 # =============================================================================
@@ -121,6 +125,11 @@ if __name__ == "__main__":
         taxa_list = GenerateTaxaListGBIF.scrape_gbif(family_name, base_folder, genera_filter)
     
         GenerateFiles.generate_files(base_folder, "gbif", family_name, taxa_list, actions)
+        
+        
+        synonym_list = GenerateTaxaListGBIF.generate_synonym_list(family_name, base_folder, genera_filter)  
+        
+        GenerateFiles.generate_files(base_folder, "gbif", family_name, synonym_list, ["synonyms file"])
     
 
 # =============================================================================

@@ -238,6 +238,10 @@ class TaxaList:
     def clean_noauthor(self):
         
         self.taxa = list(filter(lambda item : True if item.author else False, self.taxa))
+    
+    
+    def get_species_list(self):
+        return list(filter(lambda t : t.is_specie() or t.is_subspecie(), self.taxa))
         
         
             

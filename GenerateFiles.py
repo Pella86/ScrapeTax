@@ -35,5 +35,9 @@ def generate_files(base_folder, source, family_name, taxa_list, actions):
         elif action == "label table":
             table = CreateLabelTable.LabelTable("safari")                
             table.create_table(taxa_list.taxa, fileinfo.html_filename("label_table"))
+        
+        elif action == "synonyms file":
+            CreateAuthorityFile.generate_synonym_list(taxa_list, fileinfo)
+        
         else:
             print("Action not supported")

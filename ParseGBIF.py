@@ -338,8 +338,81 @@ def generate_lists(family_name, file_info, load_lists = True):
     return genus_list, species_list
 
 
-def create_synonym_list():
+def mp_taxa_specie(gbif_taxon):
+    taxa = Taxa.Taxa()
     
+    name = gbif_taxon["scientificName"].replace(gbif_taxon["authorship"], "").strip()
+    name_parts = name.split(" ")
+    
+    taxa.genus = name_parts[0]
+    taxa.specie = name_parts[1]
+    taxa.rank = Taxa.Taxa.rank_specie
+    
+    author = gbif_taxon["authorship"].strip()      
+    taxa.author = author
+    
+    return taxa
+
+class Synonym:
+    
+    def __init__(self, synonym_taxa, accepted_taxa):
+        self.synonym_taxa = synonym_taxa
+        self.accepted_taxa = accepted_taxa
+
+def get_synonyms(taxa_list, file_info):
+    
+    
+    synonym_list = []
+    
+    for taxa in taxa_list:
+
+        url = taxa.links[0] + "/synonyms"
+        filename = file_info.cache_filename(f"{taxa.genus}_{taxa.specie}_synonym")
+        
+        req = RequestsHandler.Request(url, filename)
+        
+        jreq = req.get_json()
+
+        results = jreq["results"]
+        
+        if len(results) > 0:
+            print(taxa)           
+        
+        for taxon in results:
+            # get genus
+            
+            if taxon["scientificName"].find(":") != -1:
+                continue
+            
+            syn = mp_taxa_specie(taxon)
+            print(" = ", syn)
+            
+            synonym_list.append(Synonym(syn, taxa))
+                
+    synonym_list.sort(key= lambda t : t.synonym_taxa.sort_key_genus())
+    
+    return synonym_list
+    
+#    max_len = max(map(lambda t : len(str(t.synonym_taxa)), synonym_list))
+#
+#    s = ""
+#    for taxa in synonym_list:
+#        fmt = "{0:.<" + str(max_len) + "}{1}\n"
+#        s += fmt.format(str(taxa.synonym_taxa), str(taxa.accepted_taxa))
+#        
+#    with open(file_info.txt_filename("synonym_list"), "w") as f:
+#        f.write(s)       
+    
+    
+#    s = ""
+#    for taxa in synonym_list:
+#        print(taxa.synonym_taxa, taxa.accepted_taxa)
+#        s += str(taxa.synonym_taxa) + "
+#        
+#    with open(file_info.txt_filename("synonym_list"), "w") as f:
+#        for taxa in synonym_list:
+#            f.write(taxa.synonym_taxa, taxa.accepted_taxa)        
+
 
 if __name__ == "__main__":    
     family_name = "Mycetophilidae"
@@ -347,6 +420,8 @@ if __name__ == "__main__":
     file_info = FileInfo.FileInfo(base_folder, "gbif", family_name)
     
     genus_list, species_list = generate_lists(family_name, file_info)
+    
+    get_synonyms(species_list, file_info)
     
 #    for genus in genus_list:
 #        print(genus)

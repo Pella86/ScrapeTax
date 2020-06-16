@@ -74,7 +74,7 @@ class FileInfo:
         if not os.path.isdir(cache_subfolder):
             os.mkdir(cache_subfolder)
         
-        return os.path.join(cache_subfolder, self.format_name(name, ".pickle"))
+        return os.path.join(cache_subfolder, self.format_name(name, "pickle"))
         
     
 

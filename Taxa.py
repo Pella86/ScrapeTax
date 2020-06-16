@@ -130,7 +130,7 @@ class Taxa:
         
     def __str__(self):
         
-        if self.rank == self.rank_specie:
+        if self.is_specie():
             return self.genus + " " + self.specie + " | " + self.str_author()
         
         elif self.rank == self.rank_genus:
@@ -146,6 +146,12 @@ class Taxa:
             return self.tribe + " | " + self.str_author()
         else:
             raise Exception("Taxa feature not implemented: " + self.rank)
+    
+    def is_specie(self):
+        return self.rank == self.rank_specie
+    
+    def is_subspecie(self):
+        return self.rank == self.rank_subspecie
         
 
 def save_taxa_list(taxa_list, filename):

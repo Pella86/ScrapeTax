@@ -14,6 +14,9 @@ import re
 
 import LevenshteinDistance
 import TaxaList
+import ParseGBIF
+import Taxa
+import FileInfo
 
 
 def get_author_name(author):
@@ -139,4 +142,31 @@ def scrape_gbif(family_name, base_folder, genera_filter):
     taxa_list.taxa = list(filter(lambda taxa : validate_author_filter(taxa), taxa_list.taxa))
     
     return taxa_list
+
+
+def generate_synonym_list(family_name, base_folder, genera_filter):
+    
+    taxa_list = TaxaList.generate_taxa_list_single(base_folder, "gbif", family_name)
+    
+    # GET NAMES FROM GBIF
+    species_list = taxa_list.get_species_list()
+    
+
+    fileinfo = FileInfo.FileInfo(base_folder, "gbif", family_name)    
+    synonym_list = ParseGBIF.get_synonyms(species_list, fileinfo)        
+        
+    return synonym_list
+
+
+
+
+if __name__ == "__main__":
+    
+    family_name = "Mycetophilidae"
+    base_folder = "./Tests/test_GBIF"
+    
+    generate_synonym_list(family_name, base_folder)
+    
+    
+    
     

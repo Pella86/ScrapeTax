@@ -130,3 +130,42 @@ def generate_authority_list(taxa_list, fileinfo):
     
     
     fhtml.generate_html_file(fileinfo.html_filename("species_list"))
+    
+
+# =============================================================================
+#  Function to create the synonym list    
+# =============================================================================
+    
+def generate_synonym_list(synonym_list, fileinfo):
+    fhtml = CreateHTMLFile.CreateHTMLFile()
+    fhtml.add_heading(1, "Synonym list for " + fileinfo.family_name)   
+ 
+    fhtml.add_heading(2, "Synonym (...) Accepted name")
+    fhtml.add_line_break()
+    
+
+    for synonym in synonym_list:
+        
+        syn_taxa = synonym.synonym_taxa
+        
+        fhtml.add_italics_element(syn_taxa.genus + " " + syn_taxa.specie)
+        fhtml.add_element(", ")
+        if syn_taxa.author:
+            fhtml.add_element(syn_taxa.author)
+        else:
+            fhtml.add_element("author not found")
+            
+        fhtml.add_element("  =  ")
+        
+        acc_taxa = synonym.accepted_taxa
+        
+        fhtml.add_italics_element(acc_taxa.genus + " " + acc_taxa.specie)
+        fhtml.add_element(", ")
+        if acc_taxa.author:
+            fhtml.add_element(acc_taxa.author)
+        else:
+            fhtml.add_element("author not found")
+        
+        fhtml.add_line_break()
+    
+    fhtml.generate_html_file(fileinfo.html_filename("synonym_list"))
