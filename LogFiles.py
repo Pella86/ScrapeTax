@@ -12,16 +12,28 @@ import time
 
 run_log_filename = None
 
+
+# Files
+#  main log file
+#  console
+#  report
+
 class Logger:
     
     application_log_file = "./log_file.log"
-    
-    
-    
+
     
     # flags
     level_DEBUG = 0
     level_INFO = 1
+    
+    
+    # handler type
+    handler_main = 0
+    handler_console = 1
+    handler_report = 2
+    
+    handler_main_report = [handler_main, handler_report]
     
     
     def __init__(self, name):
@@ -31,12 +43,12 @@ class Logger:
         if not self.logger.hasHandlers():
             
             # console handler
-            ch = logging.StreamHandler()
-            
-            console_formatter = logging.Formatter("%(message)s")
-            ch.setFormatter(console_formatter)
-            
-            self.logger.addHandler(ch)
+#            ch = logging.StreamHandler()
+#            
+#            console_formatter = logging.Formatter("%(message)s")
+#            ch.setFormatter(console_formatter)
+#            
+#            self.logger.addHandler(ch)
             
             # file handler
             fh = logging.FileHandler(self.application_log_file)
@@ -45,11 +57,12 @@ class Logger:
             fh.setFormatter(file_formatter)
             
             self.logger.addHandler(fh)
-        
-        
-    
-    def log(self, message, level = 0):
-        
+            
+    def set_run_log_filename(self, filename):
+        global run_log_filename
+        run_log_filename = filename + "_" + time.strftime("%Y%m%d-%H%M%S") + ".log"
+            
+    def main_log(self, message, level = 0):
         if level == self.level_DEBUG:
             self.logger.debug(message)
         
@@ -57,21 +70,58 @@ class Logger:
             self.logger.info(message)
         
         else:
-            raise ValueError("Logger: log level not supported")
+            raise ValueError("Logger: log level not supported")  
+
+    def console_log(self, message):
+        print(message)
     
     
-    def set_run_log_filename(self, filename):
-        global run_log_filename
-        run_log_filename = filename + "_" + time.strftime("%Y%m%d-%H%M%S") + ".log"
-    
-    
-    def log_action(self, message):
-        global run_log_filename
-        
+    def report_log(self, message):
         with open(run_log_filename, "a") as f:
-            f.write(message + "\n")
+            f.write(message + "\n")  
+    
+    def log(self, message, handlers = [0, 1, 2], level = 0):
+        
+        for handler in handlers:
             
-        self.log(message)
+            if handler == self.handler_main:
+                self.main_log(message, level)
+            
+            if handler == self.handler_console:
+                self.console_log(message)
+            
+            if handler == self.handler_report:
+                self.report_log(message)
+        
+        
+    
+#    def log(self, message, level = 0):
+#        
+#        if level == self.level_DEBUG:
+#            self.logger.debug(message)
+#        
+#        elif level == self.level_INFO:
+#            self.logger.info(message)
+#        
+#        else:
+#            raise ValueError("Logger: log level not supported")
+#    
+#    
+#    def set_run_log_filename(self, filename):
+#        global run_log_filename
+#        run_log_filename = filename + "_" + time.strftime("%Y%m%d-%H%M%S") + ".log"
+#    
+#    
+#    def log_action(self, message):
+#        global run_log_filename
+#        
+#        with open(run_log_filename, "a") as f:
+#            f.write(message + "\n")
+#            
+#        self.log(message)
+        
+    
+    
             
             
     

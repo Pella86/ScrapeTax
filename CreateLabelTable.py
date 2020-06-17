@@ -5,12 +5,19 @@ Created on Mon Mar 23 09:52:02 2020
 @author: maurop
 """
 
+# =============================================================================
+# Imports
+# =============================================================================
+
 import xml.etree.ElementTree as ET
-
 import CreateHTMLFile
+import LogFiles
 
-import Taxa
+# =============================================================================
+# Logging
+# =============================================================================
 
+logger = LogFiles.Logger(__name__)
 
 # =============================================================================
 # Labels table creation
@@ -74,7 +81,8 @@ class LabelTable:
         # total number of rows is figured out from how many taxas are there
         n_rows = int(len(taxa_list) / n_cols) + 1
         
-        print(f"Table will be {n_rows}x{n_cols}")
+        logger.log("--- Generating Label Rable ---" )
+        logger.log(f"Rows x columns: {n_rows}x{n_cols}")
         
         # Start generating a coloumn
         for irow in range(n_rows):
@@ -143,6 +151,7 @@ class LabelTable:
                         right.text = "(" + taxa.source + ")"
     
         self.fhtml.generate_html_file(filename)
+        logger.log("Label table saved in: " + filename)
     
 
 

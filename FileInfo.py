@@ -47,9 +47,9 @@ class FileInfo:
         self.base_path = os.path.join(base_path, self.family_name)
         
         if os.path.isdir(self.base_path):
-            log.log("Folder already present: " + self.base_path)
+            log.main_log("Folder already present: " + self.base_path)
         else:
-            log.log("created folders: " + self.base_path)
+            log.main_log("created folders: " + self.base_path)
             os.makedirs(self.base_path)
     
     def mptaxa_exists(self, name):
@@ -81,7 +81,7 @@ class FileInfo:
         # generate a subfolder named cache
         cache_subfolder = os.path.join(self.base_path, "cache/")
         if not os.path.isdir(cache_subfolder):
-            log.log("Created chache folder")
+            log.main_log("Created chache folder")
             os.mkdir(cache_subfolder)
         
         return os.path.join(cache_subfolder, self.format_name(name, "pickle"))

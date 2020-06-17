@@ -5,9 +5,20 @@ Created on Mon Apr 20 10:59:46 2020
 @author: maurop
 """
 
+# =============================================================================
+# Imports
+# =============================================================================
+
 import ProgressBar
 import CreateHTMLFile
 import Taxa
+import LogFiles
+
+# =============================================================================
+# Logging
+# =============================================================================
+
+logger = LogFiles.Logger(__name__)
 
 # =============================================================================
 # Function to create the authority file
@@ -18,15 +29,14 @@ def create_authority_lines(taxa_list):
     a line of the authority file separated and formatted (utf-8). The file can
     be imported in excel'''
     
+    logger.log("--- Generating authority file ---")
+    
     
     # Data will be comma separated
     separator = ","
     
     # create the lines based on the above defined elements
     lines = []
-    
-    
-    pb = ProgressBar.ProgressBar(len(taxa_list))
     
     
     for i, taxa in enumerate(taxa_list):
@@ -64,8 +74,10 @@ def create_authority_lines(taxa_list):
         line += "\n"
         
         lines.append(line)
+    
+    
+    logger.log(f"Created {len(lines)} lines")
         
-        pb.draw_bar(i)
     
     return lines    
     
@@ -80,7 +92,7 @@ def save_authority_file(filename, taxa_list):
     with open(filename, "wb") as f:
         f.write(csv_file)
     
-    print("Authority file saved file in:", filename)
+    logger.log("Authority file saved file in:" + filename)
 
 
 def generate_authority_file(taxa_list, fileinfo):
@@ -97,6 +109,8 @@ def generate_authority_file(taxa_list, fileinfo):
 # =============================================================================
 
 def generate_authority_list(taxa_list, fileinfo):
+    
+    logger.log("-- Generating Authority List ---")
     
     fhtml = CreateHTMLFile.CreateHTMLFile()
     # add date of creation and how many taxas are in the file
@@ -129,7 +143,11 @@ def generate_authority_list(taxa_list, fileinfo):
         fhtml.add_line_break()
     
     
-    fhtml.generate_html_file(fileinfo.html_filename("species_list"))
+    filename = fileinfo.html_filename("species_list")
+    
+    fhtml.generate_html_file(filename)
+    
+    logger.log("Authority list saved in: " + filename)
     
 
 # =============================================================================
@@ -137,8 +155,11 @@ def generate_authority_list(taxa_list, fileinfo):
 # =============================================================================
     
 def generate_synonym_list(synonym_list, fileinfo):
+    
+    logger.log("--- Generating Synonyms list ---")
+    
     fhtml = CreateHTMLFile.CreateHTMLFile()
-    fhtml.add_heading(1, "Synonym list for " + fileinfo.family_name)   
+    fhtml.add_heading(1, "Synonyms list for " + fileinfo.family_name)   
  
     fhtml.add_heading(2, "Synonym (...) Accepted name")
     fhtml.add_line_break()
@@ -168,4 +189,7 @@ def generate_synonym_list(synonym_list, fileinfo):
         
         fhtml.add_line_break()
     
-    fhtml.generate_html_file(fileinfo.html_filename("synonym_list"))
+    filename = fileinfo.html_filename("synonym_list")
+    fhtml.generate_html_file(filename)
+    
+    logger.log("Synonyms file saved in: " + filename)

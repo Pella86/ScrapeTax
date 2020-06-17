@@ -12,6 +12,7 @@ Created on Fri Jan 10 09:21:27 2020
 import GenerateTaxaListGBIF
 import GenerateFiles
 import LogFiles
+import FileInfo
 
 # =============================================================================
 # Logging
@@ -70,8 +71,6 @@ class UserInput:
 # =============================================================================
 
 def prod_main():
-    
-    
     # title
     print("Scrape Tax")
     print("Program to gather informations from online databases about species and genuses")
@@ -101,15 +100,26 @@ def prod_main():
     
     genera_filter = genera_input.get_input()
     
-    print("Generating lists...")
-    
     actions = ["authority list", "authority file", "label table"]
+    
+    
+    fi = FileInfo.FileInfo(base_folder, "gbif", family_name)
+    
+    logger.set_run_log_filename(fi.name_only("run_log"))
+    
+    logger.log("Family name: " + family_name)
+
+    logger.log("Output Folder: " + fi.base_path)
+    logger.log("Genera Filter: " + str(genera_filter))
+    logger.log("Actions: " + str(actions))    
+    
     
     taxa_list = GenerateTaxaListGBIF.scrape_gbif(family_name, base_folder, genera_filter)
     
     GenerateFiles.generate_files(base_folder, "gbif", family_name, taxa_list, actions)
     
-    synonym_list = GenerateTaxaListGBIF.generate_synonym_list(family_name, base_folder, genera_filter)  
+    
+    synonym_list = GenerateTaxaListGBIF.generate_synonym_list(family_name, base_folder, taxa_list)  
         
     GenerateFiles.generate_files(base_folder, "gbif", family_name, synonym_list, ["synonyms file"])        
     
@@ -117,7 +127,7 @@ def prod_main():
 # Main function
 # =============================================================================
 
-PRODUCTION = False   
+PRODUCTION = True   
 
 if __name__ == "__main__":
     if PRODUCTION:
@@ -129,24 +139,24 @@ if __name__ == "__main__":
         genera_filter = []
         actions = ["authority list", "authority file", "label table"]
         
-        import FileInfo
+        
         
         fi = FileInfo.FileInfo(base_folder, "gbif", family_name)
         
         logger.set_run_log_filename(fi.name_only("run_log"))
         
-        logger.log_action("Family name: " + family_name)
+        logger.log("Family name: " + family_name)
 
-        logger.log_action("Output Folder: " + fi.base_path)
-        logger.log_action("Genera Filter: " + str(genera_filter))
-        logger.log_action("Actions: " + str(actions))
+        logger.log("Output Folder: " + fi.base_path)
+        logger.log("Genera Filter: " + str(genera_filter))
+        logger.log("Actions: " + str(actions))
         
         taxa_list = GenerateTaxaListGBIF.scrape_gbif(family_name, base_folder, genera_filter)
     
         GenerateFiles.generate_files(base_folder, "gbif", family_name, taxa_list, actions)
         
         
-        synonym_list = GenerateTaxaListGBIF.generate_synonym_list(family_name, base_folder, genera_filter)  
+        synonym_list = GenerateTaxaListGBIF.generate_synonym_list(family_name, base_folder, taxa_list)  
         
         GenerateFiles.generate_files(base_folder, "gbif", family_name, synonym_list, ["synonyms file"])
     
