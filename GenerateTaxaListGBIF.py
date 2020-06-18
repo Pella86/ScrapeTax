@@ -98,12 +98,17 @@ def correct_author(gbif_taxa_list, nbn_taxa_list):
                     if distance <= 2:
                         # substitute all the name in the list
                         for sub_author_taxon in gbif_taxa_list.taxa:
+                            
+                            # avoid correcting and recorrecting 
+                            if "Author spelling from NBN Atlas" in sub_author_taxon.links:
+                                continue
+                            
+                            # assign the nbn Atlas name toal the authors carrying the same mispelled name
                             if get_author_name(sub_author_taxon.author) == gbif_author_name:
-                                logger.log_report(f"Correcting spelling for {sub_author_taxon} | {nbn_author_name}")
                                 sub_author_taxon.author = sub_author_taxon.author.replace(gbif_author_name, nbn_author_name)
-                                sub_author_taxon.links += ["Author spelling from NBN Atlas"]
-                        
-                                correction_counter += 1        
+                                sub_author_taxon.links += ["Author spelling from NBN Atlas"]    
+                                logger.log_report(f"Correcting spelling for {sub_author_taxon} | {nbn_author_name}")
+                                correction_counter += 1    
                     
                     # else there is a true author conflict so we take the 
                     # nbn one?
