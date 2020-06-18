@@ -49,8 +49,8 @@ family_name = "Mycetophilidae"
 base_folder = "./Data/GBIF_test"
 
 def generate_lists(family_name, file_info, load_lists = True):
-    logger.log("Generating taxa list from GBIF database...")
-    logger.log("Input name: ", family_name)
+    logger.main_log("Generating taxa list from GBIF database...")
+    logger.log_short_report("Input name: " + family_name)
     
     # establish the first query
     
@@ -68,9 +68,9 @@ def generate_lists(family_name, file_info, load_lists = True):
         confidence = family_json['confidence']
         match_type = family_json["matchType"]
         log_str = f"Found: {family} Confidence: {confidence}% match type: {match_type}"
-        logger.log(log_str)
+        logger.log_short_report(log_str)
     else:
-        logger.log("GBIF: Name not found because: " +  str(family_json))
+        logger.log_short_report("GBIF: Name not found because: " +  str(family_json))
         raise Exception("GBIF: Name not found because: " +  str(family_json))
     
     # get the family main page
@@ -164,21 +164,9 @@ def generate_lists(family_name, file_info, load_lists = True):
         
         return taxa        
         
-    logger.log("Gathering child taxa...")
+    logger.console_log("Gathering child taxa...")
     genus_list = []
     species_list = []
-    
-    #pbar = ProgressBar.ProgressBar(len(children_json["results"]))
-    
-
-#    num_desc = family_json["numDescendants"]
-#    num_res  = len(children_json["results"])
-#    
-#    if num_res != num_desc:
-#        print(f"GBIF_downlaoder: Results({num_res}) dont match num descendant({num_desc})")
-        
-    
-    
     
     for i, taxon in enumerate(children_json["results"]):
         
@@ -214,14 +202,13 @@ def generate_lists(family_name, file_info, load_lists = True):
                 if specie["rank"] == "SPECIES":
                     stax = generate_specie(specie)
                     species_list.append(stax)
+                    
                                    
         
         # pick the species that don't have a genus apparently
         if taxon["rank"] == "SPECIES":
             stax = generate_specie(taxon)
-            species_list.append(stax)
-        
-        #pbar.draw_bar(i)
+            species_list.append(stax)       
         
 
 
@@ -234,7 +221,7 @@ def generate_lists(family_name, file_info, load_lists = True):
     
     n_genera = len(genus_list)
     n_species = len(species_list)
-    logger.log(f"Genus retrived: {n_genera} Species retrived: {n_species}")
+    logger.log_short_report(f"Genus retrived: {n_genera} Species retrived: {n_species}")
     return genus_list, species_list
 
 

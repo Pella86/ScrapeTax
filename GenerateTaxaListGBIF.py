@@ -60,7 +60,7 @@ def validate_author(author):
     
 def correct_author(gbif_taxa_list, nbn_taxa_list):  
     
-    logger.log("--- Correcting name conflicts ---")
+    logger.log_short_report("--- Correcting name conflicts ---")
     
     correction_counter = 0
     
@@ -81,7 +81,7 @@ def correct_author(gbif_taxa_list, nbn_taxa_list):
                 # spelled correctly, we take the year parentheses from the nbn as a 
                 # reference                
                 if gbif_author_name == nbn_author_name:
-                    logger.log(f"Corrected year or parenthesis for {gbif_taxon} with {nbn_taxon}", LogFiles.Logger.handler_main_report)
+                    logger.log_report(f"Corrected year or parenthesis for {gbif_taxon} with {nbn_taxon}")
                     gbif_taxon.author = nbn_taxon.author
                     gbif_taxon.links += nbn_taxon.links
                     
@@ -99,7 +99,7 @@ def correct_author(gbif_taxa_list, nbn_taxa_list):
                         # substitute all the name in the list
                         for sub_author_taxon in gbif_taxa_list.taxa:
                             if get_author_name(sub_author_taxon.author) == gbif_author_name:
-                                logger.log(f"Correcting spelling for {sub_author_taxon} | {nbn_author_name}", LogFiles.Logger.handler_main_report)
+                                logger.log_report(f"Correcting spelling for {sub_author_taxon} | {nbn_author_name}")
                                 sub_author_taxon.author = sub_author_taxon.author.replace(gbif_author_name, nbn_author_name)
                                 sub_author_taxon.links += ["Author spelling from NBN Atlas"]
                         
@@ -111,15 +111,16 @@ def correct_author(gbif_taxa_list, nbn_taxa_list):
                         if nbn_taxon.author.find("misident.") != -1:
                             continue
                         else:
-                            logger.log(f"Name conflict {gbif_taxon} | {nbn_taxon}", LogFiles.Logger.handler_main_report)
+                            logger.log_report(f"Name conflict {gbif_taxon} | {nbn_taxon}")
                             gbif_taxon.author = nbn_taxon.author
                             gbif_taxon.links += nbn_taxon.links
                     correction_counter += 1
-    logger.log(f"Total corrections: {correction_counter}" )
+    logger.log_short_report(f"Total corrections: {correction_counter}" )
 
 def scrape_gbif(family_name, base_folder, genera_filter):
     
-    
+    logger.log_short_report("--- Retriving taxons ---")
+
     # GET NAMES FROM GBIF
     gbif_taxa_list = TaxaList.generate_taxa_list_single(base_folder, "gbif", family_name)
     
@@ -134,6 +135,8 @@ def scrape_gbif(family_name, base_folder, genera_filter):
     
     # GET FAMILIES FROM BOLD
     
+    logger.log_short_report("--- Retriving Subfamilies and Tribes ---")
+    
     # scrape the bold website to get the subfamilies and tribes
     bold_taxa_list = TaxaList.generate_taxa_list_single(base_folder, "bold", family_name)
     
@@ -143,6 +146,7 @@ def scrape_gbif(family_name, base_folder, genera_filter):
     gbif_taxa_list.fill_associations(associations)
 
     # GET AUTHORS FROM NBN ATLAS
+    logger.log_short_report("--- Retriving Authors ---")
     
     # use the NBN_Atlas for the authors
     nbn_taxa_list = TaxaList.generate_taxa_list_single(base_folder, "nbn", family_name)
@@ -156,15 +160,15 @@ def scrape_gbif(family_name, base_folder, genera_filter):
     taxa_list.sort()
     
     # filter akwardly formatted authors
-    logger.log("--- Authors not correctly formatted ---")
-    logger.log("Regex test: " + str(author_regex))
+    logger.log_short_report("--- Authors not correctly formatted ---")
+    logger.log_report("Regex test: " + str(author_regex))
     
     def validate_author_filter(taxa):
         if validate_author(taxa.author):
             return True
         else:
             report_taxa = str(taxa) #+ " source: " + ", ".join(taxa.links)
-            logger.log(report_taxa, LogFiles.Logger.handler_main_report)
+            logger.log_report(report_taxa)
             return False
         
     previous_size = len(taxa_list.taxa)
@@ -172,7 +176,7 @@ def scrape_gbif(family_name, base_folder, genera_filter):
     actual_size = len(taxa_list.taxa)
     
     n_filtered = previous_size - actual_size
-    logger.log(f"Filtered {n_filtered} taxons")
+    logger.log_short_report(f"Filtered {n_filtered} taxons")
     return taxa_list
 
 

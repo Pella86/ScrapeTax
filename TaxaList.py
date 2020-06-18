@@ -71,7 +71,7 @@ class TaxaList:
                          "bold" : ParseBOLD
                          }
         
-        logger.main_log("Generating the taxa list from the module: " + source)
+        logger.log_short_report("--- Generating the taxa list from the module: " + source.upper() + " ---")
         
         genus_list, species_list = source_module[source].generate_lists(family_name, fileinfo)
         self.taxa = genus_list + species_list        
@@ -131,10 +131,10 @@ class TaxaList:
                         genus_filtered.append(taxa)
                         genus_count[filt] += 1
             
-            logger.log("--- Items found in genus filtering ---")
+            logger.log_short_report("--- Items found in genus filtering ---")
             for genus_name, count in genus_count.items():
-                logger.log(f"  {genus_name}: {count}")
-            logger.log("--------------------------------------")
+                logger.log_short_report(f"  {genus_name}: {count}")
+            logger.log_short_report("--------------------------------------")
         
             self.taxa = genus_filtered
         
@@ -143,7 +143,7 @@ class TaxaList:
             taxonomic status information are retrived from the GBIF database
         '''
         
-        logger.log("--- Filter names with non accepted status ---")
+        logger.log_short_report("--- Filter names with non accepted status ---")
         previous_size = len(self.taxa)
         
         def check_status(item):
@@ -151,7 +151,7 @@ class TaxaList:
                 if item.taxonomic_status == "ACCEPTED":
                     return True
                 else:
-                    logger.log(f"{item} status: {item.taxonomic_status}", LogFiles.Logger.handler_main_report)
+                    logger.log_report(f"{item} status: {item.taxonomic_status}")
             else:
                 return True
         
@@ -160,7 +160,7 @@ class TaxaList:
         actual_size = len(self.taxa)
         
         n_filtered = previous_size - actual_size
-        logger.log(f"Filtered {n_filtered} taxons")
+        logger.log_short_report(f"Filtered {n_filtered} taxons")
     
     
     def add_taxon(self, taxon):
@@ -180,7 +180,7 @@ class TaxaList:
         ''' loads the file from disk if present else it returns false'''
         if fileinfo.mptaxa_exists(name):
             self.load(fileinfo, name)
-            logger.log(f"Loaded {len(self.taxa)} taxa from disk {fileinfo.prefix}_{name}.mptaxa")
+            logger.log_short_report(f"Loaded {len(self.taxa)} taxa from disk {fileinfo.prefix}_{name}.mptaxa")
             return True
         else:
             return False
@@ -224,23 +224,23 @@ class TaxaList:
         
         # little debug to show how many have been found
         
-        logger.log("--- Subfamilies / Tribes with associated genera ---")
-        logger.log("Subfamilies", LogFiles.Logger.handler_main_report)
+        logger.log_short_report("--- Subfamilies / Tribes with associated genera ---")
+        logger.log_report("Subfamilies")
         
         for subfamily in subfamilies:
-            logger.log("  " + subfamily.main_taxa, LogFiles.Logger.handler_main_report)
+            logger.log_report("  " + subfamily.main_taxa)
             for genus in subfamily.associates:
-                logger.log("    " + genus, LogFiles.Logger.handler_main_report)
+                logger.log_report("    " + genus)
                 
-        logger.log("Subfamilies found: " + str(len(subfamilies)))
+        logger.log_short_report("Subfamilies found: " + str(len(subfamilies)))
         
-        logger.log("Tribes", LogFiles.Logger.handler_main_report)
+        logger.log_report("Tribes")
         for tribe in tribes:
-            logger.log("  " + tribe.main_taxa, LogFiles.Logger.handler_main_report)
+            logger.log_report("  " + tribe.main_taxa)
             for genus in tribe.associates:
-                logger.log("    " + genus, LogFiles.Logger.handler_main_report)        
+                logger.log_report("    " + genus)        
 
-        logger.log("Tribes found: " + str(len(subfamilies)))
+        logger.log_short_report("Tribes found: " + str(len(subfamilies)))
                          
         return subfamilies, tribes
 
@@ -275,13 +275,13 @@ class TaxaList:
     def clean_noauthor(self):
         # function that checks and logs the author
         
-        logger.log("--- Names excluded because no author is available ---")
+        logger.log_short_report("--- Names excluded because no author is available ---")
         
         def no_author(item):
             if item.author:
                 return True
             else:
-                logger.log(f"{item}", LogFiles.Logger.handler_main_report)
+                logger.log_report(f"{item}")
                 return False
         
         previous_size = len(self.taxa)
@@ -289,7 +289,7 @@ class TaxaList:
         actual_size = len(self.taxa)
         
         n_filtered = previous_size - actual_size
-        logger.log(f"Filtered {n_filtered} taxons")
+        logger.log_short_report(f"Filtered {n_filtered} taxons")
     
     def get_species_list(self):
         return list(filter(lambda t : t.is_specie() or t.is_subspecie(), self.taxa))
@@ -411,7 +411,7 @@ if __name__ == "__main__":
     sources = ["eol", "nbn", "gbif", "bold"]
     family_name = "Chrysididae"
     genera_filter = []
-    logger.set_run_log_filename(base_folder + "TaxaList.log")
+    logger.set_run_log_filename(base_folder + "TaxaList")
     
     taxa_list = generate_taxa_list(base_folder, sources, family_name, genera_filter)
     
@@ -420,11 +420,11 @@ if __name__ == "__main__":
         if taxa.subfamily or taxa.tribe:
             print(taxa)
         
-    import AuthorityFileCreation
+    import CreateAuthorityFile
     
     
     fileinfo = FileInfo.FileInfo(base_folder, "_".join(sources), family_name) 
-    AuthorityFileCreation.generate_authority_file(taxa_list.taxa, fileinfo)
+    CreateAuthorityFile.generate_authority_file(taxa_list.taxa, fileinfo)
         
     print("Taxa in  the list:", len(taxa_list.taxa))
     

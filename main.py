@@ -35,11 +35,11 @@ class UserInput:
         self.user_input = None
     
     def get_user_input(self):
-        print("-" * 79)
-        print(self.title)
+        logger.console_log("-" * 79)
+        logger.console_log(self.title)
         
         if self.default:
-            print("Default:", self.default)
+            logger.console_log("Default:" + str(self.default))
         
         choice = input(self.input_sentence + " >")
         
@@ -62,7 +62,7 @@ class UserInput:
         if self.comma_values:
             self.parse_comma_separated()
         
-        print("Input:", self.user_input)
+        logger.console_log("Input:" + str(self.user_input))
         
         return self.user_input
 
@@ -71,9 +71,14 @@ class UserInput:
 # =============================================================================
 
 def prod_main():
-    # title
-    print("Scrape Tax")
+    
+
+    
+    #title    
+    print("#### Scrape Tax ####")
     print("Program to gather informations from online databases about species and genuses")
+    
+   
     
     # get the base folder
     base_folder_input = UserInput()
@@ -87,7 +92,7 @@ def prod_main():
     family_name_input = UserInput()
     family_name_input.title = "Input the family name"
     family_name_input.input_sentence = "family"
-    family_name_input.default = "Mycetophilidae"
+    family_name_input.default = "Balaenopteridae"
     
     family_name = family_name_input.get_input()
     
@@ -105,13 +110,18 @@ def prod_main():
     
     fi = FileInfo.FileInfo(base_folder, "gbif", family_name)
     
-    logger.set_run_log_filename(fi.name_only("run_log"))
+    # set logging files
+    logger.set_run_log_filename(fi.name_only("detailed_log"))  
     
-    logger.log("Family name: " + family_name)
+    logger.log_short_report("#### Scrape Tax ####")
+    # add date?
+    
+    logger.log_short_report("--- User inputs ---")
+    logger.log_short_report("Family name: " + family_name)
 
-    logger.log("Output Folder: " + fi.base_path)
-    logger.log("Genera Filter: " + str(genera_filter))
-    logger.log("Actions: " + str(actions))    
+    logger.log_short_report("Output Folder: " + fi.base_path)
+    logger.log_short_report("Genera Filter: " + str(genera_filter))
+    logger.log_short_report("Actions: " + str(actions))    
     
     
     taxa_list = GenerateTaxaListGBIF.scrape_gbif(family_name, base_folder, genera_filter)
@@ -145,11 +155,11 @@ if __name__ == "__main__":
         
         logger.set_run_log_filename(fi.name_only("run_log"))
         
-        logger.log("Family name: " + family_name)
+        logger.log_short_report("Family name: " + family_name)
 
-        logger.log("Output Folder: " + fi.base_path)
-        logger.log("Genera Filter: " + str(genera_filter))
-        logger.log("Actions: " + str(actions))
+        logger.log_short_report("Output Folder: " + fi.base_path)
+        logger.log_short_report("Genera Filter: " + str(genera_filter))
+        logger.log_short_report("Actions: " + str(actions))
         
         taxa_list = GenerateTaxaListGBIF.scrape_gbif(family_name, base_folder, genera_filter)
     

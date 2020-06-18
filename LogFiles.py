@@ -11,6 +11,7 @@ import time
 
 
 run_log_filename = None
+short_report_log_filename = None
 
 
 # Files
@@ -32,13 +33,18 @@ class Logger:
     handler_main = 0
     handler_console = 1
     handler_report = 2
+    handler_short_report = 3
     
     handler_main_report = [handler_main, handler_report]
+    handler_mcr = [handler_main, handler_report, handler_short_report]
     
     
     def __init__(self, name):
         self.logger = logging.getLogger(name)
         self.logger.setLevel(logging.DEBUG)
+        
+        
+        
         
         if not self.logger.hasHandlers():
             
@@ -50,6 +56,11 @@ class Logger:
 #            
 #            self.logger.addHandler(ch)
             
+            # reset the log
+            with open(self.application_log_file, "w") as f:
+                f.write("")
+                
+            
             # file handler
             fh = logging.FileHandler(self.application_log_file)
             
@@ -60,7 +71,18 @@ class Logger:
             
     def set_run_log_filename(self, filename):
         global run_log_filename
-        run_log_filename = filename + "_" + time.strftime("%Y%m%d-%H%M%S") + ".log"
+        global short_report_log_filename
+#        run_log_filename = filename + "_" + time.strftime("%Y%m%d-%H%M%S") + ".log"
+        run_log_filename = filename + ".log"
+        short_report_log_filename = filename + "_summary.log"
+        
+        # reset the files
+        with open(run_log_filename, "w") as f:
+            f.write("")  
+    
+        with open(short_report_log_filename, "w") as f:
+            f.write("")        
+        
             
     def main_log(self, message, level = 0):
         if level == self.level_DEBUG:
@@ -80,7 +102,11 @@ class Logger:
         with open(run_log_filename, "a") as f:
             f.write(message + "\n")  
     
-    def log(self, message, handlers = [0, 1, 2], level = 0):
+    def short_report_log(self, message):
+        with open(short_report_log_filename, "a") as f:
+            f.write(message + "\n")
+    
+    def _log(self, message, handlers = [0, 1, 2, 3], level = 0):
         
         for handler in handlers:
             
@@ -92,6 +118,22 @@ class Logger:
             
             if handler == self.handler_report:
                 self.report_log(message)
+                
+            if handler == self.handler_short_report:
+                self.short_report_log(message)
+    
+    def log_report(self, message):
+        handlers = [self.handler_main, self.handler_report]
+        self._log(message, handlers)
+    
+    def log_report_console(self, message):
+        handlers = [self.handler_main, self.handler_report, self.handler_console]
+        self._log(message, handlers)
+    
+    
+    def log_short_report(self, message):
+        handlers = [self.handler_main, self.handler_report, self.handler_console, self.handler_short_report]
+        self._log(message, handlers)        
         
         
     
