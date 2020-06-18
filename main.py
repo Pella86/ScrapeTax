@@ -148,9 +148,7 @@ if __name__ == "__main__":
         base_folder = "./Tests/test_main"
         genera_filter = []
         actions = ["authority list", "authority file", "label table"]
-        
-        
-        
+
         fi = FileInfo.FileInfo(base_folder, "gbif", family_name)
         
         logger.set_run_log_filename(fi.name_only("run_log"))
