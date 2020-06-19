@@ -236,11 +236,8 @@ def get_children(taxid, fileinfo, parent_taxa = None):
             raise Exception("BOLD_downloader: Taxon rank not present")
             
         if retrived_taxa.rank == Taxa.Taxa.rank_specie or retrived_taxa.rank == Taxa.Taxa.rank_subspecie:
-            logger.log_report("Skipped because species:")
-            names = re.split(r"\[\d+\]", tax.text)
-            for name in names:    
-                if name:
-                    logger.log_report(name)
+            names = re.sub(r"\[\d+\]", ", ", tax.text)
+            logger.main_log("Skipped because species:" + names)
             continue
         
         # get the names associated with the rank

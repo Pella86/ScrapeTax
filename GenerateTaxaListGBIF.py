@@ -124,7 +124,7 @@ def correct_author(gbif_taxa_list, nbn_taxa_list):
 
 def scrape_gbif(family_name, base_folder, genera_filter):
     
-    logger.log_short_report("--- Retriving taxons ---")
+    logger.log_short_report("---*** Retriving taxons ***---")
 
     # GET NAMES FROM GBIF
     gbif_taxa_list = TaxaList.generate_taxa_list_single(base_folder, "gbif", family_name)
@@ -140,7 +140,7 @@ def scrape_gbif(family_name, base_folder, genera_filter):
     
     # GET FAMILIES FROM BOLD
     
-    logger.log_short_report("--- Retriving Subfamilies and Tribes ---")
+    logger.log_short_report("---*** Retriving Subfamilies and Tribes ***---")
     
     # scrape the bold website to get the subfamilies and tribes
     bold_taxa_list = TaxaList.generate_taxa_list_single(base_folder, "bold", family_name)
@@ -151,7 +151,7 @@ def scrape_gbif(family_name, base_folder, genera_filter):
     gbif_taxa_list.fill_associations(associations)
 
     # GET AUTHORS FROM NBN ATLAS
-    logger.log_short_report("--- Retriving Authors ---")
+    logger.log_short_report("---*** Retriving Authors ***---")
     
     # use the NBN_Atlas for the authors
     nbn_taxa_list = TaxaList.generate_taxa_list_single(base_folder, "nbn", family_name)
@@ -186,6 +186,7 @@ def scrape_gbif(family_name, base_folder, genera_filter):
 
 
 def generate_synonym_list(family_name, base_folder, taxa_list):
+    logger.log_short_report("---*** Retriving synonyms ***---")
     fileinfo = FileInfo.FileInfo(base_folder, "gbif", family_name)
     species_list = taxa_list.get_species_list()    
     synonym_list = ParseGBIF.get_synonyms(species_list, fileinfo)        
