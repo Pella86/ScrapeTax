@@ -5,6 +5,9 @@ Created on Fri May 29 09:21:10 2020
 
 @author: maurop
 """
+# =============================================================================
+# Imports
+# =============================================================================
 
 import os
 import pickle
@@ -15,7 +18,17 @@ import ParseEOL
 import ParseGBIF
 import ParseBOLD
 import FileInfo
+import LogFiles
 
+# =============================================================================
+# Logging
+# =============================================================================
+
+logger = LogFiles.Logger(__name__)
+
+# =============================================================================
+# Functions
+# =============================================================================
 
 class AssociatedTaxa:
     ''' class that couples a taxa with a list of subtaxa, like a subfamily
@@ -57,7 +70,9 @@ class TaxaList:
                          "gbif" : ParseGBIF,
                          "bold" : ParseBOLD
                          }
-
+        
+        logger.log_short_report("--- Generating the taxa list from the module: " + source.upper() + " ---")
+        
         genus_list, species_list = source_module[source].generate_lists(family_name, fileinfo)
         self.taxa = genus_list + species_list        
 
@@ -116,10 +131,10 @@ class TaxaList:
                         genus_filtered.append(taxa)
                         genus_count[filt] += 1
             
-            print("--- Items found in genus filtering ---")
-            for key, value in genus_count.items():
-                print(key, value)
-            print("--------------------------------------")
+            logger.log_short_report("--- Items found in genus filtering ---")
+            for genus_name, count in genus_count.items():
+                logger.log_short_report(f"  {genus_name}: {count}")
+            logger.log_short_report("--------------------------------------")
         
             self.taxa = genus_filtered
         
@@ -128,23 +143,36 @@ class TaxaList:
             taxonomic status information are retrived from the GBIF database
         '''
         
+        logger.log_short_report("--- Filter names with non accepted status ---")
+        previous_size = len(self.taxa)
+        
         def check_status(item):
             if item.taxonomic_status != None:
-                return item.taxonomic_status == "ACCEPTED"
+                if item.taxonomic_status == "ACCEPTED":
+                    return True
+                else:
+                    logger.log_report(f"{item} status: {item.taxonomic_status}")
             else:
                 return True
         
         self.taxa = list(filter(lambda item : check_status(item), self.taxa))
+        
+        actual_size = len(self.taxa)
+        
+        n_filtered = previous_size - actual_size
+        logger.log_short_report(f"Filtered {n_filtered} taxons")
     
     
     def add_taxon(self, taxon):
         self.taxa.append(taxon)
         
     def save(self, fileinfo, name):
+        logger.main_log("Taxa list saved in: " + fileinfo.mptaxa_filename(name))
         with open(fileinfo.mptaxa_filename(name), "wb") as f:
             pickle.dump(self.taxa, f)
         
     def load(self, fileinfo, name):
+        logger.main_log("Taxa list loaded from: " + fileinfo.mptaxa_filename(name))
         with open(fileinfo.mptaxa_filename(name), "rb") as f:
             self.taxa = pickle.load(f)
     
@@ -152,7 +180,7 @@ class TaxaList:
         ''' loads the file from disk if present else it returns false'''
         if fileinfo.mptaxa_exists(name):
             self.load(fileinfo, name)
-            print(f"Loaded {len(self.taxa)} taxa from disk {fileinfo.prefix}_{name}.mptaxa")
+            logger.log_short_report(f"Loaded {len(self.taxa)} taxa from disk {fileinfo.prefix}_{name}.mptaxa")
             return True
         else:
             return False
@@ -195,16 +223,25 @@ class TaxaList:
                         tribe.add_associate(taxa.genus)
         
         # little debug to show how many have been found
-        sf = "Subfamilies"
-        print(f"{sf:-^79}")
+        
+        logger.log_short_report("--- Subfamilies / Tribes with associated genera ---")
+        logger.log_report("Subfamilies")
+        
         for subfamily in subfamilies:
-            print(subfamily)    
+            logger.log_report("  " + subfamily.main_taxa)
+            for genus in subfamily.associates:
+                logger.log_report("    " + genus)
+                
+        logger.log_short_report("Subfamilies found: " + str(len(subfamilies)))
         
-        st = "Tribes"
-        print(f"{st:-^79}")   
+        logger.log_report("Tribes")
         for tribe in tribes:
-            print(tribe)                
-        
+            logger.log_report("  " + tribe.main_taxa)
+            for genus in tribe.associates:
+                logger.log_report("    " + genus)        
+
+        logger.log_short_report("Tribes found: " + str(len(tribes)))
+                         
         return subfamilies, tribes
 
 
@@ -236,9 +273,23 @@ class TaxaList:
         self.taxa.sort(key=lambda t : t.sort_key())
 
     def clean_noauthor(self):
+        # function that checks and logs the author
         
-        self.taxa = list(filter(lambda item : True if item.author else False, self.taxa))
-    
+        logger.log_short_report("--- Names excluded because no author is available ---")
+        
+        def no_author(item):
+            if item.author:
+                return True
+            else:
+                logger.log_report(f"{item}")
+                return False
+        
+        previous_size = len(self.taxa)
+        self.taxa = list(filter(lambda item : no_author(item), self.taxa))
+        actual_size = len(self.taxa)
+        
+        n_filtered = previous_size - actual_size
+        logger.log_short_report(f"Filtered {n_filtered} taxons")
     
     def get_species_list(self):
         return list(filter(lambda t : t.is_specie() or t.is_subspecie(), self.taxa))
@@ -252,6 +303,7 @@ class TaxaList:
 # =============================================================================
 
 def generate_taxa_list_single(base_folder, source, family_name):
+    
     fileinfo = FileInfo.FileInfo(base_folder, source, family_name)
     
     taxa_list = TaxaList()
@@ -359,6 +411,7 @@ if __name__ == "__main__":
     sources = ["eol", "nbn", "gbif", "bold"]
     family_name = "Chrysididae"
     genera_filter = []
+    logger.set_run_log_filename(base_folder + "TaxaList")
     
     taxa_list = generate_taxa_list(base_folder, sources, family_name, genera_filter)
     
@@ -367,11 +420,11 @@ if __name__ == "__main__":
         if taxa.subfamily or taxa.tribe:
             print(taxa)
         
-    import AuthorityFileCreation
+    import CreateAuthorityFile
     
     
     fileinfo = FileInfo.FileInfo(base_folder, "_".join(sources), family_name) 
-    AuthorityFileCreation.generate_authority_file(taxa_list.taxa, fileinfo)
+    CreateAuthorityFile.generate_authority_file(taxa_list.taxa, fileinfo)
         
     print("Taxa in  the list:", len(taxa_list.taxa))
     

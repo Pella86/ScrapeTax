@@ -5,13 +5,27 @@ Created on Wed Mar 18 09:55:42 2020
 @author: maurop
 """
 
+# =============================================================================
+# Imports
+# =============================================================================
+
 import re
 
 import RequestsHandler
 import Taxa
 import FileInfo
 import ProgressBar
+import LogFiles
 
+# =============================================================================
+# Logging
+# =============================================================================
+
+logger = LogFiles.Logger(__name__)
+
+# =============================================================================
+# Scrape NBN Atlas
+# =============================================================================
 
 NBN_HOME = "https://species.nbnatlas.org"   
 
@@ -19,9 +33,12 @@ NBN_HOME = "https://species.nbnatlas.org"
 def process_author(html_element):
     author = html_element.text
 
-    
     # remove the nomen nudum here
     author = author.replace("nomen nudum", "")
+    
+    if author != html_element.text:
+        logger.report_log(html_element.text + " Removed nomen nudum")
+    
     author = author.strip()
     
     regex = re.compile(r"[^,] [(\[]?\d\d\d\d[)\]]?")
@@ -33,7 +50,9 @@ def process_author(html_element):
         
         pos = author.find(rematch[0])
         
-        author = author[:pos + 1] + "," + author[pos + 1:]    
+        author = author[:pos + 1] + "," + author[pos + 1:]   
+        
+        logger.report_log(author + " Added comma")
     
     return author
 
@@ -157,8 +176,8 @@ def generate_lists(family_name, fileinfo, load_lists = True):
     could be translated in a tree, but ... is difficult. The function returns
     a list of Taxa with name, author and reference link'''
     
-    print("Generating taxa list from NBN Atlas...")
-    print("Input name: ", family_name)
+    logger.main_log("Generating taxa list from NBN Atlas...")
+    logger.log_short_report("Input name: " + family_name)
     
     api_url = "https://species-ws.nbnatlas.org/search?"
     
@@ -172,9 +191,9 @@ def generate_lists(family_name, fileinfo, load_lists = True):
     search_results = search_json["searchResults"]["results"]
     
     # display the possible matches
-    print("Possible matches:", len(search_results))
+    logger.log_short_report(f"Possible matches: {len(search_results)}")
     for result in search_results:
-        print("    -", result["name"], f"({result['guid']})")
+        logger.log_short_report(f"    -{result['name']} ({result['guid']})")
     
     # pick the first result
     family_guid = search_results[0]["guid"]
@@ -311,7 +330,7 @@ def generate_lists(family_name, fileinfo, load_lists = True):
     
     pwheel.end()
     
-    print("Genus retrived:", len(genus_list), "Species retrived:", len(species_list))
+    logger.log_short_report(f"Genus retrived: {len(genus_list)} Species retrived: {len(species_list)}")
         
     return genus_list, species_list
 
@@ -322,6 +341,8 @@ if __name__ == "__main__":
     family_name = "Mycetophilidae"
     
     fi = FileInfo.FileInfo(base_folder, "nbn", family_name)
+    
+    logger.set_run_log_filename(fi.name_only("test_log_myceto"))
     
     genus_list, specie_list = generate_lists(family_name, fi)
     

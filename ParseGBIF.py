@@ -14,8 +14,13 @@ Created on Fri May  8 10:28:00 2020
 import RequestsHandler
 import Taxa
 import FileInfo
-import ProgressBar
+import LogFiles
 
+# =============================================================================
+# Logging
+# =============================================================================
+
+logger = LogFiles.Logger(__name__)
 
 # =============================================================================
 # Constants
@@ -44,8 +49,8 @@ family_name = "Mycetophilidae"
 base_folder = "./Data/GBIF_test"
 
 def generate_lists(family_name, file_info, load_lists = True):
-    print("Generating taxa list from GBIF database...")
-    print("Input name: ", family_name)
+    logger.main_log("Generating taxa list from GBIF database...")
+    logger.log_short_report("Input name: " + family_name)
     
     # establish the first query
     
@@ -59,80 +64,21 @@ def generate_lists(family_name, file_info, load_lists = True):
     family_json = family_query.get_json()
     
     if family_json.get("family") != None: 
-        print("Found:", family_json["family"], "Confidence:", str(family_json["confidence"]) + "%", "match type:", family_json["matchType"])
+        family = family_json['family']
+        confidence = family_json['confidence']
+        match_type = family_json["matchType"]
+        log_str = f"Found: {family} Confidence: {confidence}% match type: {match_type}"
+        logger.log_short_report(log_str)
     else:
+        logger.log_short_report("GBIF: Name not found because: " +  str(family_json))
         raise Exception("GBIF: Name not found because: " +  str(family_json))
-    
-    # Json structure of the family json
-    #import json
-    #print(json.dumps(family_json, indent=2))
-    #
-    #{
-    #  "usageKey": 5565,
-    #  "scientificName": "Mycetophilidae",
-    #  "canonicalName": "Mycetophilidae",
-    #  "rank": "FAMILY",
-    #  "status": "ACCEPTED",
-    #  "confidence": 94,
-    #  "matchType": "EXACT",
-    #  "kingdom": "Animalia",
-    #  "phylum": "Arthropoda",
-    #  "order": "Diptera",
-    #  "family": "Mycetophilidae",
-    #  "kingdomKey": 1,
-    #  "phylumKey": 54,
-    #  "classKey": 216,
-    #  "orderKey": 811,
-    #  "familyKey": 5565,
-    #  "synonym": false,
-    #  "class": "Insecta"
-    #}
-    
     
     # get the family main page
     
     family_page = RequestsHandler.Request(taxon_page(family_json["familyKey"]), file_info.cache_filename("family_page"))
     family_page.load()
     family_json = family_page.get_json()
-    
-    #import json
-    #print(json.dumps(family_json, indent=2))
-    #{
-    #  "key": 5565,
-    #  "nubKey": 5565,
-    #  "nameKey": 7242389,
-    #  "taxonID": "gbif:5565",
-    #  "sourceTaxonKey": 155863502,
-    #  "kingdom": "Animalia",
-    #  "phylum": "Arthropoda",
-    #  "order": "Diptera",
-    #  "family": "Mycetophilidae",
-    #  "kingdomKey": 1,
-    #  "phylumKey": 54,
-    #  "classKey": 216,
-    #  "orderKey": 811,
-    #  "familyKey": 5565,
-    #  "datasetKey": "d7dddbf4-2cf0-4f39-9b2a-bb099caae36c",
-    #  "constituentKey": "7ddf754f-d193-4cc9-b351-99906754a03b",
-    #  "parentKey": 811,
-    #  "parent": "Diptera",
-    #  "scientificName": "Mycetophilidae",
-    #  "canonicalName": "Mycetophilidae",
-    #  "authorship": "",
-    #  "nameType": "SCIENTIFIC",
-    #  "rank": "FAMILY",
-    #  "origin": "SOURCE",
-    #  "taxonomicStatus": "ACCEPTED",
-    #  "nomenclaturalStatus": [],
-    #  "remarks": "",
-    #  "numDescendants": 7215,
-    #  "lastCrawled": "2019-09-06T05:41:48.812+0000",
-    #  "lastInterpreted": "2019-09-06T04:35:49.995+0000",
-    #  "issues": [],
-    #  "synonym": false,
-    #  "class": "Insecta"
-    #}
-    
+ 
     
     # Get the childrens of the family
     limit_param = {"limit" : family_json["numDescendants"]}
@@ -141,51 +87,7 @@ def generate_lists(family_name, file_info, load_lists = True):
     children_req.load()
     children_json = children_req.get_json()
     
-   
-    
-    # content of children json
-    # children_json keys:
-    # dict_keys(['offset', 'limit', 'endOfRecords', 'results'])
-    
-    # example of the first element of the resulst (children_json[”results"][0])
-    #  "authorship": "Hutton, 1904",
-    #  "canonicalName": "Anomalomyia",
-    #  "class": "Insecta",
-    #  "classKey": 216,
-    #  "constituentKey": "7ddf754f-d193-4cc9-b351-99906754a03b",
-    #  "datasetKey": "d7dddbf4-2cf0-4f39-9b2a-bb099caae36c",
-    #  "family": "Mycetophilidae",
-    #  "familyKey": 5565,
-    #  "genus": "Anomalomyia",
-    #  "genusKey": 1615502,
-    #  "issues": [],
-    #  "key": 1615502,
-    #  "kingdom": "Animalia",
-    #  "kingdomKey": 1,
-    #  "lastCrawled": "2019-09-06T05:41:48.812+0000",
-    #  "lastInterpreted": "2019-09-06T04:35:55.714+0000",
-    #  "nameKey": 709396,
-    #  "nameType": "SCIENTIFIC",
-    #  "nomenclaturalStatus": [],
-    #  "nubKey": 1615502,
-    #  "numDescendants": 13,
-    #  "order": "Diptera",
-    #  "orderKey": 811,
-    #  "origin": "SOURCE",
-    #  "parent": "Mycetophilidae",
-    #  "parentKey": 5565,
-    #  "phylum": "Arthropoda",
-    #  "phylumKey": 54,
-    #  "publishedIn": "Index Faunae N. Zealand",
-    #  "rank": "GENUS",
-    #  "remarks": "",
-    #  "scientificName": "Anomalomyia Hutton, 1904",
-    #  "sourceTaxonKey": 156980061,
-    #  "synonym": false,
-    #  "taxonID": "gbif:1615502",
-    #  "taxonomicStatus": "ACCEPTED"
-    
-    
+    # Create the taxon reference for the family
     fam_taxa = Taxa.Taxa()
     fam_taxa.family = family_name
     fam_taxa.source = "g"
@@ -262,26 +164,15 @@ def generate_lists(family_name, file_info, load_lists = True):
         
         return taxa        
         
-    print("Gathering child taxa...")
+    logger.console_log("Gathering child taxa...")
     genus_list = []
     species_list = []
-    
-    #pbar = ProgressBar.ProgressBar(len(children_json["results"]))
-    
-
-    num_desc = family_json["numDescendants"]
-    num_res  = len(children_json["results"])
-    
-    if num_res != num_desc:
-        print(f"GBIF_downlaoder: Results({num_res}) dont match num descendant({num_desc})")
     
     for i, taxon in enumerate(children_json["results"]):
         
         # search for the genus, and if is a genus, find the children species
         if taxon["rank"] == "GENUS":
-            
-            
-            
+
             tax = generate_genus(taxon)
             
             #print(tax.genus)
@@ -308,21 +199,16 @@ def generate_lists(family_name, file_info, load_lists = True):
             # navigate throught the child taxa of the genus
             for specie in species_response["results"]:
 
-                
                 if specie["rank"] == "SPECIES":
                     stax = generate_specie(specie)
-                    
-                    
-                
                     species_list.append(stax)
+                    
                                    
         
         # pick the species that don't have a genus apparently
         if taxon["rank"] == "SPECIES":
             stax = generate_specie(taxon)
-            species_list.append(stax)
-        
-        #pbar.draw_bar(i)
+            species_list.append(stax)       
         
 
 
@@ -333,8 +219,9 @@ def generate_lists(family_name, file_info, load_lists = True):
         
     
     
-    
-    print("Genus retrived:", len(genus_list), "Species retrived:", len(species_list))
+    n_genera = len(genus_list)
+    n_species = len(species_list)
+    logger.log_short_report(f"Genus retrived: {n_genera} Species retrived: {n_species}")
     return genus_list, species_list
 
 
@@ -376,7 +263,8 @@ def get_synonyms(taxa_list, file_info):
         results = jreq["results"]
         
         if len(results) > 0:
-            print(taxa)           
+            #print(taxa)
+            pass
         
         for taxon in results:
             # get genus
@@ -385,7 +273,7 @@ def get_synonyms(taxa_list, file_info):
                 continue
             
             syn = mp_taxa_specie(taxon)
-            print(" = ", syn)
+            #print(" = ", syn)
             
             synonym_list.append(Synonym(syn, taxa))
                 

@@ -7,6 +7,10 @@ Created on Wed Mar 18 10:07:07 2020
 
 import pickle
 
+import LogFiles
+
+logger = LogFiles.Logger(__name__)
+
 
 class Taxa:
     ''' Small class that contains the taxon information'''
@@ -145,6 +149,7 @@ class Taxa:
         elif self.rank == self.rank_tribe:
             return self.tribe + " | " + self.str_author()
         else:
+            logger.log("Taxa feature not implemented: " + self.rank)
             raise Exception("Taxa feature not implemented: " + self.rank)
     
     def is_specie(self):

@@ -5,24 +5,30 @@ Created on Wed Apr 22 10:02:11 2020
 @author: maurop
 """
 
+#import os
+#import logging
+#
+#logger = logging.getLogger(__name__)
+#
+#logger.setLevel(logging.INFO)
+#
+## add ch to logger
+#if not logger.hasHandlers():
+#    ch = logging.StreamHandler()
+#    ch.setLevel(logging.DEBUG)
+#    
+#    # create formatter
+#    formatter = logging.Formatter('%(levelname)s - %(message)s')
+#    
+#    # add formatter to ch
+#    ch.setFormatter(formatter)
+#    logger.addHandler(ch)
+
+
 import os
-import logging
+import LogFiles
 
-logger = logging.getLogger(__name__)
-
-logger.setLevel(logging.INFO)
-
-# add ch to logger
-if not logger.hasHandlers():
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    
-    # create formatter
-    formatter = logging.Formatter('%(levelname)s - %(message)s')
-    
-    # add formatter to ch
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
+log = LogFiles.Logger(__name__)
 
 
 class FileInfo:
@@ -31,6 +37,7 @@ class FileInfo:
     def __init__(self, base_path, source_website, family_name):
         # Family first letter must be capitalized
         if family_name[0].islower():
+            log.log("family_name is not capitalized")
             raise Exception("FileInfo: family_name is not capitalized")
             
         self.family_name = family_name
@@ -38,9 +45,11 @@ class FileInfo:
         
         # create a folder with the family name (e.g. ./base_path/Familyname)
         self.base_path = os.path.join(base_path, self.family_name)
+        
         if os.path.isdir(self.base_path):
-            logger.debug("Folder already present")
+            log.main_log("Folder already present: " + self.base_path)
         else:
+            log.main_log("created folders: " + self.base_path)
             os.makedirs(self.base_path)
     
     def mptaxa_exists(self, name):
@@ -72,9 +81,13 @@ class FileInfo:
         # generate a subfolder named cache
         cache_subfolder = os.path.join(self.base_path, "cache/")
         if not os.path.isdir(cache_subfolder):
+            log.main_log("Created chache folder")
             os.mkdir(cache_subfolder)
         
         return os.path.join(cache_subfolder, self.format_name(name, "pickle"))
+    
+    def name_only(self, name):
+        return os.path.join(self.base_path, name)
         
     
 

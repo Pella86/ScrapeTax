@@ -14,11 +14,18 @@ Created on Wed May 20 12:55:37 2020
 # =============================================================================
 
 import urllib
+import re
 
 import RequestsHandler
 import Taxa
 import ProgressBar
+import LogFiles
 
+# =============================================================================
+# Logging
+# =============================================================================
+
+logger = LogFiles.Logger(__name__)
 
 # =============================================================================
 # API URL
@@ -47,9 +54,7 @@ class Record:
         self.rank = None
         
         # get the taxons
-        
         # check if is a specie
-        
         specie_taxon = self.get_taxon("species")
         
         if specie_taxon:
@@ -72,7 +77,6 @@ class Record:
             self.genus = self.get_name("genus")
         
         # add the higher taxonomy
-        
         self.tribe = self.assign_name("tribe")
         self.subfamily = self.assign_name("subfamily")
         self.family = self.assign_name("family")
@@ -230,6 +234,11 @@ def get_children(taxid, fileinfo, parent_taxa = None):
             retrived_taxa.rank = taxa_ranks[frank]
         except KeyError:
             raise Exception("BOLD_downloader: Taxon rank not present")
+            
+        if retrived_taxa.rank == Taxa.Taxa.rank_specie or retrived_taxa.rank == Taxa.Taxa.rank_subspecie:
+            names = re.sub(r"\[\d+\]", ", ", tax.text)
+            logger.main_log("Skipped because species:" + names)
+            continue
         
         # get the names associated with the rank
         
@@ -239,6 +248,8 @@ def get_children(taxid, fileinfo, parent_taxa = None):
             
             taxa = Taxa.Taxa()
             taxa.copy_taxa(retrived_taxa)
+            
+            
             
             # parse the name
             if taxa.rank == Taxa.Taxa.rank_specie:
@@ -257,11 +268,12 @@ def get_children(taxid, fileinfo, parent_taxa = None):
                 continue
             
             if text.find("sp.") != -1:
-                print("sp. in text, text:", text)
+                logger.log_report("sp. in text, text: " + name.text)
+                
                 continue
             
             if text.find("nr.") != -1:
-                print("nr. in text, text:", text)
+                logger.log_report("nr. in text, text:" + name.text)
                 continue
                         
             
@@ -368,16 +380,25 @@ def generate_children_list(family_id, fileinfo, parent_taxa):
                                     
                                     taxa_list += subspecie_taxa
     pwheel.end()
+    
+    logger.log_report("taxon excluded because missing specie or genus:")
+    def filter_taxa(taxa):
+        if taxa.specie != None or taxa.genus != None:
+            return True
+        else:
+            logger.log_report(str(taxa))
+            return False
+
     # filter out all the taxon that don't have specie or genus
-    return list(filter(lambda taxa : taxa.specie != None or taxa.genus != None, taxa_list))
+    return list(filter(lambda taxa : filter_taxa(taxa), taxa_list))
 
 # =============================================================================
 # Generate the complete taxa list
 # =============================================================================
 
 def generate_lists(family_name, fileinfo, load_lists = True):
-    print("Gathering data from BOLD Databases...")
-    print("Input name:", family_name)
+    logger.main_log("Gathering data from BOLD Databases...")
+    logger.log_short_report("Input name:" + family_name)
     
     
     # Use the search API to search for the name
@@ -388,10 +409,11 @@ def generate_lists(family_name, fileinfo, load_lists = True):
     
     res_json = req.get_json()
     
-    print("Possible matches:", res_json["total_matched_names"])
+    logger.log_short_report("Possible matches: " + str(res_json["total_matched_names"]))
     
     for match in res_json["top_matched_names"]:
-        print("    - " + match["taxon"], f"(id: {match['taxid']})" )
+        tax_match = match["taxon"]
+        logger.log_short_report(f"    - {tax_match} (id: {match['taxid']})" )
     
     # get the tax id from the search    
         
@@ -421,30 +443,30 @@ def generate_lists(family_name, fileinfo, load_lists = True):
     
     family_id = res_json["taxid"]
     
-    print("Retriving subtaxas...")
+    logger.log_report("Retriving subtaxas...")
     
     # use the retrived information to scavenge the sub taxa
     taxa_list = generate_children_list(family_id, fileinfo, family_taxa)
     
-    print("Gathering specimens...")
-    
-    # use the specimen database to find the authors
-    specimens = specimen_list(family_name, fileinfo)
-    
-    print("Composing the list...")
-    
-    # assign the authors from the specimen database
-    for taxa in taxa_list:
-        for specimen in specimens:
-            if taxa.specie == specimen.specie and taxa.genus == specimen.genus:
-                if taxa.author == None:
-                    taxa.author = specimen.author    
+#    print("Gathering specimens...")
+#    
+#    # use the specimen database to find the authors
+#    specimens = specimen_list(family_name, fileinfo)
+#    
+#    print("Composing the list...")
+#    
+#    # assign the authors from the specimen database
+#    for taxa in taxa_list:
+#        for specimen in specimens:
+#            if taxa.specie == specimen.specie and taxa.genus == specimen.genus:
+#                if taxa.author == None:
+#                    taxa.author = specimen.author    
     
     # divide species and genus
     species_list = list(filter(lambda t : t.rank == t.rank_specie, taxa_list))
     genus_list = list(filter(lambda t : t.rank == t.rank_genus, taxa_list))
         
-    print("Genus retrived:", len(genus_list), "Species retrived:", len(species_list))
+    logger.short_report_log(f"Genus retrived: {len(genus_list)} Species retrived: {len(species_list)}")
     
     return genus_list, species_list
 

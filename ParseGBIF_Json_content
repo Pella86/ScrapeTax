@@ -1,0 +1,123 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Jun 17 10:36:23 2020
+
+@author: maurop
+"""
+# =============================================================================
+# Family Query JSON
+# =============================================================================
+
+    # Json structure of the family json
+    #import json
+    #print(json.dumps(family_json, indent=2))
+    #
+    #{
+    #  "usageKey": 5565,
+    #  "scientificName": "Mycetophilidae",
+    #  "canonicalName": "Mycetophilidae",
+    #  "rank": "FAMILY",
+    #  "status": "ACCEPTED",
+    #  "confidence": 94,
+    #  "matchType": "EXACT",
+    #  "kingdom": "Animalia",
+    #  "phylum": "Arthropoda",
+    #  "order": "Diptera",
+    #  "family": "Mycetophilidae",
+    #  "kingdomKey": 1,
+    #  "phylumKey": 54,
+    #  "classKey": 216,
+    #  "orderKey": 811,
+    #  "familyKey": 5565,
+    #  "synonym": false,
+    #  "class": "Insecta"
+    #}
+    
+# =============================================================================
+# Family Page JSON
+# =============================================================================
+
+    #import json
+    #print(json.dumps(family_json, indent=2))
+    #{
+    #  "key": 5565,
+    #  "nubKey": 5565,
+    #  "nameKey": 7242389,
+    #  "taxonID": "gbif:5565",
+    #  "sourceTaxonKey": 155863502,
+    #  "kingdom": "Animalia",
+    #  "phylum": "Arthropoda",
+    #  "order": "Diptera",
+    #  "family": "Mycetophilidae",
+    #  "kingdomKey": 1,
+    #  "phylumKey": 54,
+    #  "classKey": 216,
+    #  "orderKey": 811,
+    #  "familyKey": 5565,
+    #  "datasetKey": "d7dddbf4-2cf0-4f39-9b2a-bb099caae36c",
+    #  "constituentKey": "7ddf754f-d193-4cc9-b351-99906754a03b",
+    #  "parentKey": 811,
+    #  "parent": "Diptera",
+    #  "scientificName": "Mycetophilidae",
+    #  "canonicalName": "Mycetophilidae",
+    #  "authorship": "",
+    #  "nameType": "SCIENTIFIC",
+    #  "rank": "FAMILY",
+    #  "origin": "SOURCE",
+    #  "taxonomicStatus": "ACCEPTED",
+    #  "nomenclaturalStatus": [],
+    #  "remarks": "",
+    #  "numDescendants": 7215,
+    #  "lastCrawled": "2019-09-06T05:41:48.812+0000",
+    #  "lastInterpreted": "2019-09-06T04:35:49.995+0000",
+    #  "issues": [],
+    #  "synonym": false,
+    #  "class": "Insecta"
+    #}
+
+# =============================================================================
+# Children JSON
+# =============================================================================
+
+    # content of children json
+    # children_json keys:
+    # dict_keys(['offset', 'limit', 'endOfRecords', 'results'])
+    
+    # example of the first element of the resulst (children_json[”results"][0])
+    #  "authorship": "Hutton, 1904",
+    #  "canonicalName": "Anomalomyia",
+    #  "class": "Insecta",
+    #  "classKey": 216,
+    #  "constituentKey": "7ddf754f-d193-4cc9-b351-99906754a03b",
+    #  "datasetKey": "d7dddbf4-2cf0-4f39-9b2a-bb099caae36c",
+    #  "family": "Mycetophilidae",
+    #  "familyKey": 5565,
+    #  "genus": "Anomalomyia",
+    #  "genusKey": 1615502,
+    #  "issues": [],
+    #  "key": 1615502,
+    #  "kingdom": "Animalia",
+    #  "kingdomKey": 1,
+    #  "lastCrawled": "2019-09-06T05:41:48.812+0000",
+    #  "lastInterpreted": "2019-09-06T04:35:55.714+0000",
+    #  "nameKey": 709396,
+    #  "nameType": "SCIENTIFIC",
+    #  "nomenclaturalStatus": [],
+    #  "nubKey": 1615502,
+    #  "numDescendants": 13,
+    #  "order": "Diptera",
+    #  "orderKey": 811,
+    #  "origin": "SOURCE",
+    #  "parent": "Mycetophilidae",
+    #  "parentKey": 5565,
+    #  "phylum": "Arthropoda",
+    #  "phylumKey": 54,
+    #  "publishedIn": "Index Faunae N. Zealand",
+    #  "rank": "GENUS",
+    #  "remarks": "",
+    #  "scientificName": "Anomalomyia Hutton, 1904",
+    #  "sourceTaxonKey": 156980061,
+    #  "synonym": false,
+    #  "taxonID": "gbif:1615502",
+    #  "taxonomicStatus": "ACCEPTED"
