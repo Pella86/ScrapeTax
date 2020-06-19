@@ -240,7 +240,7 @@ class TaxaList:
             for genus in tribe.associates:
                 logger.log_report("    " + genus)        
 
-        logger.log_short_report("Tribes found: " + str(len(subfamilies)))
+        logger.log_short_report("Tribes found: " + str(len(tribes)))
                          
         return subfamilies, tribes
 

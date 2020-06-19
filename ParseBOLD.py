@@ -53,9 +53,7 @@ class Record:
         self.rank = None
         
         # get the taxons
-        
         # check if is a specie
-        
         specie_taxon = self.get_taxon("species")
         
         if specie_taxon:
@@ -78,7 +76,6 @@ class Record:
             self.genus = self.get_name("genus")
         
         # add the higher taxonomy
-        
         self.tribe = self.assign_name("tribe")
         self.subfamily = self.assign_name("subfamily")
         self.family = self.assign_name("family")
@@ -236,6 +233,10 @@ def get_children(taxid, fileinfo, parent_taxa = None):
             retrived_taxa.rank = taxa_ranks[frank]
         except KeyError:
             raise Exception("BOLD_downloader: Taxon rank not present")
+            
+        if retrived_taxa.rank == Taxa.Taxa.rank_specie or retrived_taxa.rank == Taxa.Taxa.subspecie:
+            logger.log_report(tax.text + " skipped because specie")
+            continue
         
         # get the names associated with the rank
         
@@ -245,6 +246,8 @@ def get_children(taxid, fileinfo, parent_taxa = None):
             
             taxa = Taxa.Taxa()
             taxa.copy_taxa(retrived_taxa)
+            
+            
             
             # parse the name
             if taxa.rank == Taxa.Taxa.rank_specie:
@@ -263,12 +266,12 @@ def get_children(taxid, fileinfo, parent_taxa = None):
                 continue
             
             if text.find("sp.") != -1:
-                logger.log_report("sp. in text, text: " + name)
+                logger.log_report("sp. in text, text: " + name.text)
                 
                 continue
             
             if text.find("nr.") != -1:
-                logger.log_report("nr. in text, text:" + name)
+                logger.log_report("nr. in text, text:" + name.text)
                 continue
                         
             

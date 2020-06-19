@@ -73,7 +73,7 @@ class Logger:
         global run_log_filename
         global short_report_log_filename
 #        run_log_filename = filename + "_" + time.strftime("%Y%m%d-%H%M%S") + ".log"
-        run_log_filename = filename + ".log"
+        run_log_filename = filename + "_detailed.log"
         short_report_log_filename = filename + "_summary.log"
         
         # reset the files

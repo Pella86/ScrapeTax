@@ -71,9 +71,7 @@ class UserInput:
 # =============================================================================
 
 def prod_main():
-    
 
-    
     #title    
     print("#### Scrape Tax ####")
     print("Program to gather informations from online databases about species and genuses")
@@ -111,7 +109,7 @@ def prod_main():
     fi = FileInfo.FileInfo(base_folder, "gbif", family_name)
     
     # set logging files
-    logger.set_run_log_filename(fi.name_only("detailed_log"))  
+    logger.set_run_log_filename(fi.name_only("report_log"))  
     
     logger.log_short_report("#### Scrape Tax ####")
     # add date?
