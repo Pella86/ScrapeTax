@@ -14,6 +14,7 @@ Created on Wed May 20 12:55:37 2020
 # =============================================================================
 
 import urllib
+import re
 
 import RequestsHandler
 import Taxa
@@ -234,8 +235,12 @@ def get_children(taxid, fileinfo, parent_taxa = None):
         except KeyError:
             raise Exception("BOLD_downloader: Taxon rank not present")
             
-        if retrived_taxa.rank == Taxa.Taxa.rank_specie or retrived_taxa.rank == Taxa.Taxa.subspecie:
-            logger.log_report(tax.text + " skipped because specie")
+        if retrived_taxa.rank == Taxa.Taxa.rank_specie or retrived_taxa.rank == Taxa.Taxa.rank_subspecie:
+            logger.log_report("Skipped because species:")
+            names = re.split(r"\[\d+\]", tax.text)
+            for name in names:    
+                if name:
+                    logger.log_report(name)
             continue
         
         # get the names associated with the rank
