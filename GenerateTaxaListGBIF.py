@@ -64,6 +64,44 @@ def correct_author(gbif_taxa_list, nbn_taxa_list):
     
     correction_counter = 0
     
+    
+    logger.log_short_report("--- Correcting author spelling ---")
+    
+    # correct spelling before
+    for gbif_taxon in gbif_taxa_list.taxa:        
+        for nbn_taxon in nbn_taxa_list.taxa:    
+            if gbif_taxon.compare_specie(nbn_taxon):            
+
+                if gbif_taxon.author == nbn_taxon.author:
+                    continue
+
+                gbif_author_name = get_author_name(gbif_taxon.author)
+                nbn_author_name = get_author_name(nbn_taxon.author)
+                
+                if gbif_author_name == nbn_author_name:
+                    continue
+                else:
+                    # if is a name issue check if the name is similar
+                    # with the Levenshtein distance
+                    distance = LevenshteinDistance.levenshtein(gbif_author_name, nbn_author_name)
+                    if distance <= 2:
+                        # substitute all the name in the list
+                        for sub_author_taxon in gbif_taxa_list.taxa:
+                            
+                            # avoid correcting and recorrecting 
+                            if "Author spelling from NBN Atlas" in sub_author_taxon.links:
+                                continue
+                            
+                            # assign the nbn Atlas name toal the authors carrying the same mispelled name
+                            if get_author_name(sub_author_taxon.author) == gbif_author_name:
+                                sub_author_taxon.author = sub_author_taxon.author.replace(gbif_author_name, nbn_author_name)
+                                sub_author_taxon.links += ["Author spelling from NBN Atlas"]    
+                                logger.log_report(f"Correcting spelling for {sub_author_taxon} | {nbn_author_name}")
+                                correction_counter += 1                     
+                    
+                                
+    logger.log_short_report("--- Correcting names and conflicts ---")           
+    
     for gbif_taxon in gbif_taxa_list.taxa:        
         for nbn_taxon in nbn_taxa_list.taxa:            
             
@@ -88,38 +126,18 @@ def correct_author(gbif_taxa_list, nbn_taxa_list):
                     correction_counter += 1
                     
                 else:
-                    # if is a name issue check if the name is similar
-                    # with the Levenshtein distance
-                    distance = LevenshteinDistance.levenshtein(gbif_author_name, nbn_author_name)
-            
-                    # if the distance is less then 2 letters his means that
-                    # is a probable spelling mistake so all the authors name
-                    # should be substituted accordingly
-                    if distance <= 2:
-                        # substitute all the name in the list
-                        for sub_author_taxon in gbif_taxa_list.taxa:
-                            
-                            # avoid correcting and recorrecting 
-                            if "Author spelling from NBN Atlas" in sub_author_taxon.links:
-                                continue
-                            
-                            # assign the nbn Atlas name toal the authors carrying the same mispelled name
-                            if get_author_name(sub_author_taxon.author) == gbif_author_name:
-                                sub_author_taxon.author = sub_author_taxon.author.replace(gbif_author_name, nbn_author_name)
-                                sub_author_taxon.links += ["Author spelling from NBN Atlas"]    
-                                logger.log_report(f"Correcting spelling for {sub_author_taxon} | {nbn_author_name}")
-                                correction_counter += 1    
-                    
+
                     # else there is a true author conflict so we take the 
                     # nbn one?
+                    
+                    if nbn_taxon.author.find("misident.") != -1:
+                        continue
                     else:
-                        if nbn_taxon.author.find("misident.") != -1:
-                            continue
-                        else:
-                            logger.log_report(f"Name conflict {gbif_taxon} | {nbn_taxon}")
-                            gbif_taxon.author = nbn_taxon.author
-                            gbif_taxon.links += nbn_taxon.links
-                    correction_counter += 1
+                        logger.log_report(f"Name conflict {gbif_taxon} | {nbn_taxon}")
+                        gbif_taxon.author = nbn_taxon.author
+                        gbif_taxon.links += nbn_taxon.links
+                        correction_counter += 1
+                        
     logger.log_short_report(f"Total corrections: {correction_counter}" )
 
 def scrape_gbif(family_name, base_folder, genera_filter):
