@@ -10,6 +10,8 @@ Created on Fri May  8 10:28:00 2020
 # Imports
 # =============================================================================
 
+import pickle
+
 # my imports
 import RequestsHandler
 import Taxa
@@ -78,14 +80,37 @@ def generate_lists(family_name, file_info, load_lists = True):
     family_page = RequestsHandler.Request(taxon_page(family_json["familyKey"]), file_info.cache_filename("family_page"))
     family_page.load()
     family_json = family_page.get_json()
- 
     
-    # Get the childrens of the family
-    limit_param = {"limit" : family_json["numDescendants"]}
+    print(family_json["numDescendants"])
     
-    children_req = RequestsHandler.Request(children_url(family_json["familyKey"]), file_info.cache_filename("children"), limit_param)
-    children_req.load()
-    children_json = children_req.get_json()
+    
+    children_json = dict()
+    children_json["endOfRecords"] = False
+    offset = 0
+    
+    pages = []
+
+    while children_json["endOfRecords"] != True: # and len(pages) < 1:
+        # Get the childrens of the family
+        limit_param = {"limit" : 1000,
+                       "offset" : offset}
+        
+        filename = file_info.cache_filename("children_page_" + str(offset))
+        
+        children_req = RequestsHandler.Request(children_url(family_json["familyKey"]), 
+                                               filename,
+                                               limit_param)
+        children_req.load()
+        children_json = children_req.get_json()
+        
+        offset += 1
+        
+        pages.append(filename)
+        
+        print( "\r", offset, children_json["endOfRecords"], end="")
+    print()
+    
+    
     
     # Create the taxon reference for the family
     fam_taxa = Taxa.Taxa()
@@ -94,129 +119,247 @@ def generate_lists(family_name, file_info, load_lists = True):
     fam_taxa.rank = Taxa.Taxa.rank_family
     
     # Small function to convert the json info in a Taxa
-    def generate_mp_taxa(gbif_taxon, mp_taxa_parent_genus):
-        name = gbif_taxon["scientificName"].replace(gbif_taxon["authorship"], "").strip()
-        author = gbif_taxon["authorship"].strip()        
+#    def generate_mp_taxa(gbif_taxon, mp_taxa_parent_genus):
+#        name = gbif_taxon["scientificName"].replace(gbif_taxon["authorship"], "").strip()
+#        author = gbif_taxon["authorship"].strip()        
+#        
+#        taxa = Taxa.Taxa()
+#        taxa.copy_taxa(fam_taxa)
+#        
+#        if gbif_taxon["rank"] == "GENUS":
+#            taxa.genus = name
+#            taxa.rank = Taxa.Taxa.rank_genus
+#            taxon_id = gbif_taxon["genusKey"]
+#            
+#        else:
+#            if mp_taxa_parent_genus:
+#                taxa.copy_taxonomy(mp_taxa_parent_genus)
+#            taxa.specie = name
+#            taxa.rank = Taxa.Taxa.rank_specie
+#            taxon_id = gbif_taxon["speciesKey"]
+#        
+#        link = f"{api_url}/species/{taxon_id}"
+#        
+#        taxa.links.append(link)
+#        taxa.author = author
+#        
+#        return taxa
+    
+    class ParseTaxon:
         
-        taxa = Taxa.Taxa()
-        taxa.copy_taxa(fam_taxa)
-        
-        if gbif_taxon["rank"] == "GENUS":
-            taxa.genus = name
-            taxa.rank = Taxa.Taxa.rank_genus
-            taxon_id = gbif_taxon["genusKey"]
+        def __init__(self, gbif_taxon):
+            self.gbif_taxon = gbif_taxon
             
-        else:
-            if mp_taxa_parent_genus:
-                taxa.copy_taxonomy(mp_taxa_parent_genus)
-            taxa.specie = name
-            taxa.rank = Taxa.Taxa.rank_specie
-            taxon_id = gbif_taxon["speciesKey"]
+            # copy the attributes of the family
+            self.taxa = Taxa.Taxa()
+            self.taxa.copy_taxa(fam_taxa)
+            
+            # prepare the scientific name
+            self.prepare_name = self.gbif_taxon["scientificName"].replace(self.gbif_taxon["authorship"], "").strip()
+            
+            # assign the author
+            self.taxa.author = self.gbif_taxon["authorship"].strip()
+            
+            # assign the taxonomic status
+            self.taxa.taxonomic_status = self.gbif_taxon["taxonomicStatus"]
+            
         
-        link = f"{api_url}/species/{taxon_id}"
+        def get_specie(self):
+            # define the name
+            name_parts = self.prepare_name.split(" ")
+            
+            self.taxa.genus = name_parts[0]
+            self.taxa.specie = name_parts[1]
+            
+            # define rank
+            self.taxa.rank = Taxa.Taxa.rank_specie
+            
+            # define source link
+            taxon_id = self.gbif_taxon["speciesKey"]
+            
+            link = taxon_page(taxon_id)[:-1]
+            self.taxa.links.append(link)
+            
+            return self.taxa
         
-        taxa.links.append(link)
-        taxa.author = author
+        def get_genus(self):
+            # define the name
+            self.taxa.genus = self.prepare_name
+            
+            #define the rank
+            self.taxa.rank = Taxa.Taxa.rank_genus
+            
+            # define source link
+            taxon_id = self.gbif_taxon["genusKey"]
+            
+            link = taxon_page(taxon_id)[:-1]
+            self.taxa.links.append(link)     
+            
+            return self.taxa
         
-        return taxa
+        def get_subspecie(self):
+            name_parts = self.prepare_name.split(" ")
+            
+            self.taxa.genus = name_parts[0]
+            self.taxa.specie = name_parts[1]
+            self.taxa.subspecie = name_parts[2]
+            
+            # define rank
+            self.taxa.rank = Taxa.Taxa.rank_subspecie
+            
+            # define source link
+            taxon_id = self.gbif_taxon["speciesKey"]
+            
+            link = taxon_page(taxon_id)[:-1]
+            self.taxa.links.append(link)
+            
+            return self.taxa            
     
-    def generate_genus(gbif_taxon):
-        name = gbif_taxon["scientificName"].replace(gbif_taxon["authorship"], "").strip()
-        author = gbif_taxon["authorship"].strip()        
-        
-        taxa = Taxa.Taxa()
-        taxa.copy_taxa(fam_taxa)
-        
-        taxa.genus = name
-        taxa.rank = Taxa.Taxa.rank_genus
-        
-        taxon_id = gbif_taxon["genusKey"]
-        link = f"{api_url}/species/{taxon_id}"
-        
-        taxa.links.append(link)
-        taxa.author = author
-        
-        taxa.taxonomic_status = gbif_taxon["taxonomicStatus"]
-        
-        return taxa
-        
-    def generate_specie(gbif_taxon):    
-        
-        taxa = Taxa.Taxa()
-        taxa.copy_taxa(fam_taxa)
-        
-        name = gbif_taxon["scientificName"].replace(gbif_taxon["authorship"], "").strip()
-        name_parts = name.split(" ")
-        
-        taxa.genus = name_parts[0]
-        taxa.specie = name_parts[1]
-        taxa.rank = Taxa.Taxa.rank_specie
-        taxon_id = gbif_taxon["speciesKey"]
-    
-        link = f"{api_url}/species/{taxon_id}"
-        
-        taxa.links.append(link)
-        
-        author = gbif_taxon["authorship"].strip()      
-        taxa.author = author
-        
-        taxa.taxonomic_status = gbif_taxon["taxonomicStatus"]
-        
-        return taxa        
+#    def generate_genus(gbif_taxon):
+#        taxa = Taxa.Taxa()
+#        taxa.copy_taxa(fam_taxa)        
+#        
+#        name = gbif_taxon["scientificName"].replace(gbif_taxon["authorship"], "").strip()
+#        author = gbif_taxon["authorship"].strip()        
+#        
+#
+#        
+#        taxa.genus = name
+#        taxa.rank = Taxa.Taxa.rank_genus
+#        
+#        taxon_id = gbif_taxon["genusKey"]
+#        link = f"{api_url}/species/{taxon_id}"
+#        
+#        taxa.links.append(link)
+#        taxa.author = author
+#        
+#        taxa.taxonomic_status = gbif_taxon["taxonomicStatus"]
+#        
+#        return taxa
+#        
+#    def generate_specie(gbif_taxon):    
+#        taxa = Taxa.Taxa()
+#        taxa.copy_taxa(fam_taxa)
+#        
+#        name = gbif_taxon["scientificName"].replace(gbif_taxon["authorship"], "").strip()
+#        name_parts = name.split(" ")
+#        
+#        taxa.genus = name_parts[0]
+#        taxa.specie = name_parts[1]
+#        taxa.rank = Taxa.Taxa.rank_specie
+#        taxon_id = gbif_taxon["speciesKey"]
+#    
+#        link = f"{api_url}/species/{taxon_id}"
+#        
+#        taxa.links.append(link)
+#        
+#        author = gbif_taxon["authorship"].strip()      
+#        taxa.author = author
+#        
+#        taxa.taxonomic_status = gbif_taxon["taxonomicStatus"]
+#        
+#        return taxa        
+            
+    def get_children(taxon_key, name, limit_params=None):
+        url = children_url(taxon_key)
+        filename = file_info.cache_filename(name)
+        req = RequestsHandler.Request(url, filename, limit_params)
+        return req.get_json()
         
     logger.console_log("Gathering child taxa...")
     genus_list = []
     species_list = []
     
-    for i, taxon in enumerate(children_json["results"]):
-        
-        # search for the genus, and if is a genus, find the children species
-        if taxon["rank"] == "GENUS":
+    limit_param = dict()
+    
+    ranks = []
+    
+    for page in pages:
+        children_json = None
+        with open(page, "rb") as f:
+            children_json = pickle.load(f).json()
+ 
+        for i, taxon in enumerate(children_json["results"]):
+            pt = ParseTaxon(taxon)
+            
+            if taxon["rank"] not in ranks:
+                print(taxon["rank"])
+                ranks.append(taxon["rank"])
+            
+            # search for the genus, and if is a genus, find the children species
+            if taxon["rank"] == "GENUS":    
+                # put genus in genus list
+                tax = pt.get_genus()
+                genus_list.append(tax)
+                
+                # look for species associated with the genus
+#                limit_param["limit"] = taxon["numDescendants"]
+                
+                genus_id = taxon["genusKey"]
+                
+#                url = children_url(genus_id)
+#                filename = file_info.cache_filename(tax.genus)
+#                
+#                genus_child = RequestsHandler.Request(url,
+#                                                      filename,
+#                                                      limit_param)
+#                genus_child.load()
+                
+                species_response = get_children(genus_id, str(genus_id) + "_genus_children")
+                
+                if len(species_response["results"]) >= 1000:
+                    print("May be that the genus has more than 1000 associated species")
+                
+                # navigate throught the child taxa of the genus
+                for specie in species_response["results"]:
+    
+                    if specie["rank"] == "SPECIES":
+                        pt = ParseTaxon(specie)
+                        stax = pt.get_specie()
+                        species_list.append(stax)
+                        
+                        specie_id = specie["speciesKey"]
+                        
+                        species_children = get_children(specie_id, str(specie_id) + "_specie_children")
+                        
+#                        # find the sub species
+#                        filename = file_info.cache_filename(stax.specie + "_children")
+#                        
+#                        url = children_url(specie_id)
+#                        specie_children_response = RequestsHandler.Request(url,
+#                                                              filename)    
+#                        specie_children_response.load()
+                        
+                        for sc in species_children["results"]:
 
-            tax = generate_genus(taxon)
-            
-            #print(tax.genus)
-            if tax.genus == "Fotella":
-                print(tax)
-            
-            genus_list.append(tax)
-            
-            # look for the next 
-            limit_param["limit"] = taxon["numDescendants"]
-            
-            genus_id = taxon["genusKey"]
-            
-            url = children_url(genus_id)
-            filename = file_info.cache_filename(tax.genus)
-            
-            genus_child = RequestsHandler.Request(url,
-                                                  filename,
-                                                  limit_param)
-            genus_child.load()
-            
-            species_response = genus_child.get_json()
-            
-            # navigate throught the child taxa of the genus
-            for specie in species_response["results"]:
+                            if sc["rank"] not in ranks:
+                                print(sc["rank"])
+                                ranks.append(sc["rank"])
 
-                if specie["rank"] == "SPECIES":
-                    stax = generate_specie(specie)
-                    species_list.append(stax)
-                    
-                                   
-        
-        # pick the species that don't have a genus apparently
-        if taxon["rank"] == "SPECIES":
-            stax = generate_specie(taxon)
-            species_list.append(stax)       
-        
-
-
-#        if taxon["rank"] != "GENUS" and taxon["rank"] != "SPECIES":
-#            if not ( "BOLD" in  taxon["scientificName"]):
-#                print(taxon["scientificName"])
-#                print(taxon["rank"])
-        
+                            if sc["rank"] == "SUBSPECIES":
+                                pt = ParseTaxon(sc)
+                                sctax = pt.get_subspecie()
+                                species_list.append(sctax)
+                                
+                                
+                        
+#                    if taxon["rank"] != "GENUS" and taxon["rank"] != "SPECIES":
+#                        if not ( "BOLD" in  taxon["scientificName"]):
+#                            print(taxon["scientificName"])
+#                            print(taxon["rank"])                                   
+            
+            # pick the species that don't have a genus apparently
+            if taxon["rank"] == "SPECIES":
+                stax = pt.get_specie()
+                species_list.append(stax)       
+            
+    
+    
+            if taxon["rank"] != "GENUS" and taxon["rank"] != "SPECIES":
+                if not ( "BOLD" in  taxon["scientificName"]):
+                    print(taxon["scientificName"])
+                    print(taxon["rank"])
+            
     
     
     n_genera = len(genus_list)
@@ -303,13 +446,14 @@ def get_synonyms(taxa_list, file_info):
 
 
 if __name__ == "__main__":    
-    family_name = "Mycetophilidae"
+    family_name = "Noctuidae"
     base_folder = "./Tests/test_GBIF"
     file_info = FileInfo.FileInfo(base_folder, "gbif", family_name)
+    logger.set_run_log_filename(base_folder + "/" + family_name + "/gbif_test")
     
     genus_list, species_list = generate_lists(family_name, file_info)
     
-    get_synonyms(species_list, file_info)
+#    get_synonyms(species_list, file_info)
     
 #    for genus in genus_list:
 #        print(genus)
@@ -318,8 +462,8 @@ if __name__ == "__main__":
 #    for specie in species_list:
 #        print(specie)
     
-       
-#    AuthorityFileCreation.generate_authority_list(genus_list, species_list, file_info)    
+#    import CreateAuthorityFile
+#    CreateAuthorityFile.generate_authority_list(genus_list, species_list, file_info)    
     
     
     
