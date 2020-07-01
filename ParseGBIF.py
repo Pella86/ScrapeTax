@@ -50,7 +50,7 @@ def children_url(key):
 #family_name = "Mycetophilidae"
 #base_folder = "./Data/GBIF_test"
 
-def get_children(taxon_key, filename, limit_params=None):
+def get_children(taxon_key, filename, limit_params={"limit" : 1000, "offset" : 0}):
     url = children_url(taxon_key)
     #filename = file_info.cache_filename(name)
     req = RequestsHandler.Request(url, filename, limit_params)
@@ -221,11 +221,39 @@ def generate_lists(family_name, file_info, load_lists = True):
                 # look for species associated with the genus
                 genus_id = taxon["genusKey"]
                                 
-                filename = file_info.cache_filename(str(genus_id) + "_genus_children")
-                species_response = get_children(genus_id, filename)
+#                filename = file_info.cache_filename(str(genus_id) + "_genus_children")
+#                species_response = get_children(genus_id, filename)
+#                
+#                if not species_response["endOfRecords"]:
+#                    raise Exception(f"ParseGBIF genus: {tax.genus} has more than 1000 species")
+                    
+                    
+                # cycle throught the response pages
+                
+                results = []
+
+                species_response = dict()
+                species_response["endOfRecords"] = False
+                
+                limit_param = dict()
+                limit_param["limit"] = 1000
+                
+                offset = 0
+                while not species_response["endOfRecords"]:
+                    
+                    limit_param["offset"] = offset
+                    
+                    filename = file_info.cache_filename(f"{genus_id}_genus_children_page_{offset}")
+                    species_response = get_children(genus_id, filename, limit_param)
+                    
+                    results += species_response["results"]
+                    offset += 1
+                    
+                    print(offset, genus_id)
+                
                 
                 # navigate through the child taxa of the genus
-                for specie in species_response["results"]:
+                for specie in results:
     
                     if specie["rank"] == "SPECIES":
                         pt = ParseTaxon(specie)
@@ -239,6 +267,9 @@ def generate_lists(family_name, file_info, load_lists = True):
                         
                         filename = file_info.cache_filename(str(specie_id) + "_specie_children")
                         species_children = get_children(specie_id, filename)
+                        
+                        if not species_children["endOfRecords"]:
+                            raise Exception(f"ParseGBIF genus: {tax.specie} has more than 1000 substuff")
                                                 
                         for sc in species_children["results"]:
 
@@ -342,6 +373,10 @@ if __name__ == "__main__":
     logger.set_run_log_filename(base_folder + "/" + family_name + "/gbif_test")
     
     genus_list, species_list = generate_lists(family_name, file_info)
+    
+    with open(file_info.name_only("genus_list.log") , "w") as f:
+        for genus in genus_list:
+            f.write(str(genus) + "\n")
     
 #    get_synonyms(species_list, file_info)
     

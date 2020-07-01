@@ -135,7 +135,7 @@ def prod_main():
 # Main function
 # =============================================================================
 
-PRODUCTION = True   
+PRODUCTION = False   
 
 if __name__ == "__main__":
     if PRODUCTION:
