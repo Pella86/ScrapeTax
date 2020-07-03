@@ -249,7 +249,6 @@ def generate_lists(family_name, file_info, load_lists = True):
                     results += species_response["results"]
                     offset += 1
                     
-                    print(offset, genus_id)
                 
                 
                 # navigate through the child taxa of the genus

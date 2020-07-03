@@ -55,6 +55,9 @@ class FileInfo:
     def mptaxa_exists(self, name):
         return os.path.isfile(self.mptaxa_filename(name))
     
+    def json_mptaxa_exist(self, name):
+        return os.path.isfile(self.json_mptaxa_filename(name))
+    
     def format_name(self, name, extention):
         return f"{self.prefix}_{name}.{extention}"
 
@@ -76,6 +79,9 @@ class FileInfo:
     
     def txt_filename(self, name):
         return self.filename(name, "txt")
+    
+    def json_mptaxa_filename(self, name):
+        return self.filename(name + "_json", "mptaxa")
     
     def cache_filename(self, name):
         # generate a subfolder named cache

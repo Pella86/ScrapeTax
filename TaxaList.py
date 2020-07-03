@@ -11,6 +11,7 @@ Created on Fri May 29 09:21:10 2020
 
 import os
 import pickle
+import json
 
 import Taxa
 import ParseNBN
@@ -52,6 +53,38 @@ class AssociatedTaxa:
         associates_str = "".join(associate + ", " for associate in self.associates)
         associates_str = associates_str[:-2]
         return "- " + self.main_taxa + ": " + associates_str
+
+
+class TaxaListEncoder(json.JSONEncoder):
+    
+    def default(self, o):
+        return o.__dict__
+    
+class TaxaListDecoder(json.JSONDecoder):
+    
+    def __init__(self, *args, **kwargs):
+        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
+    
+    def object_hook(self, s):
+        if "taxa_list" not in s:
+            taxa = Taxa.Taxa()
+            
+            for k in s.keys():
+                taxa.__setattr__(k, s[k])
+            
+            return taxa
+        else:
+            taxa = []
+            
+            for t in s["taxa"]:
+                taxa = Taxa.Taxa()
+                
+                for k in t.keys():
+                    taxa.__setattr__(k, t[k])
+                
+                taxa.append(taxa)
+            
+            return taxa        
 
 
 class TaxaList:
@@ -167,18 +200,29 @@ class TaxaList:
         self.taxa.append(taxon)
         
     def save(self, fileinfo, name):
-        logger.main_log("Taxa list saved in: " + fileinfo.mptaxa_filename(name))
-        with open(fileinfo.mptaxa_filename(name), "wb") as f:
-            pickle.dump(self.taxa, f)
+        filename = fileinfo.json_mptaxa_filename(name)
+        
+        logger.main_log("Taxa list saved in: " + filename)
+            
+        with open(filename, "w", encoding="utf8") as f:
+            json.dump(self.taxa, f, cls=TaxaListEncoder, ensure_ascii=False)
+
+    
+
         
     def load(self, fileinfo, name):
-        logger.main_log("Taxa list loaded from: " + fileinfo.mptaxa_filename(name))
-        with open(fileinfo.mptaxa_filename(name), "rb") as f:
-            self.taxa = pickle.load(f)
+        filename = fileinfo.json_mptaxa_filename(name)
+        
+        logger.main_log("Taxa list loaded from: " + filename)
+
+        with open(filename, "r", encoding="utf-8") as f:
+            self.taxa = json.load(f, cls=TaxaListDecoder)
+            
     
     def load_existing(self, fileinfo, name):
         ''' loads the file from disk if present else it returns false'''
-        if fileinfo.mptaxa_exists(name):
+
+        if fileinfo.json_mptaxa_exist(name):
             self.load(fileinfo, name)
             logger.log_short_report(f"Loaded {len(self.taxa)} taxa from disk {fileinfo.prefix}_{name}.mptaxa")
             return True
@@ -414,6 +458,7 @@ if __name__ == "__main__":
     logger.set_run_log_filename(base_folder + "TaxaList")
     
     taxa_list = generate_taxa_list(base_folder, sources, family_name, genera_filter)
+    
     
     
     for taxa in taxa_list.taxa:
