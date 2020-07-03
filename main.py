@@ -142,7 +142,7 @@ if __name__ == "__main__":
         prod_main()
     else:
         
-        family_name = "Mycetophilidae"
+        family_name = "Noctuidae"
         base_folder = "./Tests/test_main"
         genera_filter = []
         actions = ["authority list", "authority file", "label table"]
