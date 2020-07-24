@@ -17,6 +17,7 @@ import TaxaList
 import ParseGBIF
 import FileInfo
 import LogFiles
+import ParseBOLD
 
 
 # =============================================================================
@@ -160,13 +161,18 @@ def scrape_gbif(family_name, base_folder, genera_filter):
     
     logger.log_short_report("---*** Retriving Subfamilies and Tribes ***---")
     
-    # scrape the bold website to get the subfamilies and tribes
-    bold_taxa_list = TaxaList.generate_taxa_list_single(base_folder, "bold", family_name)
+    try:
     
-    # find subfamilies and tribes
-    associations = bold_taxa_list.find_associations()
+        # scrape the bold website to get the subfamilies and tribes
+        bold_taxa_list = TaxaList.generate_taxa_list_single(base_folder, "bold", family_name)
+        
+        # find subfamilies and tribes
+        associations = bold_taxa_list.find_associations()
+        
+        gbif_taxa_list.fill_associations(associations)
     
-    gbif_taxa_list.fill_associations(associations)
+    except ParseBOLD.ParseBoldException:
+        logger.log_short_report("No subfamilies and tribes information available")
 
     # GET AUTHORS FROM NBN ATLAS
     logger.log_short_report("---*** Retriving Authors ***---")

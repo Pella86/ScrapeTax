@@ -319,6 +319,15 @@ def get_synonyms(taxa_list, file_info):
         filename = file_info.cache_filename(f"{taxa.genus}_{taxa.specie}_synonym")
         
         req = RequestsHandler.Request(url, filename)
+        req.load()
+        
+        
+        if req.response.status_code == 503:
+            logger.log_report_console(f"Response 503 from server: {taxa.genus} {taxa.specie} no synonyms retrived")
+            logger.log_report_console(f"url: {url}")
+            continue
+        
+        
         
         jreq = req.get_json()
 

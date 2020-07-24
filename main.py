@@ -90,7 +90,7 @@ def prod_main():
     family_name_input = UserInput()
     family_name_input.title = "Input the family name"
     family_name_input.input_sentence = "family"
-    family_name_input.default = "Vespidae"
+    family_name_input.default = "Papilionidae"
     
     family_name = family_name_input.get_input()
     
@@ -134,8 +134,12 @@ def prod_main():
 # =============================================================================
 # Main function
 # =============================================================================
+    
 
-PRODUCTION = False   
+    
+    
+
+PRODUCTION = True   
 
 if __name__ == "__main__":
     if PRODUCTION:

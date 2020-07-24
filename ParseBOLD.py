@@ -39,6 +39,13 @@ specimen_api_url = main_url + "/index.php/API_Public/specimen"
 taxon_search_url = main_url + "/index.php/Taxbrowser_Taxonpage"
 
 # =============================================================================
+# Exceptions
+# =============================================================================
+
+class ParseBoldException(Exception):
+    pass
+
+# =============================================================================
 # retrive all the specimens they have
 # =============================================================================
 
@@ -411,9 +418,14 @@ def generate_lists(family_name, fileinfo, load_lists = True):
     
     logger.log_short_report("Possible matches: " + str(res_json["total_matched_names"]))
     
+    if not res_json["top_matched_names"]:
+        raise ParseBoldException("No candidates found")
+    
     for match in res_json["top_matched_names"]:
         tax_match = match["taxon"]
         logger.log_short_report(f"    - {tax_match} (id: {match['taxid']})" )
+    
+    
     
     # get the tax id from the search    
         

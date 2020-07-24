@@ -303,6 +303,8 @@ def generate_lists(family_name, fileinfo, load_lists = True):
             soup = RequestsHandler.get_soup(taxa.links[0], filename)
             children = soup.find("section", id="classification")
             
+            print(taxa.links[0])
+            
             if children:
             
                 dts = children.find_all("dt")
@@ -317,9 +319,16 @@ def generate_lists(family_name, fileinfo, load_lists = True):
                         staxa = Taxa.Taxa()
                         staxa.copy_taxonomy(taxa)
                         
-                        staxa.author = process_author(ddh.find("span", class_="author"))
-                        staxa.subspecie = ddh.find("span", class_="name").text.split(" ")[3]
+                        subspecie_element = NBNElement(dth, ddh, fileinfo)
+                        staxa.author = subspecie_element.get_author()
                         
+                        name_text = subspecie_element.get_name()
+                        
+                        # clean the subsp. mention that sometimes appears
+                        name_text.replace("subsp. ", "")
+                        
+                        # select the subspecie name
+                        staxa.subspecie = name_text.split(" ")[2]
                         
                         staxa.rank = Taxa.Taxa.rank_subspecie
                         staxa.links.append(specie.get_link())
