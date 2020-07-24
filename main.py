@@ -65,6 +65,70 @@ class UserInput:
         logger.console_log("Input:" + str(self.user_input))
         
         return self.user_input
+    
+
+import tkinter    
+
+from tkinter import Frame, Label, Entry, Button, filedialog, Checkbutton
+
+class LabelEntry:
+    
+    def __init__(self, root_frame, text):
+        
+        self.pFrame = Frame(root_frame)
+        
+        label = Label(self.pFrame, text=text)
+        label.grid(row=0, column=0)
+        
+        self.entry = Entry(self.pFrame)
+        self.entry.grid(row=0, column=1)
+
+class SelectFolder:
+    
+    def __init__(self, root_frame):
+        self.pFrame = Frame(root_frame)
+        
+        select_button = Button(self.pFrame, text="Select a folder", command=lambda : self.select())
+        select_button.pack()
+        
+        self.selected_directory = None
+    
+    def select(self):
+        sel_dir = filedialog.askdirectory()
+        
+        if sel_dir:
+            self.selected_directory = sel_dir
+            
+class ActionBox:
+    
+    def __init__(self, root_frame, text):
+        pass
+        
+        
+class GUI:
+    
+    def __init__(self):
+        
+        root = tkinter.Tk()
+        
+        family_entry = LabelEntry(root, "Family:")
+        family_entry.pFrame.pack()
+        
+        ass_family_entry = LabelEntry(root, "Associated Families:")
+        ass_family_entry.pFrame.pack()
+        
+        select_folder = SelectFolder(root)
+        select_folder.pFrame.pack()
+        
+        genera_filter = LabelEntry(root, "Genera filter:")
+        genera_filter.pFrame.pack()
+        
+        # make a selectable actions thingy
+        
+        
+        
+        root.mainloop()
+
 
 # =============================================================================
 # User input main        
@@ -140,10 +204,14 @@ def prod_main():
     
 
 PRODUCTION = True   
+CONSOLE = False
 
 if __name__ == "__main__":
     if PRODUCTION:
-        prod_main()
+        if CONSOLE:
+            prod_main()
+        else:
+            GUI()
     else:
         
         family_name = "Noctuidae"

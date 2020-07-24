@@ -157,7 +157,13 @@ def scrape_gbif(family_name, base_folder, genera_filter):
     # remove taxa without authors
     gbif_taxa_list.clean_noauthor()
     
-    # GET FAMILIES FROM BOLD
+    
+    # gather the names for the associated family
+    # substitute the family names 
+    # fuse the lists
+    
+    
+    # GET SUBFAMILIES FROM BOLD
     
     logger.log_short_report("---*** Retriving Subfamilies and Tribes ***---")
     
