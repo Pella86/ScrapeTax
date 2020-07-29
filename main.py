@@ -227,16 +227,19 @@ class Actions:
                     f.write(f"{name}=0\n")
 class OConsole:
     
-    def __init__(self, root_frame):
+    def __init__(self, root_frame, root):
         
         self.pFrame = Frame(root_frame)
         
         self.text = Text(self.pFrame, height=20)
         self.text.pack()
+        
+        self.root = root
     
     def add_line(self, line):
         self.text.insert(tkinter.END, line + "\n")
         self.text.yview_pickplace("end")
+        self.root.update()
         
     
         
@@ -281,7 +284,10 @@ class GUI:
         
         # output console
         
-        self.oconsole = OConsole(root)
+        output_console_frame = LabelFrame(text="Output console")
+        output_console_frame.pack()
+        
+        self.oconsole = OConsole(output_console_frame, root)
         self.oconsole.pFrame.pack()
         
         
@@ -316,7 +322,7 @@ class GUI:
         logger.log_short_report("#### Scrape Tax ####")
                                 
         # scrape the thing
-        taxa_list = GenerateTaxaListGBIF.scrape_gbif(family, base_folder, genera)
+        taxa_list = GenerateTaxaListGBIF.scrape_gbif(family, ass_family, base_folder, genera)
         
         # do the actions like creating files and stuff
         

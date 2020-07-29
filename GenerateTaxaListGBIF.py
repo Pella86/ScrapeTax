@@ -141,7 +141,7 @@ def correct_author(gbif_taxa_list, nbn_taxa_list):
                         
     logger.log_short_report(f"Total corrections: {correction_counter}" )
 
-def scrape_gbif(family_name, base_folder, genera_filter):
+def scrape_gbif(family_name, associated_families, base_folder, genera_filter):
     
     logger.log_short_report("---*** Retriving taxons ***---")
 
@@ -161,6 +161,23 @@ def scrape_gbif(family_name, base_folder, genera_filter):
     # gather the names for the associated family
     # substitute the family names 
     # fuse the lists
+    
+    associated_list = []
+    for family in associated_families:
+        family_taxa_list = TaxaList.generate_taxa_list_single(base_folder, "gbif", family)
+        
+        family_taxa_list.filter_status()
+        family_taxa_list.filter_taxa(genera_filter)
+        family_taxa_list.clean_noauthor()
+        
+        for taxa in family_taxa_list.taxa:
+            taxa.family = family_name
+            
+        associated_list.append(family_taxa_list)
+        
+    gbif_taxa_list.add_lists(associated_list)
+    
+    
     
     
     # GET SUBFAMILIES FROM BOLD
