@@ -9,10 +9,13 @@ Created on Fri Jan 10 09:21:27 2020
 # Imports
 # =============================================================================
 
+import os
+
 import GenerateTaxaListGBIF
 import GenerateFiles
 import LogFiles
 import FileInfo
+import RememberPaths
 
 # =============================================================================
 # Logging
@@ -69,19 +72,60 @@ class UserInput:
 
 import tkinter    
 
-from tkinter import Frame, Label, Entry, Button, filedialog, Checkbutton
+from tkinter import Frame, Label, Entry, Button, filedialog, Checkbutton, StringVar, IntVar, LabelFrame, Text
+
+
 
 class LabelEntry:
     
-    def __init__(self, root_frame, text):
+    def __init__(self, root_frame, text, uid):
         
         self.pFrame = Frame(root_frame)
         
         label = Label(self.pFrame, text=text)
         label.grid(row=0, column=0)
         
+        
         self.entry = Entry(self.pFrame)
         self.entry.grid(row=0, column=1)
+        
+        self.filename = "./settings/" + uid + ".txt"
+
+        if os.path.isfile(self.filename):
+            self.read()
+        
+    def read(self):
+        with open(self.filename, "r") as f:
+            data = f.read()
+        
+        data = data.strip()
+        self.entry.delete(0, tkinter.END)
+        self.entry.insert(0, data)
+    
+    def write(self):
+        with open(self.filename, "w") as f:
+            f.write(self.entry.get())      
+        
+    def get(self):
+        self.write()
+        
+        return self.entry.get()
+    
+    def get_csv(self):
+        self.write()
+        
+        v = self.entry.get().split(",")
+        
+        print("strip", v)
+        
+        if v[0]:
+            v = map(lambda s : s.strip(), v)
+            return list(v)
+        
+        else:
+            v = []
+            return v
+        
 
 class SelectFolder:
     
@@ -89,21 +133,112 @@ class SelectFolder:
         self.pFrame = Frame(root_frame)
         
         select_button = Button(self.pFrame, text="Select a folder", command=lambda : self.select())
-        select_button.pack()
+        select_button.grid(row=0, column=0)
         
-        self.selected_directory = None
+        self.selected_directory = RememberPaths.RememberPath("seldir", "/")
+        
+        self.selected_dir_str = StringVar()
+        self.selected_dir_str.set(self.selected_directory.get())
+        
+        lfolder = Label(self.pFrame, textvariable=self.selected_dir_str)
+        lfolder.grid(row=1, column=0)
+        
+        
+        
+    def get(self):
+        return self.selected_directory.get()
     
     def select(self):
-        sel_dir = filedialog.askdirectory()
+        sel_dir = filedialog.askdirectory(title="Select a directory", initialdir=self.selected_directory.get())
         
         if sel_dir:
-            self.selected_directory = sel_dir
+            self.selected_directory.assign(sel_dir)
             
-class ActionBox:
+            self.selected_dir_str.set(self.selected_directory.get())
+            
+class ActionButton:
     
-    def __init__(self, root_frame, text):
-        pass
+    def __init__(self, root_frame, text, actions):
+        self.actions = actions
+        self.text = text
         
+        self.pFrame = Frame(root_frame)
+        
+        self.var = IntVar()
+        self.var.set(1 if self.actions.action_choice[self.text] else 0)
+        
+        cb = Checkbutton(self.pFrame, text=self.text, variable=self.var, command=self.cb)
+        cb.grid(row=0, column=0)
+        
+
+    
+    def cb(self):
+        self.actions.action_choice[self.text] = True if self.var.get() == 1 else False
+        self.actions.write()
+    
+    
+class Actions:
+    
+    choice_file = "./settings/choice.txt"
+    possible_actions = ["Authority list", "Authority file", "Label table", "Synonym list"]
+    
+    def __init__(self, root_frame):
+        self.pFrame = LabelFrame(root_frame, text="Actions")
+        
+        
+        
+        self.action_choice = {}
+        for action in self.possible_actions:
+            self.action_choice[action] = False
+        
+        
+        if os.path.isfile(self.choice_file):
+            self.read()
+        
+        for action in self.possible_actions:
+            
+            ab = ActionButton(self.pFrame, action, self)
+            ab.pFrame.pack()
+            
+            if self.action_choice[action]:
+                ab.var.set(1)
+            else:
+                ab.var.set(0)
+
+            
+            self.write()
+    
+    def read(self):
+        with open(self.choice_file, "r") as f:
+            lines = f.readlines()
+            
+        for line in lines:
+            parts = line.split("=")
+            
+            choice = True if parts[1].strip() == "1" else False
+            self.action_choice[parts[0].strip()] = choice
+    
+    def write(self):
+        with open(self.choice_file, "w") as f:
+            for name, choice in self.action_choice.items():
+                if choice:
+                    f.write(f"{name}=1\n")
+                else:
+                    f.write(f"{name}=0\n")
+class OConsole:
+    
+    def __init__(self, root_frame):
+        
+        self.pFrame = Frame(root_frame)
+        
+        self.text = Text(self.pFrame, height=20)
+        self.text.pack()
+    
+    def add_line(self, line):
+        self.text.insert(tkinter.END, line + "\n")
+        self.text.yview_pickplace("end")
+        
+    
         
 class GUI:
     
@@ -111,24 +246,101 @@ class GUI:
         
         root = tkinter.Tk()
         
-        family_entry = LabelEntry(root, "Family:")
-        family_entry.pFrame.pack()
+        # family options
         
-        ass_family_entry = LabelEntry(root, "Associated Families:")
-        ass_family_entry.pFrame.pack()
+        fam_frame = LabelFrame(root, text="Family details")
+        fam_frame.pack()
         
-        select_folder = SelectFolder(root)
-        select_folder.pFrame.pack()
+        self.family_entry = LabelEntry(fam_frame, "Family:", "family")
+        self.family_entry.pFrame.pack()
         
-        genera_filter = LabelEntry(root, "Genera filter:")
-        genera_filter.pFrame.pack()
+        self.ass_family_entry = LabelEntry(fam_frame, "Associated Families:", "associated_family")
+        self.ass_family_entry.pFrame.pack()
+
+        self.genera_filter = LabelEntry(fam_frame, "Genera filter:", "genera filter")
+        self.genera_filter.pFrame.pack()
         
+        # folder options
+        
+        folder_frame = LabelFrame(root, text="Data Folder")
+        folder_frame.pack()
+        
+        self.select_folder = SelectFolder(folder_frame)
+        self.select_folder.pFrame.pack()
+        
+
         # make a selectable actions thingy
         
+        self.action_frame = Actions(root)
+        self.action_frame.pFrame.pack()
+        
+        # run button
+        
+        run_button = Button(root, text="RUN", command=self.run)
+        run_button.pack()
+        
+        # output console
+        
+        self.oconsole = OConsole(root)
+        self.oconsole.pFrame.pack()
         
         
         root.mainloop()
 
+    def run(self):
+        
+        # read the family name
+        
+        family = self.family_entry.get()
+        
+        print(family)
+        
+        ass_family = self.ass_family_entry.get_csv()
+        
+        print(ass_family)
+        
+        genera = self.genera_filter.get_csv()
+        
+        print(genera)
+        
+        base_folder = self.select_folder.get()
+        
+        print(base_folder)
+        
+        fi = FileInfo.FileInfo(base_folder, "gbif", family)
+        
+        # set logging files
+        logger.set_run_log_filename(fi.name_only("report_log"))  
+        logger.set_gui_log(self.oconsole)
+        
+        logger.log_short_report("#### Scrape Tax ####")
+                                
+        # scrape the thing
+        taxa_list = GenerateTaxaListGBIF.scrape_gbif(family, base_folder, genera)
+        
+        # do the actions like creating files and stuff
+        
+        actions = []
+        
+        for action_name, action_value in self.action_frame.action_choice.items():
+            
+            if "synonym" in action_name.lower():
+                continue
+            
+            if action_value:
+                actions.append(action_name.lower())
+        
+        print(actions)
+        
+        GenerateFiles.generate_files(base_folder, "gbif", family, taxa_list, actions)
+        
+        
+        # create synonyms
+        if  self.action_frame.action_choice["Synonym list"]:
+            synonym_list = GenerateTaxaListGBIF.generate_synonym_list(family, base_folder, taxa_list)  
+                
+            GenerateFiles.generate_files(base_folder, "gbif", family, synonym_list, ["synonyms file"])           
+        
 
 # =============================================================================
 # User input main        

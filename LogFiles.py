@@ -12,6 +12,7 @@ import time
 
 run_log_filename = None
 short_report_log_filename = None
+gui_output = None
 
 
 # Files
@@ -34,6 +35,7 @@ class Logger:
     handler_console = 1
     handler_report = 2
     handler_short_report = 3
+    handler_gui_log = 4
     
     handler_main_report = [handler_main, handler_report]
     handler_mcr = [handler_main, handler_report, handler_short_report]
@@ -82,7 +84,10 @@ class Logger:
     
         with open(short_report_log_filename, "w") as f:
             f.write("")        
-        
+    
+    def set_gui_log(self, gui_console):
+        global gui_output
+        gui_output = gui_console
             
     def main_log(self, message, level = 0):
         if level == self.level_DEBUG:
@@ -93,6 +98,10 @@ class Logger:
         
         else:
             raise ValueError("Logger: log level not supported")  
+            
+    
+    def gui_log(self, message):
+        gui_output.add_line(message)
 
     def console_log(self, message):
         print(message)
@@ -121,6 +130,9 @@ class Logger:
                 
             if handler == self.handler_short_report:
                 self.short_report_log(message)
+            
+            if handler == self.handler_gui_log:
+                self.gui_log(message)
     
     def log_report(self, message):
         handlers = [self.handler_main, self.handler_report]
@@ -129,10 +141,9 @@ class Logger:
     def log_report_console(self, message):
         handlers = [self.handler_main, self.handler_report, self.handler_console]
         self._log(message, handlers)
-    
-    
+
     def log_short_report(self, message):
-        handlers = [self.handler_main, self.handler_report, self.handler_console, self.handler_short_report]
+        handlers = [self.handler_main, self.handler_report, self.handler_console, self.handler_short_report, self.handler_gui_log]
         self._log(message, handlers)        
         
         
