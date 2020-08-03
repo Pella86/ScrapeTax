@@ -42,6 +42,80 @@ def taxon_page(key):
 def children_url(key):
     return taxon_page(key) + "children/"
 
+# =============================================================================
+# parse gbif taxon
+# =============================================================================
+
+
+class ParseTaxon:
+    
+    def __init__(self, gbif_taxon, fam_taxa):
+        self.gbif_taxon = gbif_taxon
+        
+        # copy the attributes of the family
+        self.taxa = Taxa.Taxa()
+        self.taxa.copy_taxa(fam_taxa)
+        
+        # prepare the scientific name
+        self.prepare_name = self.gbif_taxon["scientificName"].replace(self.gbif_taxon["authorship"], "").strip()
+        
+        # assign the author
+        self.taxa.author = self.gbif_taxon["authorship"].strip()
+        
+        # assign the taxonomic status
+        self.taxa.taxonomic_status = self.gbif_taxon["taxonomicStatus"]
+        
+    
+    def get_specie(self):
+        # define the name
+        name_parts = self.prepare_name.split(" ")
+        
+        self.taxa.genus = name_parts[0]
+        self.taxa.specie = name_parts[1]
+        
+        # define rank
+        self.taxa.rank = Taxa.Taxa.rank_specie
+        
+        # define source link
+        taxon_id = self.gbif_taxon["speciesKey"]
+        
+        link = taxon_page(taxon_id)[:-1]
+        self.taxa.links.append(link)
+        
+        return self.taxa
+    
+    def get_genus(self):
+        # define the name
+        self.taxa.genus = self.prepare_name
+        
+        #define the rank
+        self.taxa.rank = Taxa.Taxa.rank_genus
+        
+        # define source link
+        taxon_id = self.gbif_taxon["genusKey"]
+        
+        link = taxon_page(taxon_id)[:-1]
+        self.taxa.links.append(link)     
+        
+        return self.taxa
+    
+    def get_subspecie(self):
+        name_parts = self.prepare_name.split(" ")
+        
+        self.taxa.genus = name_parts[0]
+        self.taxa.specie = name_parts[1]
+        self.taxa.subspecie = name_parts[2]
+        
+        # define rank
+        self.taxa.rank = Taxa.Taxa.rank_subspecie
+        
+        # define source link
+        taxon_id = self.gbif_taxon["speciesKey"]
+        
+        link = taxon_page(taxon_id)[:-1]
+        self.taxa.links.append(link)
+        
+        return self.taxa 
 
 # =============================================================================
 # Inputs
@@ -124,75 +198,7 @@ def generate_lists(family_name, file_info, load_lists = True):
     fam_taxa.source = "g"
     fam_taxa.rank = Taxa.Taxa.rank_family
     
-    class ParseTaxon:
-        
-        def __init__(self, gbif_taxon):
-            self.gbif_taxon = gbif_taxon
-            
-            # copy the attributes of the family
-            self.taxa = Taxa.Taxa()
-            self.taxa.copy_taxa(fam_taxa)
-            
-            # prepare the scientific name
-            self.prepare_name = self.gbif_taxon["scientificName"].replace(self.gbif_taxon["authorship"], "").strip()
-            
-            # assign the author
-            self.taxa.author = self.gbif_taxon["authorship"].strip()
-            
-            # assign the taxonomic status
-            self.taxa.taxonomic_status = self.gbif_taxon["taxonomicStatus"]
-            
-        
-        def get_specie(self):
-            # define the name
-            name_parts = self.prepare_name.split(" ")
-            
-            self.taxa.genus = name_parts[0]
-            self.taxa.specie = name_parts[1]
-            
-            # define rank
-            self.taxa.rank = Taxa.Taxa.rank_specie
-            
-            # define source link
-            taxon_id = self.gbif_taxon["speciesKey"]
-            
-            link = taxon_page(taxon_id)[:-1]
-            self.taxa.links.append(link)
-            
-            return self.taxa
-        
-        def get_genus(self):
-            # define the name
-            self.taxa.genus = self.prepare_name
-            
-            #define the rank
-            self.taxa.rank = Taxa.Taxa.rank_genus
-            
-            # define source link
-            taxon_id = self.gbif_taxon["genusKey"]
-            
-            link = taxon_page(taxon_id)[:-1]
-            self.taxa.links.append(link)     
-            
-            return self.taxa
-        
-        def get_subspecie(self):
-            name_parts = self.prepare_name.split(" ")
-            
-            self.taxa.genus = name_parts[0]
-            self.taxa.specie = name_parts[1]
-            self.taxa.subspecie = name_parts[2]
-            
-            # define rank
-            self.taxa.rank = Taxa.Taxa.rank_subspecie
-            
-            # define source link
-            taxon_id = self.gbif_taxon["speciesKey"]
-            
-            link = taxon_page(taxon_id)[:-1]
-            self.taxa.links.append(link)
-            
-            return self.taxa            
+           
     
     # scroll through the pages, and results to find the sub taxa
     logger.console_log("Gathering child taxa...")
@@ -210,7 +216,7 @@ def generate_lists(family_name, file_info, load_lists = True):
         
         # process the results
         for i, taxon in enumerate(children_json["results"]):
-            pt = ParseTaxon(taxon)
+            pt = ParseTaxon(taxon, fam_taxa)
                         
             # search for the genus, and if is a genus, find the children species
             if taxon["rank"] == "GENUS":    
@@ -255,7 +261,7 @@ def generate_lists(family_name, file_info, load_lists = True):
                 for specie in results:
     
                     if specie["rank"] == "SPECIES":
-                        pt = ParseTaxon(specie)
+                        pt = ParseTaxon(specie, fam_taxa)
                         
                         # append the specie
                         stax = pt.get_specie()
@@ -273,7 +279,7 @@ def generate_lists(family_name, file_info, load_lists = True):
                         for sc in species_children["results"]:
 
                             if sc["rank"] == "SUBSPECIES":
-                                pt = ParseTaxon(sc)
+                                pt = ParseTaxon(sc, fam_taxa)
                                 sctax = pt.get_subspecie()
                                 species_list.append(sctax)
                                 
@@ -320,6 +326,12 @@ class Synonym:
 def get_synonyms(taxa_list, file_info):
     synonym_list = []
     
+    # Create the taxon reference for the family
+    fam_taxa = Taxa.Taxa()
+    fam_taxa.family = file_info.family_name
+    fam_taxa.source = "g"
+    fam_taxa.rank = Taxa.Taxa.rank_family    
+    
     for taxa in taxa_list:
 
         url = taxa.links[0] + "/synonyms"
@@ -347,11 +359,18 @@ def get_synonyms(taxa_list, file_info):
         
         for taxon in results:
             # get genus
-            
             if taxon["scientificName"].find(":") != -1:
                 continue
             
-            syn = mp_taxa_specie(taxon)
+            
+            p_syn = ParseTaxon(taxon, fam_taxa)
+            
+            if taxon["rank"] == "SPECIES":
+                syn = p_syn.get_specie()
+                
+            if taxon["rank"] == "SUBSPECIES":
+                syn = p_syn.get_subspecie()
+            
             #print(" = ", syn)
             
             synonym_list.append(Synonym(syn, taxa))
