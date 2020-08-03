@@ -297,7 +297,14 @@ def mp_taxa_specie(gbif_taxon):
     
     taxa.genus = name_parts[0]
     taxa.specie = name_parts[1]
-    taxa.rank = Taxa.Taxa.rank_specie
+    
+    if gbif_taxon["rank"] == "SPECIES":
+        taxa.rank = Taxa.Taxa.rank_specie
+    
+    if gbif_taxon["rank"] == "SUBSPECIES":
+        taxa.subspecie = name_parts[2]
+        taxa.rank = Taxa.Taxa.rank_subspecie        
+        
     
     author = gbif_taxon["authorship"].strip()      
     taxa.author = author
@@ -316,7 +323,10 @@ def get_synonyms(taxa_list, file_info):
     for taxa in taxa_list:
 
         url = taxa.links[0] + "/synonyms"
-        filename = file_info.cache_filename(f"{taxa.genus}_{taxa.specie}_synonym")
+        if taxa.is_subspecie():
+            filename = file_info.cache_filename(f"{taxa.genus}_{taxa.specie}_{taxa.subspecie}_synonym")
+        else:
+            filename = file_info.cache_filename(f"{taxa.genus}_{taxa.specie}_synonym")
         
         req = RequestsHandler.Request(url, filename)
         req.load()
@@ -326,9 +336,7 @@ def get_synonyms(taxa_list, file_info):
             logger.log_report_console(f"Response 503 from server: {taxa.genus} {taxa.specie} no synonyms retrived")
             logger.log_report_console(f"url: {url}")
             continue
-        
-        
-        
+
         jreq = req.get_json()
 
         results = jreq["results"]

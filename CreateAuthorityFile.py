@@ -169,8 +169,10 @@ def generate_synonym_list(synonym_list, fileinfo):
         
         syn_taxa = synonym.synonym_taxa
         
-        fhtml.add_italics_element(syn_taxa.genus + " " + syn_taxa.specie)
+        fhtml.add_italics_element(syn_taxa.get_name())
+        
         fhtml.add_element(", ")
+        
         if syn_taxa.author:
             fhtml.add_element(syn_taxa.author)
         else:
@@ -180,7 +182,7 @@ def generate_synonym_list(synonym_list, fileinfo):
         
         acc_taxa = synonym.accepted_taxa
         
-        fhtml.add_italics_element(acc_taxa.genus + " " + acc_taxa.specie)
+        fhtml.add_italics_element(acc_taxa.get_name())
         fhtml.add_element(", ")
         if acc_taxa.author:
             fhtml.add_element(acc_taxa.author)

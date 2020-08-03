@@ -157,6 +157,26 @@ class Taxa:
     
     def is_subspecie(self):
         return self.rank == self.rank_subspecie
+    
+    def get_name(self):
+        
+        name = ""
+        if self.genus:
+            name += self.genus
+        
+        if self.specie:
+            name += " " + self.specie
+            
+            if self.subspecie:
+                name += " " + self.subspecie
+                return name
+            
+            else:
+                return name
+            
+        else:
+            name += " sp."
+            return name
         
 
 def save_taxa_list(taxa_list, filename):

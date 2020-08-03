@@ -336,16 +336,18 @@ class GUI:
             if action_value:
                 actions.append(action_name.lower())
         
-        print(actions)
-        
         GenerateFiles.generate_files(base_folder, "gbif", family, taxa_list, actions)
+        
         
         
         # create synonyms
         if  self.action_frame.action_choice["Synonym list"]:
             synonym_list = GenerateTaxaListGBIF.generate_synonym_list(family, base_folder, taxa_list)  
                 
-            GenerateFiles.generate_files(base_folder, "gbif", family, synonym_list, ["synonyms file"])           
+            GenerateFiles.generate_files(base_folder, "gbif", family, synonym_list, ["synonyms file"])    
+        
+        
+        logger.gui_log("--- Program Done ---")
         
 
 # =============================================================================
