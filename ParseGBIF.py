@@ -368,8 +368,10 @@ def get_synonyms(taxa_list, file_info):
             if taxon["rank"] == "SPECIES":
                 syn = p_syn.get_specie()
                 
-            if taxon["rank"] == "SUBSPECIES":
+            elif taxon["rank"] == "SUBSPECIES":
                 syn = p_syn.get_subspecie()
+            else:
+                continue
             
             #print(" = ", syn)
             

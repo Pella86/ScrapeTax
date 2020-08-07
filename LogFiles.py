@@ -131,7 +131,7 @@ class Logger:
             if handler == self.handler_short_report:
                 self.short_report_log(message)
             
-            if handler == self.handler_gui_log:
+            if gui_output and handler == self.handler_gui_log:
                 self.gui_log(message)
     
     def log_report(self, message):
