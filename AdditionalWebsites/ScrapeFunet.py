@@ -22,6 +22,38 @@ lepi_url = "http://ftp.funet.fi/index/Tree_of_life/insecta/lepidoptera/"
 fi = FileInfo.FileInfo("./funet", "funet", "Lepidoptera")
 
 
+def parse_LIST(ul_element):
+    names = ul_element.find_all("span", {"class": "TN"})        
+    
+    taxon_list = []
+    
+    for name_tag in names:
+        
+        # find the taxon name
+        name_parts = name_tag.text.split(" ", 1)
+        
+        
+        # some names dont have an author
+        if len(name_parts) == 2:
+            name = name_parts[0]
+            author = name_parts[1]
+        else:
+            name = name_parts[0]
+            author = None
+            
+        
+        link_tag = name_tag.find("a")
+        
+        if link_tag is None:
+            link = None
+        else:
+            link = url + link_tag.get("href")
+
+        
+        taxon_list.append(Taxon(name, author, link))    
+    return taxon_list
+
+
 class Taxon:
     
     def __init__(self, name, author, link):
@@ -32,73 +64,185 @@ class Taxon:
     
 class TaxonPage:
     
-    def __init__(self, url, fi, page_name):
+    def __init__(self, url, page_name):
+        
+        fi = FileInfo.FileInfo("./funet", "funet", "Lepidoptera")
+        
+        
         req = RequestsHandler.Request(url, fi.cache_filename(page_name))
         req.load()
         
         soup = req.get_soup()
         
         clist = soup.find("ul", {"class":"LIST"})
-        names = clist.find_all("span", {"class": "TN"})        
         
-        self.taxon_list = []
+        self.taxon_list = parse_LIST(clist)
+        self.page_name = page_name
+        self.link = url
         
-        for name_tag in names:
-            
-            # find the taxon name
-            name_parts = name_tag.text.split(" ", 1)
-            
-            
-            # some names dont have an author
-            if len(name_parts) == 2:
-                name = name_parts[0]
-                author = name_parts[1]
-            else:
-                name = name_parts[0]
+
+class Node:
+    
+    def __init__(self, taxon_page):
+        
+        self.page = taxon_page
+        self.subpages = []
+        
+        if self.page.page_name.endswith("idae"):
+            pass
+        else:
+            for taxon in self.page.taxon_list:
                 
-            
-            link_tag = name_tag.find("a")
-            
-            if link_tag is None:
-                link = None
-            else:
-                link = url + link_tag.get("href")
-
-            
-            self.taxon_list.append(Taxon(name, author, link))
-            
-tp = TaxonPage(lepi_url, fi, "main_page")
-
-for taxon in tp.taxon_list:
-    print("---", taxon.name, "---")
-    print(taxon.link)  
+                if taxon.link == None:
+                    continue
+                
+                tp = TaxonPage(taxon.link, taxon.name)
+                
     
     
-    if taxon.name == "Ditrysia":
+                
+                self.subpages.append(Node(tp))
+       
+
+class Tree:
+    
+    
+    def __init__(self):
         
-        print("Ditrysia page analysis")
+        tp = TaxonPage(lepi_url, "main_page")
+        self.root = Node(tp)
         
-        tpl = TaxonPage(taxon.link, fi, taxon.name)
+    def print_node(self, node, level):
+        print("  "*level + node.page.page_name, len(node.subpages))
         
-        for t in tpl.taxon_list:
-            print("  ", t.name)
-            print("  ", t.link)
+    def print_sub(self, current_node, level):
+        
+        for node in current_node.subpages:
+            self.print_node(node, level)
             
-            if t.name == "Papilionoidea":
+            if len(node.subpages) != 0:
+                self.print_sub(node, level + 1)
                 
-                ptpl = TaxonPage(t.link, fi, t.name)
-                
-                for pt in ptpl.taxon_list:
-                    
-                    print(pt.name)
-                    
-                    if pt.name == "Papilionidae":
-                        
-                        pptpl = TaxonPage(pt.link, fi, pt.name)
-                        
-                        for ppt in pptpl.taxon_list:
-                            
-                            print("  ", ppt.name)
+            
+    def print_tree(self):
+        
+        self.print_sub(self.root, 0)
+            
+    
+    def get_family_node(self, current_node, family_name, result):
+        
+        for node in current_node.subpages:
+            
+            if node.page.page_name == family_name:
+                result.append(node.page.link)
+            else:
+                self.get_family_node(node, family_name, result)
+    
+    def get_family_link(self, family_name):
+        result = []
+        self.get_family_node(self.root, family_name, result)
+        if len(result) == 1:
+            return result[0]
+        else:
+            raise Exception("Name not found:", family_name)
+
+#t = Tree()     
+#t.print_tree()       
+#
+#
+#print(t.get_family_link("ax"))
+#
+#tp = TaxonPage(t.get_family_link("Papilionidae"))
+#
+#
+
+
+url = "http://ftp.funet.fi/index/Tree_of_life/insecta/lepidoptera/ditrysia/papilionoidea/riodinidae/"
+
+req = RequestsHandler.Request(url, fi.cache_filename("test_riodinidae")) 
+req.load()
+
+
+soup = req.get_soup()
+
+body = soup.find("body")
+
+
+chirren = body.findChildren(recursive=False)
+
+
+taxon_list = []
+group = None
+children = []
+
+for ele in chirren:
+    print(ele.name)
+    
+    if ele.name == "div" and ele.has_attr('class') and ele['class'][0] == 'GROUP':
+        if group is not None:
+            taxon_list.append((group, children))
+            children = []
+        
+        # parse the group
+        
+        tag = ele.find("span", {"class":"TN"})
+        
+        if tag is not None:
+        
+            print(tag.text)
+            
+            text_parts = tag.text.split(" ")
+            
+            rank = text_parts[0]
+            name = text_parts[1]
+            author = " ".join(text_parts[2:])
+            
+            group = (rank, name, author)
+            print(group)
+        
+
+    if ele.name == "ul" and ele.has_attr("class") and ele["class"][0] == "LIST":
+        
+        children = parse_LIST(ele)
+            
+        print(children)
+
+
+
+            
+#tp = TaxonPage(lepi_url, fi, "main_page")
+#
+#for taxon in tp.taxon_list:
+#    print("---", taxon.name, "---")
+#    print(taxon.link)  
+#    
+#    
+#    if taxon.name == "Ditrysia":
+#        
+#        print("Ditrysia page analysis")
+#        
+#        tpl = TaxonPage(taxon.link, fi, taxon.name)
+#        
+#        for t in tpl.taxon_list:
+#            print("  ", t.name)
+#            print("  ", t.link)
+#            
+#            if t.name == "Papilionoidea":
+#                
+#                ptpl = TaxonPage(t.link, fi, t.name)
+#                
+#                for pt in ptpl.taxon_list:
+#                    
+#                    print(pt.name)
+#                    
+#                    if pt.name == "Papilionidae":
+#                        
+#                        pptpl = TaxonPage(pt.link, fi, pt.name)
+#                        
+#                        for ppt in pptpl.taxon_list:
+#                            
+#                            print("  ", ppt.name)
+#                            print("  ", ppt.link)
                     
             
 
