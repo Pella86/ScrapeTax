@@ -6,16 +6,26 @@ Created on Tue Aug 11 09:57:03 2020
 @author: maurop
 """
 
+# =============================================================================
+# import hacks
+# =============================================================================
+
 import sys
-
 prev_dir = "../"
-
 if prev_dir not in sys.path:
     sys.path.append(prev_dir)
-    
-    
+
+# =============================================================================
+# imports    
+# =============================================================================
+
 import RequestsHandler
 import FileInfo
+import Taxa
+
+# =============================================================================
+# 
+# =============================================================================
 
 lepi_url = "http://ftp.funet.fi/index/Tree_of_life/insecta/lepidoptera/"
 
@@ -60,6 +70,9 @@ class Taxon:
         self.name = name
         self.author = author
         self.link = link
+    
+    def __str__(self):
+        return self.name
         
     
 class TaxonPage:
@@ -176,8 +189,7 @@ group = None
 children = []
 
 for ele in chirren:
-    print(ele.name)
-    
+
     if ele.name == "div" and ele.has_attr('class') and ele['class'][0] == 'GROUP':
         if group is not None:
             taxon_list.append((group, children))
@@ -207,6 +219,79 @@ for ele in chirren:
             
         print(children)
 
+print()
+
+
+class AssociatedTaxa:
+    ''' class that couples a taxa with a list of subtaxa, like a subfamily
+        coupled with a genus
+    '''
+        
+    def __init__(self, main_taxa, rank):
+        
+        self.rank = rank
+        self.main_taxa = main_taxa
+        self.associates = []
+    
+    def add_associate(self, associate):
+        self.associates.append(associate)
+    
+    def __eq__(self, other):
+        return self.main_taxa == other
+    
+    def __str__(self):
+        
+        associates_str = "".join(associate + ", " for associate in self.associates)
+        associates_str = associates_str[:-2]
+        return "- " + self.main_taxa + ": " + associates_str
+
+for group, children in taxon_list:
+    print(group)
+    for child in children:
+        print("   ", child)
+        
+
+# take the parsed page and assign the corresponding tribes and subfamilies
+        
+# list containing all associations
+subfamilies = []
+tribes = []
+
+# Since it is a drop down the first name encompasses the subsequent names
+current_tribe = None
+current_subfamily = None       
+
+for group, children in taxon_list:
+    
+    if group[0] == "Tribe":
+        if current_tribe:
+            tribes.append(current_tribe)
+        current_tribe = AssociatedTaxa(group[1], "tribe")
+
+    if group[0] == "Subfamily":
+        if current_subfamily:
+            subfamilies.append(current_subfamily)
+        current_subfamily = AssociatedTaxa(group[1], "subfamily")
+
+    for child in children:
+        if current_tribe:
+            current_tribe.add_associate(child.name)
+        
+        if current_subfamily:
+            current_subfamily.add_associate(child.name)
+
+if current_subfamily:
+    subfamilies.append(current_subfamily)
+
+if current_tribe:
+    tribes.append(current_tribe)            
+    
+    
+for ass in subfamilies:
+    print(ass)
+    
+for ass in tribes:
+    print(ass)
 
 
             
