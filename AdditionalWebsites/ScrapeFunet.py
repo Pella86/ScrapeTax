@@ -24,45 +24,16 @@ import FileInfo
 import Taxa
 
 # =============================================================================
-# 
+# Constants
 # =============================================================================
 
 lepi_url = "http://ftp.funet.fi/index/Tree_of_life/insecta/lepidoptera/"
 
-fi = FileInfo.FileInfo("./funet", "funet", "Lepidoptera")
+#fi = FileInfo.FileInfo("./funet", "funet", "Lepidoptera")
 
-
-def parse_LIST(ul_element):
-    names = ul_element.find_all("span", {"class": "TN"})        
-    
-    taxon_list = []
-    
-    for name_tag in names:
-        
-        # find the taxon name
-        name_parts = name_tag.text.split(" ", 1)
-        
-        
-        # some names dont have an author
-        if len(name_parts) == 2:
-            name = name_parts[0]
-            author = name_parts[1]
-        else:
-            name = name_parts[0]
-            author = None
-            
-        
-        link_tag = name_tag.find("a")
-        
-        if link_tag is None:
-            link = None
-        else:
-            link = url + link_tag.get("href")
-
-        
-        taxon_list.append(Taxon(name, author, link))    
-    return taxon_list
-
+# =============================================================================
+# Generic taxon class when the rank is unkown
+# =============================================================================
 
 class Taxon:
     
@@ -73,26 +44,199 @@ class Taxon:
     
     def __str__(self):
         return self.name
+
+# =============================================================================
+# Associated taxa
+# =============================================================================
+
+class AssociatedTaxa:
+    ''' class that couples a taxa with a list of subtaxa, like a subfamily
+        coupled with a genus
+    '''
         
+    def __init__(self, main_taxa, rank):
+        
+        self.rank = rank
+        self.main_taxa = main_taxa
+        self.associates = []
     
+    def add_associate(self, associate):
+        self.associates.append(associate)
+    
+    def __eq__(self, other):
+        return self.main_taxa == other
+    
+    def __str__(self):
+        associates_str = ", ".join(self.associates if self.associates else "No genera associated")
+        if associates_str.endswith(", "):
+            associates_str = associates_str[:-2]
+        return "- " + self.main_taxa + ": " + associates_str
+
+
+# =============================================================================
+# Main taxon page     
+# =============================================================================
+
 class TaxonPage:
+
+    fi = FileInfo.FileInfo("./funet", "funet", "Lepidoptera")
     
-    def __init__(self, url, page_name):
+    def __init__(self, url):
         
-        fi = FileInfo.FileInfo("./funet", "funet", "Lepidoptera")
+        self.url = url
         
+        name = self.generate_name()
         
-        req = RequestsHandler.Request(url, fi.cache_filename(page_name))
+        self.page_name = name
+        
+ 
+        
+        req = RequestsHandler.Request(self.url, self.fi.cache_filename(name))
         req.load()
         
-        soup = req.get_soup()
+        self.soup = req.get_soup()     
+    
+    def is_structured(self):
+        if self.soup.find("div", {"class":"GROUP"}):
+            return True
+        else:
+            return False
+    
+    
+    def generate_name(self):
+        pos = self.url[:-1].rfind("/")
+        name = self.url[pos + 1 : -1]
+        return name
+
+    def parse_LIST(self, ul_element):
+        names = ul_element.find_all("span", {"class": "TN"})        
         
-        clist = soup.find("ul", {"class":"LIST"})
+        taxon_list = []
         
-        self.taxon_list = parse_LIST(clist)
-        self.page_name = page_name
-        self.link = url
+        for name_tag in names:
+            
+            # find the taxon name
+            name_parts = name_tag.text.split(" ", 1)
+            
+            
+            # some names dont have an author
+            if len(name_parts) == 2:
+                name = name_parts[0]
+                author = name_parts[1]
+            else:
+                name = name_parts[0]
+                author = None
+                
+            
+            link_tag = name_tag.find("a")
+            
+            if link_tag is None:
+                link = None
+            else:
+                link = self.url + link_tag.get("href")
+    
+            
+            taxon_list.append(Taxon(name, author, link))    
+        return taxon_list
         
+
+
+class TaxonPageNormal(TaxonPage):
+    
+    def __init__(self, url):
+        super().__init__(url)
+        
+        clist = self.soup.find("ul", {"class":"LIST"})
+            
+        self.taxon_list = self.parse_LIST(clist)        
+        
+
+class TaxonPageStructured(TaxonPage):
+    
+    
+    def __init__(self, url):
+        super().__init__(url)
+
+        body = self.soup.find("body")
+        
+        chirren = body.findChildren(recursive=False)
+        
+        
+        group_list = []
+        group = None
+        children = []
+        
+        for ele in chirren:
+        
+            if ele.name == "div" and ele.has_attr('class') and ele['class'][0] == 'GROUP':
+                if group is not None:
+                    group_list.append((group, children))
+                    children = []
+                
+                # parse the group
+                group = self.parse_GROUP(ele)
+                
+            if ele.name == "ul" and ele.has_attr("class") and ele["class"][0] == "LIST":
+                
+                children = self.parse_LIST(ele)
+                
+       
+        group_list.append((group, children))
+
+    
+        current_tribe = None
+        current_subfamily = None  
+
+        tribes = []
+        subfamilies = []        
+    
+        for group, children in group_list:
+            
+            if group[0] == "Tribe":
+                if current_tribe:
+                    tribes.append(current_tribe)
+                current_tribe = AssociatedTaxa(group[1], "tribe")
+        
+            if group[0] == "Subfamily":
+                if current_subfamily:
+                    subfamilies.append(current_subfamily)
+                current_subfamily = AssociatedTaxa(group[1], "subfamily")
+        
+            for child in children:
+                if current_tribe:
+                    current_tribe.add_associate(child.name)
+                
+                if current_subfamily:
+                    current_subfamily.add_associate(child.name)
+
+        if current_tribe:
+            tribes.append(current_tribe)
+        
+        if current_subfamily:
+            subfamilies.append(current_subfamily)
+
+
+        self.subfamilies = subfamilies
+        self.tribes = tribes
+
+    def parse_GROUP(self, div_element):
+        
+        tag = div_element.find("span", {"class":"TN"})
+        
+        if tag is not None:
+            text_parts = tag.text.split(" ")
+            
+            rank = text_parts[0]
+            name = text_parts[1]
+            author = " ".join(text_parts[2:])
+            
+            group = (rank, name, author)
+            return group
+
+
+# =============================================================================
+# Tree class        
+# =============================================================================
 
 class Node:
     
@@ -109,7 +253,7 @@ class Node:
                 if taxon.link == None:
                     continue
                 
-                tp = TaxonPage(taxon.link, taxon.name)
+                tp = TaxonPageNormal(taxon.link)
                 
     
     
@@ -122,7 +266,7 @@ class Tree:
     
     def __init__(self):
         
-        tp = TaxonPage(lepi_url, "main_page")
+        tp = TaxonPageNormal(lepi_url)
         self.root = Node(tp)
         
     def print_node(self, node, level):
@@ -146,8 +290,8 @@ class Tree:
         
         for node in current_node.subpages:
             
-            if node.page.page_name == family_name:
-                result.append(node.page.link)
+            if node.page.page_name == family_name.lower():
+                result.append(node.page.url)
             else:
                 self.get_family_node(node, family_name, result)
     
@@ -168,228 +312,102 @@ class Tree:
 #tp = TaxonPage(t.get_family_link("Papilionidae"))
 #
 #
-
-
-url = "http://ftp.funet.fi/index/Tree_of_life/insecta/lepidoptera/ditrysia/papilionoidea/riodinidae/"
-
-req = RequestsHandler.Request(url, fi.cache_filename("test_riodinidae")) 
-req.load()
-
-
-soup = req.get_soup()
-
-body = soup.find("body")
-
-
-chirren = body.findChildren(recursive=False)
-
-
-taxon_list = []
-group = None
-children = []
-
-for ele in chirren:
-
-    if ele.name == "div" and ele.has_attr('class') and ele['class'][0] == 'GROUP':
-        if group is not None:
-            taxon_list.append((group, children))
-            children = []
-        
-        # parse the group
-        
-        tag = ele.find("span", {"class":"TN"})
-        
-        if tag is not None:
-        
-            print(tag.text)
             
-            text_parts = tag.text.split(" ")
             
-            rank = text_parts[0]
-            name = text_parts[1]
-            author = " ".join(text_parts[2:])
+#def parse_GROUP(div_element):
+#    
+#    tag = div_element.find("span", {"class":"TN"})
+#    
+#    if tag is not None:
+#        text_parts = tag.text.split(" ")
+#        
+#        rank = text_parts[0]
+#        name = text_parts[1]
+#        author = " ".join(text_parts[2:])
+#        
+#        group = (rank, name, author)
+#        return group
             
-            group = (rank, name, author)
-            print(group)
-        
+class Associations:
+    
+    def __init__(self):
+        self.tree = Tree()
+  
 
-    if ele.name == "ul" and ele.has_attr("class") and ele["class"][0] == "LIST":
+    def find_associations(self, family_name):
         
-        children = parse_LIST(ele)
+        tp_url = self.tree.get_family_link(family_name)
+        
+        tp = TaxonPage(tp_url)
+        
+        if tp.is_structured():
+            ts = TaxonPageStructured(tp_url)
+            return ts.subfamilies, ts.tribes
+        
+        else:
+            tn = TaxonPageNormal(tp_url)
             
-        print(children)
-
-print()
-
-
-class AssociatedTaxa:
-    ''' class that couples a taxa with a list of subtaxa, like a subfamily
-        coupled with a genus
-    '''
-        
-    def __init__(self, main_taxa, rank):
-        
-        self.rank = rank
-        self.main_taxa = main_taxa
-        self.associates = []
-    
-    def add_associate(self, associate):
-        self.associates.append(associate)
-    
-    def __eq__(self, other):
-        return self.main_taxa == other
-    
-    def __str__(self):
-        
-        associates_str = "".join(associate + ", " for associate in self.associates)
-        associates_str = associates_str[:-2]
-        return "- " + self.main_taxa + ": " + associates_str
-
-for group, children in taxon_list:
-    print(group)
-    for child in children:
-        print("   ", child)
-        
-
-# take the parsed page and assign the corresponding tribes and subfamilies
-        
-# list containing all associations
-subfamilies = []
-tribes = []
-
-# Since it is a drop down the first name encompasses the subsequent names
-current_tribe = None
-current_subfamily = None       
-
-for group, children in taxon_list:
-    
-    if group[0] == "Tribe":
-        if current_tribe:
-            tribes.append(current_tribe)
-        current_tribe = AssociatedTaxa(group[1], "tribe")
-
-    if group[0] == "Subfamily":
-        if current_subfamily:
-            subfamilies.append(current_subfamily)
-        current_subfamily = AssociatedTaxa(group[1], "subfamily")
-
-    for child in children:
-        if current_tribe:
-            current_tribe.add_associate(child.name)
-        
-        if current_subfamily:
-            current_subfamily.add_associate(child.name)
-
-if current_subfamily:
-    subfamilies.append(current_subfamily)
-
-if current_tribe:
-    tribes.append(current_tribe)            
-    
-    
-for ass in subfamilies:
-    print(ass)
-    
-for ass in tribes:
-    print(ass)
-
-
+            subfamilies = []
+            tribes = []
             
-#tp = TaxonPage(lepi_url, fi, "main_page")
-#
-#for taxon in tp.taxon_list:
-#    print("---", taxon.name, "---")
-#    print(taxon.link)  
-#    
-#    
-#    if taxon.name == "Ditrysia":
-#        
-#        print("Ditrysia page analysis")
-#        
-#        tpl = TaxonPage(taxon.link, fi, taxon.name)
-#        
-#        for t in tpl.taxon_list:
-#            print("  ", t.name)
-#            print("  ", t.link)
-#            
-#            if t.name == "Papilionoidea":
-#                
-#                ptpl = TaxonPage(t.link, fi, t.name)
-#                
-#                for pt in ptpl.taxon_list:
-#                    
-#                    print(pt.name)
-#                    
-#                    if pt.name == "Papilionidae":
-#                        
-#                        pptpl = TaxonPage(pt.link, fi, pt.name)
-#                        
-#                        for ppt in pptpl.taxon_list:
-#                            
-#                            print("  ", ppt.name)
-#                            print("  ", ppt.link)
-                    
+            for taxon in tn.taxon_list:
+                
+                children_page = TaxonPageStructured(taxon.link)
+                
+    
+                tribes += children_page.tribes
+    
+                atax = AssociatedTaxa(taxon, "subfamily")
+                for tribe in children_page.tribes:
+                    for tax in tribe.associates:
+                        atax.add_associate(tax)
+                
+                subfamilies.append(atax)   
+                
             
-
-
-#req = RequestsHandler.Request(lepi_url, fi.cache_filename("main_page"))
-#req.load()
-#
-#
-#soup = req.get_soup()
-#
-#clist = soup.find("ul", {"class":"LIST"})
-#
-#print(len(clist))
-#
-#print(clist.text)
-#
-#names = clist.find_all("span", {"class": "TN"})
-#
-#family_links = []
-#
-#
-## find the orders (?)
-#
-## find the links
-#links = []
-#for name_tag in names:
-#    print(name_tag.text)
-#    link_tag = name_tag.find("a")
-#    link = lepi_url + link_tag.get("href")
-#    links.append(link)
-#    print(link)
-#    
-#
-## find the families
-#
-#for link in links:
-#    
-#    pos = link[:-1].rfind("/")
-#    
-#    name = link[pos + 1:-1]
-#    
-#    #req = Request()
-#    
-#    if name == "ditrysia":
-#        print(link)
-#        
-#        req = RequestsHandler.Request(link, fi.cache_filename(name))
-#        req.load()
-#        
-#        soup = req.get_soup()
-#        
-#        # find the LIST
-#        clist = soup.find("ul", {"class":"LIST"})
-#        
-#        # find the names
-#        names = clist.find_all("span", {"class": "TN"})
-#        
-#        for name_tag in names:
-#            print(name_tag.text)
-
+            return subfamilies, tribes
         
+
+
+
+
+
+
+if __name__ == "__main__":
+    
+#    normal_url = "http://ftp.funet.fi/index/Tree_of_life/insecta/lepidoptera/ditrysia/"
+#    
+#    tpage = TaxonPageNormal(normal_url)
+#    
+#    for t in tpage.taxon_list:
+#        print(t)
+#    
+#    stuctured_url = "http://ftp.funet.fi/index/Tree_of_life/insecta/lepidoptera/ditrysia/papilionoidea/riodinidae/"
+#    
+#    tpage = TaxonPageStructured(stuctured_url)
+    
+    family_name = "Erebidae"
+    
+    ass = Associations()
+    
+    subfamilies, tribes = ass.find_associations(family_name)
         
+    print("--- subfamilies ---")
+    for sub in subfamilies:
+        print(sub.main_taxa)
+        print(sub.associates)
+    
+    print("--- tribes ---")
+    
+    for tribe in tribes:
+        print(tribe)
+    
+    
+    
+    
+    
+    
+    
     
     
     
