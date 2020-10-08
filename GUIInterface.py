@@ -24,6 +24,8 @@ import GenerateTaxaListGBIF
 import GenerateFiles
 import LogFiles
 
+import TaxaList
+
 # =============================================================================
 # Logger
 # =============================================================================
@@ -102,7 +104,44 @@ class LabelEntry(GUIElement):
         else:
             v = []
             return v
+
+
+class SelectFile(GUIElement):
+    
+    ''' Function that selects a filename to be opened later'''
+
+    def __init__(self, root_frame):
+        super().__init__(root_frame)
+
+        # button that will open the select file 
+        select_button = Button(self.pFrame, text="Select a file", command=lambda : self.select())
+        select_button.grid(row=0, column=0)    
+
+        self.selected_directory = RememberPaths.RememberPath("selfile", "/")  
+
+        # the variable showing the selected file name
+        self.selected_file_str = StringVar()
+        self.selected_file_str.set("no file selected")
         
+        # the label displaying the selected file name
+        lfolder = Label(self.pFrame, textvariable=self.selected_file_str)
+        lfolder.grid(row=1, column=0)  
+        
+        # variable that stores the filename
+        self.pathfile = None
+    
+    def select(self):
+        sel_file = filedialog.askopenfilename(title="Select a file containing the subfamilies and tribes", initialdir=self.selected_directory.get())
+        
+        if sel_file:
+            
+            self.pathfile = sel_file
+            
+            # get the directory and name to be stored and displayed
+            sel_dir, filename = os.path.split(self.pathfile)
+            self.selected_directory.assign(sel_dir)
+            self.selected_file_str.set(filename)
+
 
 class SelectFolder(GUIElement):
     
@@ -237,6 +276,8 @@ class OConsole(GUIElement):
         self.text.insert(tkinter.END, line + "\n")
         self.text.yview_pickplace("end")
         self.root.update()
+
+
         
     
         
@@ -260,6 +301,12 @@ class GUI:
         self.genera_filter = LabelEntry(fam_frame, "Genera filter:", "genera filter")
         self.genera_filter.pFrame.pack()
         
+        # possibility to add an external file containing subfamilies and tribes
+        # information (the file is csv file with 1st col subfamily, 2nd
+        # col tribe, third col genus)
+        self.select_taxonomic_file = SelectFile(fam_frame)
+        self.select_taxonomic_file.pFrame.pack()
+        
         # folder options
         
         folder_frame = LabelFrame(root, text="Data Folder")
@@ -267,7 +314,6 @@ class GUI:
         
         self.select_folder = SelectFolder(folder_frame)
         self.select_folder.pFrame.pack()
-        
 
         # make a selectable actions thingy
         
@@ -314,6 +360,52 @@ class GUI:
         # scrape the thing
         taxa_list = GenerateTaxaListGBIF.scrape_gbif(family, ass_family, base_folder, genera)
         
+        # read the file containing the tribes / subfamilies information
+        if self.select_taxonomic_file.pathfile and os.path.isfile(self.select_taxonomic_file.pathfile):
+            
+            with open(self.select_taxonomic_file.pathfile) as f:
+                lines = f.readlines()
+            
+            # store the already retrived subfamilies and tribes
+            subfamilies = []
+            tribes = []
+            
+            # skip the file header
+            for line in lines[1:]:
+                
+                # parse the comma separated values and strip the values
+                values = tuple(map(lambda s : s.strip(), line.split(",")))
+
+                subfamily, tribe, genus = values
+                
+                
+                for subf in subfamilies:
+                    if subf.main_taxa == subfamily:
+                        subf.add_associate(genus)
+                        break
+                else:
+                    if subfamily:
+                        new_subfamily = TaxaList.AssociatedTaxa(subfamily, "subfamily")
+                        new_subfamily.add_associate(genus)
+                        subfamilies.append(new_subfamily)
+                
+                for trib in tribes:
+                    if trib.main_taxa == tribe:
+                        trib.add_associate(genus)
+                        break
+                else:
+                    if tribe:
+                        new_tribe = TaxaList.AssociatedTaxa(tribe, "tribe")
+                        new_tribe.add_associate(genus)
+                        tribes.append(new_tribe)
+            
+            logger.gui_log("Retrived subfamilies: " + str(len(subfamilies)))
+            logger.gui_log("Retrived tribes: " + str(len(tribes)))
+            logger.gui_log("From file:" + self.select_taxonomic_file.pathfile)
+            
+            taxa_list.fill_associations((subfamilies, tribes))
+
+
         # do the actions like creating files and stuff
         actions = []
         
