@@ -22,6 +22,7 @@ if prev_dir not in sys.path:
 import RequestsHandler
 import FileInfo
 import Taxa
+import CSVFile
 
 # =============================================================================
 # Constants
@@ -192,6 +193,12 @@ class TaxonPageStructured(TaxonPage):
     
         for group, children in group_list:
             
+            if group is None:
+                print("group is none")
+                print(group)
+                print(children)
+                continue
+            
             if group[0] == "Tribe":
                 if current_tribe:
                     tribes.append(current_tribe)
@@ -338,19 +345,24 @@ class Associations:
         
         tp_url = self.tree.get_family_link(family_name)
         
+        print(tp_url)
+        
         tp = TaxonPage(tp_url)
         
         if tp.is_structured():
+            print("Page is structured")
             ts = TaxonPageStructured(tp_url)
             return ts.subfamilies, ts.tribes
         
         else:
+            print("Page is normal")
             tn = TaxonPageNormal(tp_url)
             
             subfamilies = []
             tribes = []
             
             for taxon in tn.taxon_list:
+                print(taxon.link)
                 
                 children_page = TaxonPageStructured(taxon.link)
                 
@@ -386,7 +398,7 @@ if __name__ == "__main__":
 #    
 #    tpage = TaxonPageStructured(stuctured_url)
     
-    family_name = "Papilionidae"
+    family_name = "Lycaenidae"
     
     ass = Associations()
     
@@ -401,6 +413,42 @@ if __name__ == "__main__":
     
     for tribe in tribes:
         print(tribe)
+        
+    csv = CSVFile.CSVFile("./funet/" + family_name + "_subfamiles_tribes.csv")
+    
+    csv.add_line(["Subfamily", "Tribe", "Genus"])
+    
+    
+    tot_genus = []
+    
+    for sub in subfamilies:
+        for genus in sub.associates:
+            tot_genus.append(genus)
+    
+    for tribe in tribes:
+        for genus in tribe.associates:
+            if genus not in tot_genus:
+                tot_genus.append(genus)
+            
+    for genus in tot_genus:
+        line = ["", "", ""]
+        line[2] = genus
+        
+        for sub in subfamilies:
+            if genus in sub.associates:
+                line[0] = sub.main_taxa.name
+                break
+        
+        for tribe in tribes:
+            if genus in tribe.associates:
+                line[1] = tribe.main_taxa
+                break
+        print(line)
+        
+        csv.add_line(line)
+            
+    
+    
     
     
     

@@ -112,26 +112,29 @@ class SelectFile(GUIElement):
 
     def __init__(self, root_frame):
         super().__init__(root_frame)
-
+ 
         # button that will open the select file 
         select_button = Button(self.pFrame, text="Select a file", command=lambda : self.select())
-        select_button.grid(row=0, column=0)    
+        select_button.grid(row=0, column=0)  
+        
+        clear_button = Button(self.pFrame, text="Clear file", command=lambda : self.clear())
+        clear_button.grid(row=0, column=1)
 
-        self.selected_directory = RememberPaths.RememberPath("selfile", "/")  
+        self.selected_file = RememberPaths.RememberPath("selfile", "/")  
 
         # the variable showing the selected file name
         self.selected_file_str = StringVar()
-        self.selected_file_str.set("no file selected")
+        self.selected_file_str.set(self.selected_file.get())
         
         # the label displaying the selected file name
         lfolder = Label(self.pFrame, textvariable=self.selected_file_str)
-        lfolder.grid(row=1, column=0)  
+        lfolder.grid(row=1, column=0, columnspan=2)  
         
         # variable that stores the filename
         self.pathfile = None
     
     def select(self):
-        sel_file = filedialog.askopenfilename(title="Select a file containing the subfamilies and tribes", initialdir=self.selected_directory.get())
+        sel_file = filedialog.askopenfilename(title="Select a file containing the subfamilies and tribes", initialdir=self.selected_file.get())
         
         if sel_file:
             
@@ -139,9 +142,69 @@ class SelectFile(GUIElement):
             
             # get the directory and name to be stored and displayed
             sel_dir, filename = os.path.split(self.pathfile)
-            self.selected_directory.assign(sel_dir)
+            self.selected_file.assign(sel_dir)
             self.selected_file_str.set(filename)
+    
+    def clear(self):
+        self.pathfile = None
+        self.selected_file.assign("No file selected")
+        self.selected_file_str.set(self.selected_file.get())
+        
+            
 
+class SelectTaxonomicFile(SelectFile):
+    
+    def __init__(self, root_frame):
+        super().__init__(root_frame)
+    
+    def parse_file(self):
+        
+        if self.pathfile and os.path.isfile(self.pathfile):
+            
+            with open(self.pathfile) as f:
+                lines = f.readlines()
+            
+            # store the already retrived subfamilies and tribes
+            subfamilies = []
+            tribes = []
+            
+            # skip the file header
+            for line in lines[1:]:
+                
+                # parse the comma separated values and strip the values
+                values = tuple(map(lambda s : s.strip(), line.split(",")))
+
+                subfamily, tribe, genus = values
+                
+                
+                for subf in subfamilies:
+                    if subf.main_taxa == subfamily:
+                        subf.add_associate(genus)
+                        break
+                else:
+                    if subfamily:
+                        new_subfamily = TaxaList.AssociatedTaxa(subfamily, "subfamily")
+                        new_subfamily.add_associate(genus)
+                        subfamilies.append(new_subfamily)
+                
+                for trib in tribes:
+                    if trib.main_taxa == tribe:
+                        trib.add_associate(genus)
+                        break
+                else:
+                    if tribe:
+                        new_tribe = TaxaList.AssociatedTaxa(tribe, "tribe")
+                        new_tribe.add_associate(genus)
+                        tribes.append(new_tribe)
+                        
+            logger.log_short_report("--- Additional taxonomical information ---")
+            logger.log_short_report("Retrived subfamilies: " + str(len(subfamilies)))
+            logger.log_short_report("Retrived tribes: " + str(len(tribes)))
+            logger.log_short_report("From file:" + self.pathfile)
+            
+            return subfamilies, tribes
+        else:
+            return None
 
 class SelectFolder(GUIElement):
     
@@ -301,21 +364,24 @@ class GUI:
         self.genera_filter = LabelEntry(fam_frame, "Genera filter:", "genera filter")
         self.genera_filter.pFrame.pack()
         
+        # taxonomical information
+        taxonomic_frame = LabelFrame(root, text="Additional taxonomical information")
+        taxonomic_frame.pack()
+        
         # possibility to add an external file containing subfamilies and tribes
         # information (the file is csv file with 1st col subfamily, 2nd
         # col tribe, third col genus)
-        self.select_taxonomic_file = SelectFile(fam_frame)
+        self.select_taxonomic_file = SelectTaxonomicFile(taxonomic_frame)
         self.select_taxonomic_file.pFrame.pack()
         
-        # folder options
-        
+        # output folder options
         folder_frame = LabelFrame(root, text="Data Folder")
         folder_frame.pack()
         
         self.select_folder = SelectFolder(folder_frame)
         self.select_folder.pFrame.pack()
 
-        # make a selectable actions thingy
+        # make a selectable actions checkbox
         
         self.action_frame = Actions(root)
         self.action_frame.pFrame.pack()
@@ -360,50 +426,53 @@ class GUI:
         # scrape the thing
         taxa_list = GenerateTaxaListGBIF.scrape_gbif(family, ass_family, base_folder, genera)
         
-        # read the file containing the tribes / subfamilies information
-        if self.select_taxonomic_file.pathfile and os.path.isfile(self.select_taxonomic_file.pathfile):
-            
-            with open(self.select_taxonomic_file.pathfile) as f:
-                lines = f.readlines()
-            
-            # store the already retrived subfamilies and tribes
-            subfamilies = []
-            tribes = []
-            
-            # skip the file header
-            for line in lines[1:]:
-                
-                # parse the comma separated values and strip the values
-                values = tuple(map(lambda s : s.strip(), line.split(",")))
-
-                subfamily, tribe, genus = values
-                
-                
-                for subf in subfamilies:
-                    if subf.main_taxa == subfamily:
-                        subf.add_associate(genus)
-                        break
-                else:
-                    if subfamily:
-                        new_subfamily = TaxaList.AssociatedTaxa(subfamily, "subfamily")
-                        new_subfamily.add_associate(genus)
-                        subfamilies.append(new_subfamily)
-                
-                for trib in tribes:
-                    if trib.main_taxa == tribe:
-                        trib.add_associate(genus)
-                        break
-                else:
-                    if tribe:
-                        new_tribe = TaxaList.AssociatedTaxa(tribe, "tribe")
-                        new_tribe.add_associate(genus)
-                        tribes.append(new_tribe)
-            
-            logger.gui_log("Retrived subfamilies: " + str(len(subfamilies)))
-            logger.gui_log("Retrived tribes: " + str(len(tribes)))
-            logger.gui_log("From file:" + self.select_taxonomic_file.pathfile)
-            
-            taxa_list.fill_associations((subfamilies, tribes))
+#        # read the file containing the tribes / subfamilies information
+#        if self.select_taxonomic_file.pathfile and os.path.isfile(self.select_taxonomic_file.pathfile):
+#            
+#            with open(self.select_taxonomic_file.pathfile) as f:
+#                lines = f.readlines()
+#            
+#            # store the already retrived subfamilies and tribes
+#            subfamilies = []
+#            tribes = []
+#            
+#            # skip the file header
+#            for line in lines[1:]:
+#                
+#                # parse the comma separated values and strip the values
+#                values = tuple(map(lambda s : s.strip(), line.split(",")))
+#
+#                subfamily, tribe, genus = values
+#                
+#                
+#                for subf in subfamilies:
+#                    if subf.main_taxa == subfamily:
+#                        subf.add_associate(genus)
+#                        break
+#                else:
+#                    if subfamily:
+#                        new_subfamily = TaxaList.AssociatedTaxa(subfamily, "subfamily")
+#                        new_subfamily.add_associate(genus)
+#                        subfamilies.append(new_subfamily)
+#                
+#                for trib in tribes:
+#                    if trib.main_taxa == tribe:
+#                        trib.add_associate(genus)
+#                        break
+#                else:
+#                    if tribe:
+#                        new_tribe = TaxaList.AssociatedTaxa(tribe, "tribe")
+#                        new_tribe.add_associate(genus)
+#                        tribes.append(new_tribe)
+#            
+#            logger.gui_log("Retrived subfamilies: " + str(len(subfamilies)))
+#            logger.gui_log("Retrived tribes: " + str(len(tribes)))
+#            logger.gui_log("From file:" + self.select_taxonomic_file.pathfile)
+        
+        taxonomical_info = self.select_taxonomic_file.parse_file()
+        
+        if taxonomical_info:
+            taxa_list.fill_associations(taxonomical_info)
 
 
         # do the actions like creating files and stuff
