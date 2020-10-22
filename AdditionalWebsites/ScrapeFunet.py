@@ -398,7 +398,7 @@ if __name__ == "__main__":
 #    
 #    tpage = TaxonPageStructured(stuctured_url)
     
-    family_name = "Lycaenidae"
+    family_name = "Nymphalidae"
     
     ass = Associations()
     
