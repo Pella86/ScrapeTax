@@ -79,37 +79,39 @@ class AssociatedTaxa:
 # =============================================================================
 
 class TaxonPage:
+    ''' Funet taxon page: the pages can have different structures'''
 
     fi = FileInfo.FileInfo("./funet", "funet", "Lepidoptera")
     
     def __init__(self, url):
         
+        # the page url
         self.url = url
         
-        name = self.generate_name()
-        
+        # generate page name from url (use the last name in the url)
+        pos = self.url[:-1].rfind("/")
+        name = self.url[pos + 1 : -1]        
         self.page_name = name
         
- 
-        
-        req = RequestsHandler.Request(self.url, self.fi.cache_filename(name))
+        # pull the request
+        req = RequestsHandler.Request(self.url, self.fi.cache_filename(self.page_name))
         req.load()
         
         self.soup = req.get_soup()     
     
     def is_structured(self):
+        ''' if in the page there is a GROUP class it means that the page
+            is layered'''
         if self.soup.find("div", {"class":"GROUP"}):
             return True
         else:
             return False
     
     
-    def generate_name(self):
-        pos = self.url[:-1].rfind("/")
-        name = self.url[pos + 1 : -1]
-        return name
-
     def parse_LIST(self, ul_element):
+        ''' This function parses the list in the page, the list in general
+        contains the name and authors information, returns a list of Taxon'''
+        
         names = ul_element.find_all("span", {"class": "TN"})        
         
         taxon_list = []
@@ -119,7 +121,6 @@ class TaxonPage:
             # find the taxon name
             name_parts = name_tag.text.split(" ", 1)
             
-            
             # some names dont have an author
             if len(name_parts) == 2:
                 name = name_parts[0]
@@ -128,21 +129,22 @@ class TaxonPage:
                 name = name_parts[0]
                 author = None
                 
-            
+            # link to the taxon page
             link_tag = name_tag.find("a")
             
             if link_tag is None:
                 link = None
             else:
+                # this goes one level deeper
                 link = self.url + link_tag.get("href")
     
-            
             taxon_list.append(Taxon(name, author, link))    
         return taxon_list
         
 
 
 class TaxonPageNormal(TaxonPage):
+    ''' If the page is not structured extract the information'''
     
     def __init__(self, url):
         super().__init__(url)
@@ -154,35 +156,41 @@ class TaxonPageNormal(TaxonPage):
 
 class TaxonPageStructured(TaxonPage):
     
+    ''' For structured pages the information needs to be parsed differently
+    this will have groups'''
+    
     
     def __init__(self, url):
         super().__init__(url)
 
         body = self.soup.find("body")
         
+        # finds all the first level elements
         chirren = body.findChildren(recursive=False)
         
-        
+        # this will have all the groups in the page
         group_list = []
-        group = None
+        current_group = None
         children = []
         
         for ele in chirren:
-        
+            
+            # if it is a current_group, it means that this is a higher taxonomy
             if ele.name == "div" and ele.has_attr('class') and ele['class'][0] == 'GROUP':
-                if group is not None:
-                    group_list.append((group, children))
+                if current_group is not None:
+                    group_list.append((current_group, children))
                     children = []
                 
                 # parse the group
-                group = self.parse_GROUP(ele)
-                
+                current_group = self.parse_GROUP(ele)
+             
+            # else is a normal list of taxons
             if ele.name == "ul" and ele.has_attr("class") and ele["class"][0] == "LIST":
                 
                 children = self.parse_LIST(ele)
                 
        
-        group_list.append((group, children))
+        group_list.append((current_group, children))
 
     
         current_tribe = None
@@ -246,12 +254,15 @@ class TaxonPageStructured(TaxonPage):
 # =============================================================================
 
 class Node:
+    ''' Each page is a node, the page can be normal or structured, the page
+    contains sub pages as leafs of the graph'''
     
     def __init__(self, taxon_page):
         
         self.page = taxon_page
         self.subpages = []
         
+        # the subpages collection stops at the families
         if self.page.page_name.endswith("idae"):
             pass
         else:
@@ -261,18 +272,17 @@ class Node:
                     continue
                 
                 tp = TaxonPageNormal(taxon.link)
-                
-    
-    
-                
+
                 self.subpages.append(Node(tp))
        
 
 class Tree:
     
+    ''' The tree is used to navigate under the lepidoptera page, and find 
+    the corresponding family page'''
+    
     
     def __init__(self):
-        
         tp = TaxonPageNormal(lepi_url)
         self.root = Node(tp)
         
@@ -289,7 +299,6 @@ class Tree:
                 
             
     def print_tree(self):
-        
         self.print_sub(self.root, 0)
             
     
@@ -310,31 +319,7 @@ class Tree:
         else:
             raise Exception("Name not found:", family_name)
 
-#t = Tree()     
-#t.print_tree()       
-#
-#
-#print(t.get_family_link("ax"))
-#
-#tp = TaxonPage(t.get_family_link("Papilionidae"))
-#
-#
-            
-            
-#def parse_GROUP(div_element):
-#    
-#    tag = div_element.find("span", {"class":"TN"})
-#    
-#    if tag is not None:
-#        text_parts = tag.text.split(" ")
-#        
-#        rank = text_parts[0]
-#        name = text_parts[1]
-#        author = " ".join(text_parts[2:])
-#        
-#        group = (rank, name, author)
-#        return group
-            
+
 class Associations:
     
     def __init__(self):
@@ -364,20 +349,38 @@ class Associations:
             for taxon in tn.taxon_list:
                 print(taxon.link)
                 
-                children_page = TaxonPageStructured(taxon.link)
+                taxon_page = TaxonPage(taxon.link)
                 
-    
-                tribes += children_page.tribes
-    
-                atax = AssociatedTaxa(taxon, "subfamily")
-                for tribe in children_page.tribes:
-                    for tax in tribe.associates:
-                        atax.add_associate(tax)
+                if taxon_page.is_structured():
                 
-                subfamilies.append(atax)   
+                    children_page = TaxonPageStructured(taxon.link)
+                    print(children_page.tribes)
+                    
+        
+                    tribes += children_page.tribes
+        
+                    atax = AssociatedTaxa(taxon, "subfamily")
+                    for tribe in children_page.tribes:
+                        for tax in tribe.associates:
+                            atax.add_associate(tax)
+                    
+                    subfamilies.append(atax)   
+                else:
+                    children_page = TaxonPageNormal(taxon.link)
+                    
+                    atax = AssociatedTaxa(taxon, "subfamily")
+                    for tx in children_page.taxon_list:
+                        atax.add_associate(tx)
+                    
+                    subfamilies.append(atax)   
+                    tribes = None                    
                 
             
             return subfamilies, tribes
+    
+    
+
+
         
 
 
@@ -398,7 +401,7 @@ if __name__ == "__main__":
 #    
 #    tpage = TaxonPageStructured(stuctured_url)
     
-    family_name = "Nymphalidae"
+    family_name = "Nepticulidae"
     
     ass = Associations()
     
@@ -406,11 +409,9 @@ if __name__ == "__main__":
         
     print("--- subfamilies ---")
     for sub in subfamilies:
-        print(sub.main_taxa)
-        print(sub.associates)
+        print(sub)
     
     print("--- tribes ---")
-    
     for tribe in tribes:
         print(tribe)
         
@@ -446,6 +447,7 @@ if __name__ == "__main__":
         print(line)
         
         csv.add_line(line)
+
             
     
     
