@@ -24,92 +24,24 @@ logger = LogFiles.Logger(__name__)
 # Function to create the authority file
 # =============================================================================
 
-def create_authority_lines(taxa_list):
-    ''' function that given a list of taxonomic dictionary of species creates
-    a line of the authority file separated and formatted (utf-8). The file can
-    be imported in excel'''
-    
-    logger.log_short_report("--- Generating authority file ---")
-    
-    
-    # Data will be comma separated
-    separator = ","
-    
-    # create the lines based on the above defined elements
-    lines = []
-    
-    
-    for i, taxa in enumerate(taxa_list):
-
-        line = ""
-        
-        if i == 0:
-            line += "1" + separator     
-        else:
-            line += f"= A{i + 1} + 1" + separator     
-        
-        line += taxa.family + separator
-        
-        line += (f'"{taxa.subfamily}"' if taxa.subfamily else "") + separator
-        
-        line += (f'"{taxa.tribe}"' if taxa.tribe else "") + separator
-        
-        line += (f'"{taxa.genus}"' if taxa.genus else "") + separator
-        
-        if taxa.rank == Taxa.Taxa.rank_genus:
-            line += "sp." + separator
-        else:
-            line += (f'"{taxa.specie}"' if taxa.specie else "") + separator
-
-        line += (f'"{taxa.subspecie}"' if taxa.subspecie else "") + separator
-
-        line += "" + separator # infraspecific rank
-
-        line += "" + separator # infraspecific epithet
-
-        line +=  (f'"{taxa.author}"' if taxa.author else "") + separator 
-
-        line +=  '"' + "".join(f'{link}, ' for link in taxa.links )[:-2] +'"'  
-        
-        line += "\n"
-        
-        lines.append(line)
-    
-    
-    logger.log_report(f"Created {len(lines)} lines")
-        
-    
-    return lines    
-    
-def save_authority_file(filename, taxa_list):
-    ''' saves the authority file on disk and adds the headers'''
-    
-    csv_file = " ,Family,Subfamily,Tribe,Genus,SpecificEpithet,SubspecificEpithet,InfraspecificRank,InfraspecificEpithet,Authorship\n".encode("utf8")
-    lines = create_authority_lines(taxa_list)
-    for line in lines:
-        csv_file += line.encode("utf8")
-    
-    with open(filename, "wb") as f:
-        f.write(csv_file)
-    
-    logger.log_short_report("Authority file saved file in:" + filename)
-
+def prep_field(field):
+    ''' If a field is None will be converted to an empty string'''
+    return field if field else ""
 
 def generate_authority_file(taxa_list, fileinfo):
-    ''' generates the filename and passes it to the save functio'''
+    ''' generates the csv file of the authority file'''
       
     csv_filename = fileinfo.csv_filename("authority_file")
     
-    
+    # Create a csv file
     f = CSVFile.CSVFile(csv_filename)
     
+    # add the header
     header = ["" ,"Family", "Subfamily", "Tribe" , "Genus", "SpecificEpithet", "SubspecificEpithet", "InfraspecificRank", "InfraspecificEpithet", "Authorship"]
     
     f.add_line(header)
     
-    def prep_field(field):
-        return field if field else ""
-    
+    # creates the records for each taxon in the list
     for i, taxa in enumerate(taxa_list):
         if i == 0:
             line = ["1"]
@@ -121,6 +53,7 @@ def generate_authority_file(taxa_list, fileinfo):
         line += [prep_field(taxa.tribe)]        
         line += [prep_field(taxa.genus)]      
         
+        # if is a genus the specie will be marked as "sp."
         if taxa.rank == Taxa.Taxa.rank_genus:
             line += ["sp."]
         else:
@@ -135,9 +68,8 @@ def generate_authority_file(taxa_list, fileinfo):
         f.add_line(line)
     
     f.write()
-    #save_authority_file(csv_filename, taxa_list)
-    
-    
+    logger.log_short_report("Authority file saved file in:" + csv_filename)
+
     
 # =============================================================================
 #  Function to create the authority list    
