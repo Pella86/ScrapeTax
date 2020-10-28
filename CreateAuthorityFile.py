@@ -9,10 +9,10 @@ Created on Mon Apr 20 10:59:46 2020
 # Imports
 # =============================================================================
 
-import ProgressBar
 import CreateHTMLFile
 import Taxa
 import LogFiles
+import CSVFile
 
 # =============================================================================
 # Logging
@@ -99,8 +99,43 @@ def generate_authority_file(taxa_list, fileinfo):
     ''' generates the filename and passes it to the save functio'''
       
     csv_filename = fileinfo.csv_filename("authority_file")
+    
+    
+    f = CSVFile.CSVFile(csv_filename)
+    
+    header = ["" ,"Family", "Subfamily", "Tribe" , "Genus", "SpecificEpithet", "SubspecificEpithet", "InfraspecificRank", "InfraspecificEpithet", "Authorship"]
+    
+    f.add_line(header)
+    
+    def prep_field(field):
+        return field if field else ""
+    
+    for i, taxa in enumerate(taxa_list):
+        if i == 0:
+            line = ["1"]
+        else:
+            line = [f"=A{i + 1} + 1"]
         
-    save_authority_file(csv_filename, taxa_list)
+        line += [taxa.family]
+        line += [prep_field(taxa.subfamily)]
+        line += [prep_field(taxa.tribe)]        
+        line += [prep_field(taxa.genus)]      
+        
+        if taxa.rank == Taxa.Taxa.rank_genus:
+            line += ["sp."]
+        else:
+            line += [prep_field(taxa.specie)]
+
+        line += [prep_field(taxa.subspecie)]
+        line += [""]
+        line += [""]
+        line += [prep_field(taxa.author)]  
+        line += ["".join(f'{link}, ' for link in taxa.links )[:-2]]
+        
+        f.add_line(line)
+    
+    f.write()
+    #save_authority_file(csv_filename, taxa_list)
     
     
     
