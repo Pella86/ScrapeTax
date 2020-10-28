@@ -23,8 +23,9 @@ import FileInfo
 import GenerateTaxaListGBIF
 import GenerateFiles
 import LogFiles
-
 import TaxaList
+import CSVFile
+
 
 # =============================================================================
 # Logger
@@ -40,6 +41,10 @@ class GUIElement:
     
     def __init__(self, parent_frame):
         self.pFrame = Frame(parent_frame)
+        
+# =============================================================================
+# Entry class
+# =============================================================================
 
 class LabelEntry(GUIElement):
     ''' A class to have a descriptive label in front of a text entry,
@@ -105,6 +110,9 @@ class LabelEntry(GUIElement):
             v = []
             return v
 
+# =============================================================================
+# Select files and folders
+# =============================================================================
 
 class SelectFile(GUIElement):
     
@@ -150,7 +158,6 @@ class SelectFile(GUIElement):
         self.selected_file.assign("No file selected")
         self.selected_file_str.set(self.selected_file.get())
         
-            
 
 class SelectTaxonomicFile(SelectFile):
     
@@ -161,41 +168,36 @@ class SelectTaxonomicFile(SelectFile):
         
         if self.pathfile and os.path.isfile(self.pathfile):
             
-            with open(self.pathfile) as f:
-                lines = f.readlines()
-            
-            # store the already retrived subfamilies and tribes
+            # read the CSV file containing higher taxonomy
+            f = CSVFile.CSVFile(self.pathfile)
+            lines = f.get_table()
+
+            # store the already retrived subfamilies and tribes (these are 
+            # lists of AssociatedTaxa)
             subfamilies = []
             tribes = []
             
+            def add_associate(in_higher_tax, rank_name, ranks, genus):
+                
+                # check if the higher taxonomy (subfamily or tribe) already
+                # exists and if so add the corresponding genus
+                # if it doesnt exist add a new higher taxonomy record and 
+                # add the genus to it
+                for rank in ranks:
+                    if rank.main_taxa == in_higher_tax:
+                        rank.add_associate(genus)
+                        break
+                else:
+                    new_rank = TaxaList.AssociatedTaxa(in_higher_tax, rank_name)
+                    new_rank.add_associate(genus)
+                    ranks.append(new_rank)
+            
             # skip the file header
-            for line in lines[1:]:
+            for subfamily, tribe, genus in lines[1:]:
                 
-                # parse the comma separated values and strip the values
-                values = tuple(map(lambda s : s.strip(), line.split(",")))
-
-                subfamily, tribe, genus = values
+                add_associate(subfamily, "subfamily", subfamilies, genus)
+                add_associate(tribe, "tribe", tribes, genus)
                 
-                
-                for subf in subfamilies:
-                    if subf.main_taxa == subfamily:
-                        subf.add_associate(genus)
-                        break
-                else:
-                    if subfamily:
-                        new_subfamily = TaxaList.AssociatedTaxa(subfamily, "subfamily")
-                        new_subfamily.add_associate(genus)
-                        subfamilies.append(new_subfamily)
-                
-                for trib in tribes:
-                    if trib.main_taxa == tribe:
-                        trib.add_associate(genus)
-                        break
-                else:
-                    if tribe:
-                        new_tribe = TaxaList.AssociatedTaxa(tribe, "tribe")
-                        new_tribe.add_associate(genus)
-                        tribes.append(new_tribe)
                         
             logger.log_short_report("--- Additional taxonomical information ---")
             logger.log_short_report("Retrived subfamilies: " + str(len(subfamilies)))
@@ -240,6 +242,10 @@ class SelectFolder(GUIElement):
             self.selected_directory.assign(sel_dir)
             
             self.selected_dir_str.set(self.selected_directory.get())
+
+# =============================================================================
+# Action choices
+# =============================================================================
             
 class ActionButton(GUIElement):
     ''' Radio button for options '''
@@ -323,6 +329,9 @@ class Actions(GUIElement):
                 else:
                     f.write(f"{name}=0\n")
 
+# =============================================================================
+# Console output
+# =============================================================================
 
 class OConsole(GUIElement):
     ''' The class for the output console'''
@@ -341,9 +350,10 @@ class OConsole(GUIElement):
         self.root.update()
 
 
-        
+# =============================================================================
+# Main GUI        
+# =============================================================================
     
-        
 class GUI:
     
     def __init__(self):
