@@ -135,7 +135,7 @@ def generate_lists(family_name, file_info, load_lists = True):
     logger.log_short_report("Input name: " + family_name)
     
     # establish the first query
-    param = {"name" : family_name}
+    param = {"name" : family_name, "verbose" : "true"}
     family_query = RequestsHandler.Request(match_api_url, file_info.cache_filename("family_query"), param)
     family_query.load()
         
@@ -148,6 +148,24 @@ def generate_lists(family_name, file_info, load_lists = True):
         match_type = family_json["matchType"]
         log_str = f"Found: {family} Confidence: {confidence}% match type: {match_type}"
         logger.log_short_report(log_str)
+    elif family_json.get("alternatives") != None:
+        
+        # search for the json containing the family information
+        for alternative in family_json["alternatives"]:
+            if alternative["rank"] == "FAMILY" and alternative["scientificName"] == family_name:
+                family = alternative['family']
+                confidence = alternative['confidence']
+                match_type = alternative["matchType"]
+                
+                log_str = f"Found: {family} Confidence: {confidence}% match type: {match_type}"
+                logger.log_short_report(log_str)           
+                
+                correct_alternative = alternative
+                break
+        
+        # assign the correct json to be the current family json
+        family_json = correct_alternative
+                
     else:
         logger.log_short_report("GBIF: Name not found because: " +  str(family_json))
         raise Exception("GBIF: Name not found because: " +  str(family_json))
